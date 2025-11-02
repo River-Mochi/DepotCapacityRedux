@@ -37,10 +37,10 @@
 	<!--Thumbnail-->
 	<Thumbnail Value="Properties/Thumbnail.jpg" />
 	<!--Screenshot, can be set multiple times-->
-	<Screenshot Value="10-image-Depot.jpg" />
-	<Screenshot Value="20-image-Passenger.jpg" />
-	<Screenshot Value="30-image-FR.jpg" />
-	<Screenshot Value="40-image-CN.jpg" />
+	<Screenshot Value="Properties/10-image-Depot.jpg" />
+	<Screenshot Value="Properties/20-image-Passenger.jpg" />
+	<Screenshot Value="Properties/30-image-FR.jpg" />
+	<Screenshot Value="Properties/40-image-CN.jpg" />
 	<!--Tag, can be set multiple times-->
 	<Tag Value="Code Mod" />
 	<!--Link to the forum post where the mod can be discussed-->
