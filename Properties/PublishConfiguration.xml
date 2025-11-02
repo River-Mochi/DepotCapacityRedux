@@ -30,7 +30,10 @@ Image: pch.vector / Freepik
 	<!--Thumbnail-->
 	<Thumbnail Value="Properties/Thumbnail.jpg" />
 	<!--Screenshot, can be set multiple times-->
-	<Screenshot Value="" />
+	<Screenshot Value="10-image-Depot.jpg" />
+	<Screenshot Value="20-image-Passenger.jpg" />
+	<Screenshot Value="30-image-FR.jpg" />
+	<Screenshot Value="40-image-CN.jpg" />
 	<!--Tag, can be set multiple times-->
 	<Tag Value="Code Mod" />
 	<!--Link to the forum post where the mod can be discussed-->
@@ -42,7 +45,7 @@ Image: pch.vector / Freepik
 	<!--Dependency for the mod, can be set multiple times-->
 	<Dependency Id="" />
 	<!--Change log for new version. Single line or multi line. Supports minimal markdown subset-->
-	<ChangeLog Value=" " />
+	<ChangeLog Value="Add Images" />
 	<!--ChangeLog>
 	</ChangeLog-->
 	<!--External link. supported types are discord, github, youtube, twitch, x, paypal, patreon-->
