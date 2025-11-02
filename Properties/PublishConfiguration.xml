@@ -1,6 +1,6 @@
 ﻿<Publish>
 	<!--Id must be set in order to update existed mod. it is not required for publishing mod for the first time-->
-	<ModId Value="" />
+	<ModId Value="123738" />
 	<!--Name of the mod to display to players-->
 	<DisplayName Value="Depot Capacity Redux" />
 	<!--Short description of the mod-->
@@ -9,18 +9,23 @@
 	<!--LongDescription Value="This is a long description" /-->
 	<LongDescription>## Depot Capacity Redux
 
-- Easily increase the maximum capacity of transit depots; how many vehicles each depot building can have.
-- Reduces the number of depots needed to save room in a city.
-- New: Total Passengers slider to increase how many passengers each vehicle can carry (e.g. buses, trains, etc.)
-- New: Four more languages supprted
-- Options menu sliders can be adjusted in-game without restarting.
+### Updated for 1.3.6* and Bridges DLC
+
+- **Depot capacity**: Bus, Taxi, Tram, Train, Subway scales the maximum vehicles per depot.
+- **Passenger capacity**:  to increase how many passengers each vehicle can carry (bus,tram, trains, subway, airplane, ship, ferry)
+- Options menu sliders can be adjusted in-game without restarting 100% - 1000%
 - Does not use Harmony or Reflection, making it more compatible with other mods and less likely to break with game updates.
 
 ## Languages
 
 Français French, Deutsch German, Español Spanish, 简体中文 (Simplified Chinese)
 
-## Credits
+### Notes
+- Depot capacity = maximum number of vehicles a single depot can maintain or spawn.
+- Passenger capacity = maximum passengers each vehicle can carry.
+- Supports switching cities, applies changes.
+
+### Credits
 River-Mochi - current author/maintainer
 Many Thanks to Wayze, the author of the original Depot Capacity Changer.
 Necko1996 - testing
@@ -37,15 +42,15 @@ Image: pch.vector / Freepik
 	<!--Tag, can be set multiple times-->
 	<Tag Value="Code Mod" />
 	<!--Link to the forum post where the mod can be discussed-->
-	<ForumLink Value="" />
+	<ForumLink Value="https://forum.paradoxplaza.com/forum/threads/depot-capacity-redux-and-more.1866178/" />
 	<!--Version of the mod-->
-	<ModVersion Value="1.2.0" />
+	<ModVersion Value="1.2.1" />
 	<!--Recommended version of the base game to use the mod-->
 	<GameVersion Value="1.3.6*" />
 	<!--Dependency for the mod, can be set multiple times-->
 	<Dependency Id="" />
 	<!--Change log for new version. Single line or multi line. Supports minimal markdown subset-->
-	<ChangeLog Value="Add Images" />
+	<ChangeLog Value="Added Images" />
 	<!--ChangeLog>
 	</ChangeLog-->
 	<!--External link. supported types are discord, github, youtube, twitch, x, paypal, patreon-->

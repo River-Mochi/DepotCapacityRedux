@@ -15,7 +15,7 @@ namespace DepotCapacityRedux
         public const string ModName = "Depot Capacity Redux";
         public const string ModId = "DepotCapacityRedux";
         public const string ModTag = "[DCR]";
-        public const string ModVersion = "1.2.0";
+        public const string ModVersion = "1.2.1";
 
         public static readonly ILog Log =
             LogManager.GetLogger(ModId).SetShowsErrorsInUI(false);
