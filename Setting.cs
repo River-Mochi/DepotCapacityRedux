@@ -36,14 +36,14 @@ namespace DepotCapacityRedux
 
         public override void SetDefaults()
         {
-            // depots (5 original types)
+            // Depots - 5 original types
             BusDepotPercent = 100;
             TaxiDepotPercent = 100;
             TramDepotPercent = 100;
             TrainDepotPercent = 100;
             SubwayDepotPercent = 100;
 
-            // passengers (all enabled types)
+            // Passengers - all 8 types
             BusPassengerPercent = 100;
             TaxiPassengerPercent = 100;
             TramPassengerPercent = 100;
@@ -73,7 +73,7 @@ namespace DepotCapacityRedux
         }
 
         // ---------------------------------------------------------------------
-        // DEPOT CAPACITY (max vehicles per depot)
+        // DEPOT CAPACITY - max vehicles per depot
         // ---------------------------------------------------------------------
 
         [SettingsUISlider(min = MinPercent, max = MaxPercent, step = StepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
@@ -112,7 +112,7 @@ namespace DepotCapacityRedux
         }
 
         // ---------------------------------------------------------------------
-        // PASSENGER CAPACITY (max passengers per vehicle)
+        // PASSENGER CAPACITY - max passengers per vehicle
         // ---------------------------------------------------------------------
 
         [SettingsUISlider(min = MinPercent, max = MaxPercent, step = StepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
@@ -150,7 +150,7 @@ namespace DepotCapacityRedux
             get; set;
         }
 
-        // passenger-only types
+        // Passenger-only types
         [SettingsUISlider(min = MinPercent, max = MaxPercent, step = StepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
         [SettingsUISection(MainTab, PassengerGroup)]
         public int ShipPassengerPercent
