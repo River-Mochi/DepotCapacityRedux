@@ -4,7 +4,7 @@
 	<!--Name of the mod to display to players-->
 	<DisplayName Value="Depot Capacity Redux" />
 	<!--Short description of the mod-->
-	<ShortDescription Value="Allows easy change of the max capacity of all transit depots and total passengers" />
+	<ShortDescription Value="Easy change of max capacity of all Transit Depots and Total Passengers" />
 	<!--Long description of the mod. Single line or multi line. Supports minimal markdown subset-->
 	<!--LongDescription Value="This is a long description" /-->
 	<LongDescription>## Depot Capacity Redux
@@ -14,7 +14,7 @@
 ### What it does
 
 - **Depot capacity**: Bus, Taxi, Tram, Train, Subway scales the maximum vehicles per depot.
-- **Passenger capacity**:  to increase how many passengers each vehicle can carry (bus,tram, trains, subway, airplane, ship, ferry)
+- **Passenger capacity**:  increase how many passengers each vehicle can carry (bus,tram, trains, subway, airplane, ship, ferry)
 - Options menu sliders can be adjusted without restarting (100% - 1000%)
 - Does not use Harmony or Reflection, making it more compatible with other mods and less likely to break with game updates.
 
@@ -25,13 +25,14 @@
 ### Notes
 - Depot capacity = maximum number of vehicles a single depot can maintain or spawn.
 - Passenger capacity = maximum passengers each vehicle can carry.
+- Remove other depot capacity mods to avoid conflicts (they will override each other)
 - Supports switching cities, applies changes.
 
 ### Credits
 - River-Mochi - current author/maintainer
 - Many Thanks to Wayze, the author of the original Depot Capacity Changer.
 - Necko1996 - testing
-- Image: pch.vector / Freepik
+
 
 	</LongDescription>
 	<!--Thumbnail-->
