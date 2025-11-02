@@ -8,7 +8,7 @@ This is a cleaned-up, expanded version of the original **Depot Capacity Changer*
 ## What it does
 
 - Adds 5 sliders in the mod Options:
-- Depot capacity: Bus, Taxi, Tram, Train, Subway, Ship, Ferry, Airplane
+- Depot capacity: Bus, Taxi, Tram, Train, Subway, Ship, Ferry
 - Passenger capacity: Bus, Taxi, Tram, Train, Subway, Ship, Ferry, Airplane
 - Sliders: **100% → 1000%**
 - Each slider is **100% → 1000%** of vanilla depot vehicle capacity.

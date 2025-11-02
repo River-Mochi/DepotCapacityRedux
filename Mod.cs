@@ -1,3 +1,6 @@
+// Mod.cs
+// Entrypoint for Depot Capacity Redux; registers settings, locales, and the ECS system.
+
 namespace DepotCapacityRedux
 {
     using Colossal.IO.AssetDatabase;
@@ -14,7 +17,6 @@ namespace DepotCapacityRedux
         public const string ModTag = "[DCR]";
         public const string ModVersion = "1.2.0";
 
-        // no ".Mod" suffix per your rule
         public static readonly ILog Log =
             LogManager.GetLogger(ModId).SetShowsErrorsInUI(false);
 
@@ -24,10 +26,11 @@ namespace DepotCapacityRedux
         {
             Log.Info($"{ModName} v{ModVersion} OnLoad");
 
+            // 1) Settings first
             var setting = new Setting(this);
             Settings = setting;
 
-            // register 5 locales (same pattern as MagicHearse)
+            // 2) Locales
             var lm = GameManager.instance?.localizationManager;
             if (lm != null)
             {
@@ -42,16 +45,16 @@ namespace DepotCapacityRedux
                 Log.Warn("LocalizationManager not found; settings UI texts may be missing.");
             }
 
-            // load saved settings (file name is in [FileLocation] on Setting)
+            // 3) Load saved settings (file name from [FileLocation] in Setting)
             AssetDatabase.global.LoadSettings(ModId, setting, new Setting(this));
 
-            // show in Options -> Mods
+            // 4) show in Options
             setting.RegisterInOptionsUI();
 
-            // make sure our system runs after prefabs are ready
+            // 5) Update the system AFTER prefab data is ready
             updateSystem.UpdateAfter<DepotCapacityReduxSystem>(SystemUpdatePhase.PrefabUpdate);
 
-            // if world is alive already, trigger a run now
+            // 6) If world is already running, poke system to apply current values
             var world = World.DefaultGameObjectInjectionWorld;
             if (world != null)
             {
