@@ -17,7 +17,6 @@ namespace DepotCapacityRedux
         public const string ModTag = "[DCR]";
         public const string ModVersion = "1.2.0";
 
-        // no ".Mod" suffix per your rule
         public static readonly ILog Log =
             LogManager.GetLogger(ModId).SetShowsErrorsInUI(false);
 
@@ -31,7 +30,7 @@ namespace DepotCapacityRedux
             Setting setting = new Setting(this);
             Settings = setting;
 
-            // 2) register locales (top-level classes, NOT Setting.LocaleEN)
+            // 2) register locales
             var lm = GameManager.instance?.localizationManager;
             if (lm != null)
             {
@@ -46,13 +45,13 @@ namespace DepotCapacityRedux
                 Log.Warn("LocalizationManager not found; settings UI texts may be missing.");
             }
 
-            // 3) load saved settings from our fixed path
+            // 3) load saved settings from fixed path
             AssetDatabase.global.LoadSettings(ModId, setting, new Setting(this));
 
-            // 4) show in Options → Mods
+            // 4) show in Options
             setting.RegisterInOptionsUI();
 
-            // 5) make sure our ECS system runs after prefab data is ready
+            // 5) make sure ECS system runs after prefab data is ready
             updateSystem.UpdateAfter<DepotCapacityReduxSystem>(SystemUpdatePhase.PrefabUpdate);
 
             // 6) if a world is already running, apply once right now

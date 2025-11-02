@@ -9,9 +9,9 @@
 	<!--LongDescription Value="This is a long description" /-->
 	<LongDescription>## Depot Capacity Redux
 
-- This mod allows you to easily change the maximum capacity of transit depots; how many vehicles each building can have.
+- Easily increase the maximum capacity of transit depots; how many vehicles each depot building can have.
 - Reduces the number of depots needed to save room in a city.
-- New: Total Passengers slider to adjust how many passengers each vehicle can carry.
+- New: Total Passengers slider to increase how many passengers each vehicle can carry (e.g. buses, trains, etc.)
 - New: Four more languages supprted
 - Options menu sliders can be adjusted in-game without restarting.
 - Does not use Harmony or Reflection, making it more compatible with other mods and less likely to break with game updates.
