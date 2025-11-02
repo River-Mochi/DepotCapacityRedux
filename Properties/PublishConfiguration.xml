@@ -1,17 +1,32 @@
 ﻿<Publish>
 	<!--Id must be set in order to update existed mod. it is not required for publishing mod for the first time-->
-	<ModId Value="75684" />
+	<ModId Value="" />
 	<!--Name of the mod to display to players-->
-	<DisplayName Value="Depot Capacity Changer" />
+	<DisplayName Value="Depot Capacity Redux" />
 	<!--Short description of the mod-->
-	<ShortDescription Value="Allows you to easily change the capacity of transit depots" />
+	<ShortDescription Value="Allows you to easily change the max capacity of all transit depots" />
 	<!--Long description of the mod. Single line or multi line. Supports minimal markdown subset-->
 	<!--LongDescription Value="This is a long description" /-->
-	<LongDescription>
-This mod allows you to easily change the vehicle capacity of transit depots from the settings menu. Allows you increase the capacity by up to 10x.
+	<LongDescription>## Depot Capacity Redux
+
+- This mod allows you to easily change the maximum capacity of transit depots; how many vehicles each building can have.
+- Reduces the number of depots needed to save room in a city.
+- Options menu sliders can be adjusted in-game without restarting.
+- Does not use Harmony or Reflection, making it more compatible with other mods and less likely to break with game updates.
+
+## Languages
+
+Français French, Deutsch German, Español Spanish, 简体中文 (Simplified Chinese)
+
+## Credits
+River-Mochi - current author/maintainer
+Many Thanks to Wayze, the author of the original Depot Capacity Changer.
+Necko1996 - testing
+Image: pch.vector / Freepik
+
 	</LongDescription>
 	<!--Thumbnail-->
-	<Thumbnail Value="Properties/Thumbnail.png" />
+	<Thumbnail Value="Properties/Thumbnail.jpg" />
 	<!--Screenshot, can be set multiple times-->
 	<Screenshot Value="" />
 	<!--Tag, can be set multiple times-->
@@ -19,16 +34,17 @@ This mod allows you to easily change the vehicle capacity of transit depots from
 	<!--Link to the forum post where the mod can be discussed-->
 	<ForumLink Value="" />
 	<!--Version of the mod-->
-	<ModVersion Value="1.1.0" />
+	<ModVersion Value="1.2.0" />
 	<!--Recommended version of the base game to use the mod-->
-	<GameVersion Value="1.1.*" />
+	<GameVersion Value="1.3.6*" />
 	<!--Dependency for the mod, can be set multiple times-->
 	<Dependency Id="" />
 	<!--Change log for new version. Single line or multi line. Supports minimal markdown subset-->
-	<ChangeLog Value="Settings sliders can now be adjusted in 25% increments instead of 100%" />
+	<ChangeLog Value=" " />
 	<!--ChangeLog>
 	</ChangeLog-->
 	<!--External link. supported types are discord, github, youtube, twitch, x, paypal, patreon-->
-  <ExternalLink Type="github" Url="https://github.com/Wayzware/DepotCapacityChanger" />
-  <ExternalLink Type="paypal" Url="https://www.paypal.com/paypalme/wayzware" />
+<ExternalLink Type="discord" Url="https://discord.gg/HTav7ARPs2" />
+<ExternalLink Type="github" Url="https://github.com/River-Mochi/DepotCapacityRedux" />
+
 </Publish>

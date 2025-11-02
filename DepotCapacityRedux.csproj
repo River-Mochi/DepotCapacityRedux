@@ -1,26 +1,19 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
 	<PropertyGroup>
-		<OutputType>Library</OutputType>
-		<TargetFramework>net472</TargetFramework>
+		<!-- keep configs -->
 		<Configurations>Debug;Release</Configurations>
-		<LangVersion>9</LangVersion>
-		
-		<!--The folder where Game.dll is located. Set it only if the game is not installed in the default location, otherwise keep it empty-->
-		<CustomManagedPath></CustomManagedPath>
-		
-		<!--Path to the text file where PDX account data is stored which is required to publish the mod-->
-		<!--Keep it outside of project in order to not commit it or share accidentally-->
-		<!--The file should contain 2 lines:-->
-		<!--Your.PDX@Account.login-->
-		<!--Your-PDX-Account-Pa$$word-->
-		<PDXAccountDataPath>..\..\Common\pdx_account.txt</PDXAccountDataPath>
-		
-		<!--The file where mod information which is required for publishing mod on PDX mods are stored-->
+
+		<!-- extra project-level goodness -->
+		<Nullable>enable</Nullable>
+
+		<!-- where Paradox publish metadata lives -->
 		<PublishConfigurationPath>Properties\PublishConfiguration.xml</PublishConfigurationPath>
+
+		<!-- leave TargetFramework to Mod.props -->
+		<CustomManagedPath></CustomManagedPath>
 	</PropertyGroup>
-	
-	<!--Imports must be after PropertyGroup block-->
+
+	<!-- CS2 toolchain (this is what actually sets net48 for you) -->
 	<Import Project="$([System.Environment]::GetEnvironmentVariable('CSII_TOOLPATH', 'EnvironmentVariableTarget.User'))\Mod.props" />
 	<Import Project="$([System.Environment]::GetEnvironmentVariable('CSII_TOOLPATH', 'EnvironmentVariableTarget.User'))\Mod.targets" />
 
@@ -63,21 +56,9 @@
 		</Reference>
 	</ItemGroup>
 
-	<ItemGroup>
-		<Reference Update="System">
-			<Private>false</Private>
-		</Reference>
-		<Reference Update="System.Core">
-			<Private>false</Private>
-		</Reference>
-		<Reference Update="System.Data">
-			<Private>false</Private>
-		</Reference>
-	</ItemGroup>
-
+	<!-- make toolchain files visible in VS under Properties -->
 	<ItemGroup>
 		<None Include="$(ModPropsFile)" Link="Properties\Mod.props" />
 		<None Include="$(ModTargetsFile)" Link="Properties\Mod.targets" />
 	</ItemGroup>
-
 </Project>
