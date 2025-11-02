@@ -260,7 +260,7 @@ namespace DepotCapacityRedux
                     scalar = settings.SubwayPassengerPercent / 100f;
                     break;
 
-                // passenger ship / ferry / airplane were removed → keep vanilla
+                // passenger ship / ferry / airplane -> keep vanilla
                 default:
                     return 1f;
             }
