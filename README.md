@@ -20,11 +20,7 @@ This is a cleaned-up, expanded version of the original **Depot Capacity Changer*
 
 
 ### Languages
-- English (en-US)
-- French (fr-FR)
-- Spanish (es-ES)
-- German (de-DE)
-- 简体中文 (zh-HANS)
+- English (en-US), French (fr-FR), Spanish (es-ES), German (de-DE), 简体中文 (zh-HANS)
 
 ## Credits
 

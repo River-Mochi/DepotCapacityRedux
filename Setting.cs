@@ -1,4 +1,6 @@
 // Setting.cs
+// Options UI for Depot Capacity Redux. Two groups: depot and passenger.
+// Sliders show 100%–1000% in steps of 25.
 
 namespace DepotCapacityRedux
 {
@@ -10,25 +12,22 @@ namespace DepotCapacityRedux
     using Game.UI;
     using Unity.Entities;
 
-    [FileLocation("ModsSettings/DepotCapacityRedux/DepotCapacityRedux")]
+    [FileLocation(Mod.SettingsPath)]
     [SettingsUIGroupOrder(DepotGroup, PassengerGroup)]
     [SettingsUIShowGroupName(DepotGroup, PassengerGroup)]
     public sealed class Setting : ModSetting
     {
-        // tabs + groups
         public const string MainTab = "Main";
         public const string DepotGroup = "DepotCapacity";
         public const string PassengerGroup = "PassengerCapacity";
 
-        // shared slider ranges
-        public const int MinPercent = 100;   // 1x
-        public const int MaxPercent = 1000;  // 10x
+        public const int MinPercent = 100;
+        public const int MaxPercent = 1000;
         public const int StepPercent = 25;
 
         public Setting(IMod mod)
             : base(mod)
         {
-            // brand-new settings file → populate
             if (BusDepotPercent == 0)
             {
                 SetDefaults();
@@ -37,14 +36,14 @@ namespace DepotCapacityRedux
 
         public override void SetDefaults()
         {
-            // DEPOTS
+            // depots (5 original types)
             BusDepotPercent = 100;
             TaxiDepotPercent = 100;
             TramDepotPercent = 100;
             TrainDepotPercent = 100;
             SubwayDepotPercent = 100;
 
-            // PASSENGERS — per-vehicle passenger count
+            // passengers (all enabled types)
             BusPassengerPercent = 100;
             TaxiPassengerPercent = 100;
             TramPassengerPercent = 100;
@@ -59,22 +58,23 @@ namespace DepotCapacityRedux
         {
             base.Apply();
 
-            // tell the system to reapply multipliers once
-            var world = World.DefaultGameObjectInjectionWorld;
+            World world = World.DefaultGameObjectInjectionWorld;
             if (world == null)
             {
                 return;
             }
 
-            var system = world.GetExistingSystemManaged<DepotCapacityReduxSystem>();
+            DepotCapacityReduxSystem system =
+                world.GetExistingSystemManaged<DepotCapacityReduxSystem>();
             if (system != null)
             {
                 system.Enabled = true;
             }
         }
 
-        // DEPOT CAPACITY (max vehicles per depot building)
-        // 100% = vanilla, 1000% = 10x
+        // ---------------------------------------------------------------------
+        // DEPOT CAPACITY (max vehicles per depot)
+        // ---------------------------------------------------------------------
 
         [SettingsUISlider(min = MinPercent, max = MaxPercent, step = StepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
         [SettingsUISection(MainTab, DepotGroup)]
@@ -111,7 +111,9 @@ namespace DepotCapacityRedux
             get; set;
         }
 
+        // ---------------------------------------------------------------------
         // PASSENGER CAPACITY (max passengers per vehicle)
+        // ---------------------------------------------------------------------
 
         [SettingsUISlider(min = MinPercent, max = MaxPercent, step = StepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
         [SettingsUISection(MainTab, PassengerGroup)]
@@ -148,7 +150,7 @@ namespace DepotCapacityRedux
             get; set;
         }
 
-        // passenger vehicles only
+        // passenger-only types
         [SettingsUISlider(min = MinPercent, max = MaxPercent, step = StepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
         [SettingsUISection(MainTab, PassengerGroup)]
         public int ShipPassengerPercent
@@ -169,243 +171,239 @@ namespace DepotCapacityRedux
         {
             get; set;
         }
-    }
 
-    //
-    // ENGLISH
-    //
-    public sealed class LocaleEN : IDictionarySource
-    {
-        private readonly Setting m_Setting;
-
-        public LocaleEN(Setting setting)
+        // ---------------------------------------------------------------------
+        // LOCALE: EN
+        // ---------------------------------------------------------------------
+        public sealed class LocaleEN : IDictionarySource
         {
-            m_Setting = setting;
+            private readonly Setting m_Setting;
+
+            public LocaleEN(Setting setting)
+            {
+                m_Setting = setting;
+            }
+
+            public IEnumerable<KeyValuePair<string, string>> ReadEntries(
+                IList<IDictionaryEntryError> errors,
+                Dictionary<string, int> indexCounts)
+            {
+                return new Dictionary<string, string>
+                {
+                    { m_Setting.GetSettingsLocaleID(), "Depot Capacity Redux" },
+                    { m_Setting.GetOptionTabLocaleID(MainTab), "Main" },
+
+                    { m_Setting.GetOptionGroupLocaleID(DepotGroup), "Depot capacity (max vehicles per depot)" },
+                    { m_Setting.GetOptionGroupLocaleID(PassengerGroup), "Passenger capacity" },
+
+                    { m_Setting.GetOptionLabelLocaleID(nameof(BusDepotPercent)), "Bus depots" },
+                    { m_Setting.GetOptionDescLocaleID(nameof(BusDepotPercent)), "Number of buses a bus depot can maintain. 100% = vanilla, 1000% = 10×." },
+
+                    { m_Setting.GetOptionLabelLocaleID(nameof(TaxiDepotPercent)), "Taxi depots" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(TramDepotPercent)), "Tram depots" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(TrainDepotPercent)), "Train depots" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(SubwayDepotPercent)), "Subway depots" },
+
+                    { m_Setting.GetOptionLabelLocaleID(nameof(BusPassengerPercent)), "Bus passengers" },
+                    { m_Setting.GetOptionDescLocaleID(nameof(BusPassengerPercent)), "Passenger seats for buses. 100% = vanilla, 1000% = 10×." },
+
+                    { m_Setting.GetOptionLabelLocaleID(nameof(TaxiPassengerPercent)), "Taxi passengers" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(TramPassengerPercent)), "Tram passengers" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(TrainPassengerPercent)), "Train passengers" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(SubwayPassengerPercent)), "Subway passengers" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(ShipPassengerPercent)), "Ship passengers" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(FerryPassengerPercent)), "Ferry passengers" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(AirplanePassengerPercent)), "Airplane passengers" },
+                };
+            }
+
+            public void Unload()
+            {
+            }
         }
 
-        public IEnumerable<KeyValuePair<string, string>> ReadEntries(
-            IList<IDictionaryEntryError> errors,
-            Dictionary<string, int> indexCounts)
+        // ---------------------------------------------------------------------
+        // LOCALE: FR
+        // ---------------------------------------------------------------------
+        public sealed class LocaleFR : IDictionarySource
         {
-            return new Dictionary<string, string>
-        {
-            { m_Setting.GetSettingsLocaleID(), "Depot Capacity Redux" },
-            { m_Setting.GetOptionTabLocaleID(Setting.MainTab), "Main" },
+            private readonly Setting m_Setting;
 
-            { m_Setting.GetOptionGroupLocaleID(Setting.DepotGroup), "Depot capacity (max vehicles per depot)" },
-            { m_Setting.GetOptionGroupLocaleID(Setting.PassengerGroup), "Passenger capacity" },
+            public LocaleFR(Setting setting)
+            {
+                m_Setting = setting;
+            }
 
-            // Depot
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.BusDepotPercent)), "Bus depots" },
-            { m_Setting.GetOptionDescLocaleID(nameof(Setting.BusDepotPercent)), "How many buses each bus depot can maintain/spawn. 100% = vanilla, 1000% = 10×." },
+            public IEnumerable<KeyValuePair<string, string>> ReadEntries(
+                IList<IDictionaryEntryError> errors,
+                Dictionary<string, int> indexCounts)
+            {
+                return new Dictionary<string, string>
+                {
+                    { m_Setting.GetSettingsLocaleID(), "Depot Capacity Redux" },
+                    { m_Setting.GetOptionTabLocaleID(MainTab), "Principal" },
 
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TaxiDepotPercent)), "Taxi depots" },
-            { m_Setting.GetOptionDescLocaleID(nameof(Setting.TaxiDepotPercent)), "How many taxis each taxi depot can maintain. 100% = vanilla." },
+                    { m_Setting.GetOptionGroupLocaleID(DepotGroup), "Capacité du dépôt" },
+                    { m_Setting.GetOptionGroupLocaleID(PassengerGroup), "Capacité passagers" },
 
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TramDepotPercent)), "Tram depots" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TrainDepotPercent)), "Train depots" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.SubwayDepotPercent)), "Subway depots" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(BusDepotPercent)), "Dépôts de bus" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(TaxiDepotPercent)), "Dépôts de taxi" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(TramDepotPercent)), "Dépôts de tram" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(TrainDepotPercent)), "Dépôts de trains" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(SubwayDepotPercent)), "Dépôts de métro" },
 
-            // Passenger
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.BusPassengerPercent)), "Bus passengers" },
-            { m_Setting.GetOptionDescLocaleID(nameof(Setting.BusPassengerPercent)), "Multiply the number of passengers a bus can carry. 1000% = 10× vanilla seats." },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(BusPassengerPercent)), "Passagers – bus" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(TaxiPassengerPercent)), "Passagers – taxi" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(TramPassengerPercent)), "Passagers – tram" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(TrainPassengerPercent)), "Passagers – train" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(SubwayPassengerPercent)), "Passagers – métro" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(ShipPassengerPercent)), "Passagers – navire" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(FerryPassengerPercent)), "Passagers – ferry" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(AirplanePassengerPercent)), "Passagers – avion" },
+                };
+            }
 
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TaxiPassengerPercent)), "Taxi passengers" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TramPassengerPercent)), "Tram passengers" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TrainPassengerPercent)), "Train passengers" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.SubwayPassengerPercent)), "Subway passengers" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.ShipPassengerPercent)), "Ship passengers" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.FerryPassengerPercent)), "Ferry passengers" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.AirplanePassengerPercent)), "Airplane passengers" },
-        };
+            public void Unload()
+            {
+            }
         }
 
-        public void Unload()
+        // ---------------------------------------------------------------------
+        // LOCALE: ES
+        // ---------------------------------------------------------------------
+        public sealed class LocaleES : IDictionarySource
         {
-        }
-    }
+            private readonly Setting m_Setting;
 
-    //
-    // FRENCH (fr-FR)
-    //
-    public sealed class LocaleFR : IDictionarySource
-    {
-        private readonly Setting m_Setting;
+            public LocaleES(Setting setting)
+            {
+                m_Setting = setting;
+            }
 
-        public LocaleFR(Setting setting)
-        {
-            m_Setting = setting;
-        }
+            public IEnumerable<KeyValuePair<string, string>> ReadEntries(
+                IList<IDictionaryEntryError> errors,
+                Dictionary<string, int> indexCounts)
+            {
+                return new Dictionary<string, string>
+                {
+                    { m_Setting.GetSettingsLocaleID(), "Depot Capacity Redux" },
+                    { m_Setting.GetOptionTabLocaleID(MainTab), "Principal" },
 
-        public IEnumerable<KeyValuePair<string, string>> ReadEntries(
-            IList<IDictionaryEntryError> errors,
-            Dictionary<string, int> indexCounts)
-        {
-            return new Dictionary<string, string>
-        {
-            { m_Setting.GetSettingsLocaleID(), "Depot Capacity Redux" },
-            { m_Setting.GetOptionTabLocaleID(Setting.MainTab), "Principal" },
+                    { m_Setting.GetOptionGroupLocaleID(DepotGroup), "Capacidad del depósito" },
+                    { m_Setting.GetOptionGroupLocaleID(PassengerGroup), "Capacidad de pasajeros" },
 
-            { m_Setting.GetOptionGroupLocaleID(Setting.DepotGroup), "Capacité du dépôt" },
-            { m_Setting.GetOptionGroupLocaleID(Setting.PassengerGroup), "Capacité passagers" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(BusDepotPercent)), "Depósitos de autobuses" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(TaxiDepotPercent)), "Depósitos de taxis" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(TramDepotPercent)), "Depósitos de tranvías" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(TrainDepotPercent)), "Depósitos de trenes" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(SubwayDepotPercent)), "Depósitos de metro" },
 
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.BusDepotPercent)), "Dépôts de bus" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TaxiDepotPercent)), "Dépôts de taxi" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TramDepotPercent)), "Dépôts de tram" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TrainDepotPercent)), "Dépôts de trains" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.SubwayDepotPercent)), "Dépôts de métro" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(BusPassengerPercent)), "Pasajeros – autobús" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(TaxiPassengerPercent)), "Pasajeros – taxi" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(TramPassengerPercent)), "Pasajeros – tranvía" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(TrainPassengerPercent)), "Pasajeros – tren" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(SubwayPassengerPercent)), "Pasajeros – metro" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(ShipPassengerPercent)), "Pasajeros – barco" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(FerryPassengerPercent)), "Pasajeros – ferry" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(AirplanePassengerPercent)), "Pasajeros – avión" },
+                };
+            }
 
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.BusPassengerPercent)), "Passagers – bus" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TaxiPassengerPercent)), "Passagers – taxi" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TramPassengerPercent)), "Passagers – tram" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TrainPassengerPercent)), "Passagers – train" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.SubwayPassengerPercent)), "Passagers – métro" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.ShipPassengerPercent)), "Passagers – navire" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.FerryPassengerPercent)), "Passagers – ferry" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.AirplanePassengerPercent)), "Passagers – avion" },
-        };
-        }
-
-        public void Unload()
-        {
-        }
-    }
-
-    //
-    // SPANISH (es-ES)
-    //
-    public sealed class LocaleES : IDictionarySource
-    {
-        private readonly Setting m_Setting;
-
-        public LocaleES(Setting setting)
-        {
-            m_Setting = setting;
+            public void Unload()
+            {
+            }
         }
 
-        public IEnumerable<KeyValuePair<string, string>> ReadEntries(
-            IList<IDictionaryEntryError> errors,
-            Dictionary<string, int> indexCounts)
+        // ---------------------------------------------------------------------
+        // LOCALE: DE
+        // ---------------------------------------------------------------------
+        public sealed class LocaleDE : IDictionarySource
         {
-            return new Dictionary<string, string>
-        {
-            { m_Setting.GetSettingsLocaleID(), "Depot Capacity Redux" },
-            { m_Setting.GetOptionTabLocaleID(Setting.MainTab), "Principal" },
+            private readonly Setting m_Setting;
 
-            { m_Setting.GetOptionGroupLocaleID(Setting.DepotGroup), "Capacidad del depósito" },
-            { m_Setting.GetOptionGroupLocaleID(Setting.PassengerGroup), "Capacidad de pasajeros" },
+            public LocaleDE(Setting setting)
+            {
+                m_Setting = setting;
+            }
 
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.BusDepotPercent)), "Depósitos de autobuses" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TaxiDepotPercent)), "Depósitos de taxis" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TramDepotPercent)), "Depósitos de tranvías" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TrainDepotPercent)), "Depósitos de trenes" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.SubwayDepotPercent)), "Depósitos de metro" },
+            public IEnumerable<KeyValuePair<string, string>> ReadEntries(
+                IList<IDictionaryEntryError> errors,
+                Dictionary<string, int> indexCounts)
+            {
+                return new Dictionary<string, string>
+                {
+                    { m_Setting.GetSettingsLocaleID(), "Depot Capacity Redux" },
+                    { m_Setting.GetOptionTabLocaleID(MainTab), "Hauptmenü" },
 
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.BusPassengerPercent)), "Pasajeros – autobús" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TaxiPassengerPercent)), "Pasajeros – taxi" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TramPassengerPercent)), "Pasajeros – tranvía" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TrainPassengerPercent)), "Pasajeros – tren" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.SubwayPassengerPercent)), "Pasajeros – metro" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.ShipPassengerPercent)), "Pasajeros – barco" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.FerryPassengerPercent)), "Pasajeros – ferry" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.AirplanePassengerPercent)), "Pasajeros – avión" },
-        };
+                    { m_Setting.GetOptionGroupLocaleID(DepotGroup), "Depotkapazität" },
+                    { m_Setting.GetOptionGroupLocaleID(PassengerGroup), "Passagierkapazität" },
+
+                    { m_Setting.GetOptionLabelLocaleID(nameof(BusDepotPercent)), "Busdepots" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(TaxiDepotPercent)), "Taxidepots" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(TramDepotPercent)), "Straßenbahndepots" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(TrainDepotPercent)), "Zugdepots" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(SubwayDepotPercent)), "U-Bahn-Depots" },
+
+                    { m_Setting.GetOptionLabelLocaleID(nameof(BusPassengerPercent)), "Fahrgäste – Bus" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(TaxiPassengerPercent)), "Fahrgäste – Taxi" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(TramPassengerPercent)), "Fahrgäste – Straßenbahn" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(TrainPassengerPercent)), "Fahrgäste – Zug" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(SubwayPassengerPercent)), "Fahrgäste – U-Bahn" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(ShipPassengerPercent)), "Fahrgäste – Schiff" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(FerryPassengerPercent)), "Fahrgäste – Fähre" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(AirplanePassengerPercent)), "Fahrgäste – Flugzeug" },
+                };
+            }
+
+            public void Unload()
+            {
+            }
         }
 
-        public void Unload()
+        // ---------------------------------------------------------------------
+        // LOCALE: ZH-HANS
+        // ---------------------------------------------------------------------
+        public sealed class LocaleZH : IDictionarySource
         {
-        }
-    }
+            private readonly Setting m_Setting;
 
-    //
-    // GERMAN (de-DE)
-    //
-    public sealed class LocaleDE : IDictionarySource
-    {
-        private readonly Setting m_Setting;
+            public LocaleZH(Setting setting)
+            {
+                m_Setting = setting;
+            }
 
-        public LocaleDE(Setting setting)
-        {
-            m_Setting = setting;
-        }
+            public IEnumerable<KeyValuePair<string, string>> ReadEntries(
+                IList<IDictionaryEntryError> errors,
+                Dictionary<string, int> indexCounts)
+            {
+                return new Dictionary<string, string>
+                {
+                    { m_Setting.GetSettingsLocaleID(), "车库容量重制版" },
+                    { m_Setting.GetOptionTabLocaleID(MainTab), "主要" },
 
-        public IEnumerable<KeyValuePair<string, string>> ReadEntries(
-            IList<IDictionaryEntryError> errors,
-            Dictionary<string, int> indexCounts)
-        {
-            return new Dictionary<string, string>
-        {
-            { m_Setting.GetSettingsLocaleID(), "Depot Capacity Redux" },
-            { m_Setting.GetOptionTabLocaleID(Setting.MainTab), "Hauptmenü" },
+                    { m_Setting.GetOptionGroupLocaleID(DepotGroup), "车库容量" },
+                    { m_Setting.GetOptionGroupLocaleID(PassengerGroup), "乘客数量" },
 
-            { m_Setting.GetOptionGroupLocaleID(Setting.DepotGroup), "Depotkapazität" },
-            { m_Setting.GetOptionGroupLocaleID(Setting.PassengerGroup), "Passagierkapazität" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(BusDepotPercent)), "公交车车库" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(TaxiDepotPercent)), "出租车车库" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(TramDepotPercent)), "有轨电车车库" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(TrainDepotPercent)), "火车车库" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(SubwayDepotPercent)), "地铁车库" },
 
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.BusDepotPercent)), "Busdepots" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TaxiDepotPercent)), "Taxidepots" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TramDepotPercent)), "Straßenbahndepots" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TrainDepotPercent)), "Zugdepots" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.SubwayDepotPercent)), "U-Bahn-Depots" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(BusPassengerPercent)), "公交车乘客" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(TaxiPassengerPercent)), "出租车乘客" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(TramPassengerPercent)), "有轨电车乘客" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(TrainPassengerPercent)), "火车乘客" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(SubwayPassengerPercent)), "地铁乘客" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(ShipPassengerPercent)), "客运船乘客" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(FerryPassengerPercent)), "渡轮乘客" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(AirplanePassengerPercent)), "飞机乘客" },
+                };
+            }
 
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.BusPassengerPercent)), "Fahrgäste – Bus" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TaxiPassengerPercent)), "Fahrgäste – Taxi" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TramPassengerPercent)), "Fahrgäste – Straßenbahn" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TrainPassengerPercent)), "Fahrgäste – Zug" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.SubwayPassengerPercent)), "Fahrgäste – U-Bahn" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.ShipPassengerPercent)), "Fahrgäste – Schiff" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.FerryPassengerPercent)), "Fahrgäste – Fähre" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.AirplanePassengerPercent)), "Fahrgäste – Flugzeug" },
-        };
-        }
-
-        public void Unload()
-        {
-        }
-    }
-
-    //
-    // SIMPLIFIED CHINESE (zh-HANS)
-    //
-    public sealed class LocaleZH : IDictionarySource
-    {
-        private readonly Setting m_Setting;
-
-        public LocaleZH(Setting setting)
-        {
-            m_Setting = setting;
-        }
-
-        public IEnumerable<KeyValuePair<string, string>> ReadEntries(
-            IList<IDictionaryEntryError> errors,
-            Dictionary<string, int> indexCounts)
-        {
-            return new Dictionary<string, string>
-        {
-            { m_Setting.GetSettingsLocaleID(), "车库容量重制版" },
-            { m_Setting.GetOptionTabLocaleID(Setting.MainTab), "主要" },
-
-            { m_Setting.GetOptionGroupLocaleID(Setting.DepotGroup), "车库容量" },
-            { m_Setting.GetOptionGroupLocaleID(Setting.PassengerGroup), "乘客数量" },
-
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.BusDepotPercent)), "公交车车库" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TaxiDepotPercent)), "出租车车库" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TramDepotPercent)), "有轨电车车库" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TrainDepotPercent)), "火车车库" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.SubwayDepotPercent)), "地铁车库" },
-
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.BusPassengerPercent)), "公交车乘客" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TaxiPassengerPercent)), "出租车乘客" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TramPassengerPercent)), "有轨电车乘客" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TrainPassengerPercent)), "火车乘客" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.SubwayPassengerPercent)), "地铁乘客" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.ShipPassengerPercent)), "客运船乘客" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.FerryPassengerPercent)), "渡轮乘客" },
-            { m_Setting.GetOptionLabelLocaleID(nameof(Setting.AirplanePassengerPercent)), "飞机乘客" },
-        };
-        }
-
-        public void Unload()
-        {
+            public void Unload()
+            {
+            }
         }
     }
 }

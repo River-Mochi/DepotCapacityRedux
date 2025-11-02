@@ -1,7 +1,7 @@
 // DepotCapacityReduxSystem.cs
-// Purpose: applies depot (max vehicles) and passenger (max riders) multipliers
-//          based on current settings. Safe across city switches: every new/load
-//          clears cached vanilla values because ECS entities are rebuilt per world.
+// Purpose: apply depot (max vehicles) and passenger (max riders) multipliers
+//          from current settings. Clears cached baselines when a new city is
+//          loaded because ECS entities are recreated per world.
 
 namespace DepotCapacityRedux
 {
@@ -14,11 +14,11 @@ namespace DepotCapacityRedux
 
     public sealed partial class DepotCapacityReduxSystem : GameSystemBase
     {
-        // depot entity -> vanilla vehicle capacity
+        // depot entity -> original (vanilla) vehicle capacity
         private readonly Dictionary<Entity, int> m_OriginalDepotCapacity =
             new Dictionary<Entity, int>();
 
-        // vehicle prefab/entity -> vanilla passenger capacity
+        // vehicle entity -> original (vanilla) passenger capacity
         private readonly Dictionary<Entity, int> m_OriginalPassengerCapacity =
             new Dictionary<Entity, int>();
 
@@ -29,7 +29,7 @@ namespace DepotCapacityRedux
         {
             base.OnCreate();
 
-            // query all depots
+            // depots present in the world
             m_DepotQuery = GetEntityQuery(new EntityQueryDesc
             {
                 All = new[]
@@ -38,7 +38,7 @@ namespace DepotCapacityRedux
                 }
             });
 
-            // query all public transport vehicles
+            // public transport vehicles present in the world
             m_VehicleQuery = GetEntityQuery(new EntityQueryDesc
             {
                 All = new[]
@@ -47,24 +47,22 @@ namespace DepotCapacityRedux
                 }
             });
 
-            // we need both available before we run
+            // run only when both depots and vehicles exist
             RequireForUpdate(m_DepotQuery);
             RequireForUpdate(m_VehicleQuery);
 
-            // first run on system creation (will re-apply current settings)
+            // first application for the first loaded world
             Enabled = true;
         }
 
         /// <summary>
-        /// Runs whenever a save/new game finishes loading.
-        /// Each city/save builds a fresh ECS world, so entity IDs change.
-        /// We drop per-entity baselines to avoid stale references and re-apply.
+        /// Called after a save or new game has finished loading.
+        /// Clears cached capacities because entity IDs are different per world.
         /// </summary>
         protected override void OnGameLoadingComplete(Purpose purpose, GameMode mode)
         {
             base.OnGameLoadingComplete(purpose, mode);
 
-            // only touch real gameplay worlds (ignore editors, menus, etc.)
             bool isRealGame =
                 mode == GameMode.Game &&
                 (purpose == Purpose.NewGame || purpose == Purpose.LoadGame);
@@ -74,17 +72,16 @@ namespace DepotCapacityRedux
                 return;
             }
 
-            // new world = new entities = old baselines are invalid
+            // new world → old entity baselines are invalid
             m_OriginalDepotCapacity.Clear();
             m_OriginalPassengerCapacity.Clear();
 
-            // run once on the newly loaded city
+            // re-apply to the newly loaded world
             Enabled = true;
         }
 
         protected override void OnDestroy()
         {
-            // be nice and free these
             m_OriginalDepotCapacity.Clear();
             m_OriginalPassengerCapacity.Clear();
             base.OnDestroy();
@@ -92,7 +89,6 @@ namespace DepotCapacityRedux
 
         protected override void OnUpdate()
         {
-            // if settings aren't ready, just stop
             if (Mod.Settings == null)
             {
                 Enabled = false;
@@ -101,22 +97,25 @@ namespace DepotCapacityRedux
 
             Setting settings = Mod.Settings;
 
-            // 1) apply depot multipliers
+            // ---------------------------------------------------------------
+            // 1) depot capacities (ONLY the 5 original depot types)
+            // ---------------------------------------------------------------
             NativeArray<Entity> depots = m_DepotQuery.ToEntityArray(Allocator.Temp);
             try
             {
                 for (int i = 0; i < depots.Length; i++)
                 {
                     Entity depotEntity = depots[i];
-                    TransportDepotData depotData = EntityManager.GetComponentData<TransportDepotData>(depotEntity);
+                    TransportDepotData depotData =
+                        EntityManager.GetComponentData<TransportDepotData>(depotEntity);
 
-                    // remember vanilla once
+                    // cache vanilla once per entity
                     if (!m_OriginalDepotCapacity.TryGetValue(depotEntity, out int baseCapacity))
                     {
                         baseCapacity = depotData.m_VehicleCapacity;
                         if (baseCapacity < 1)
                         {
-                            baseCapacity = 1; // avoid 0 from weird prefabs
+                            baseCapacity = 1;
                         }
 
                         m_OriginalDepotCapacity[depotEntity] = baseCapacity;
@@ -127,7 +126,7 @@ namespace DepotCapacityRedux
 
                     if (newCapacity < 1)
                     {
-                        newCapacity = 1; // never write 0 capacity
+                        newCapacity = 1;
                     }
 
                     if (newCapacity != depotData.m_VehicleCapacity)
@@ -142,7 +141,9 @@ namespace DepotCapacityRedux
                 depots.Dispose();
             }
 
-            // 2) apply passenger multipliers
+            // ---------------------------------------------------------------
+            // 2) passenger capacities (all 8 public-transport vehicle types)
+            // ---------------------------------------------------------------
             NativeArray<Entity> vehicles = m_VehicleQuery.ToEntityArray(Allocator.Temp);
             try
             {
@@ -152,6 +153,7 @@ namespace DepotCapacityRedux
                     PublicTransportVehicleData vehicleData =
                         EntityManager.GetComponentData<PublicTransportVehicleData>(vehicleEntity);
 
+                    // cache vanilla once per entity
                     if (!m_OriginalPassengerCapacity.TryGetValue(vehicleEntity, out int basePassengers))
                     {
                         basePassengers = vehicleData.m_PassengerCapacity;
@@ -183,21 +185,23 @@ namespace DepotCapacityRedux
                 vehicles.Dispose();
             }
 
-            // run-once; Setting.Apply() or city-load will re-enable us
+            // run once; settings.Apply() or city-load will re-enable
             Enabled = false;
         }
 
-        //
+        // ---------------------------------------------------------------------
         // Helpers
-        //
+        // ---------------------------------------------------------------------
 
         /// <summary>
-        /// Depot multipliers: 100%–1000% → 1.0–10.0.
-        /// Unknown / removed types → 1.0 (vanilla).
+        /// Depot multipliers: keep behavior to the 5 original depot types only.
+        /// Values are 100–1000 → 1.0–10.0.
+        /// Any other depot type is left at vanilla (returns 1.0).
         /// </summary>
         private static float GetDepotScalar(Setting settings, TransportType type)
         {
             float scalar;
+
             switch (type)
             {
                 case TransportType.Bus:
@@ -216,13 +220,11 @@ namespace DepotCapacityRedux
                     scalar = settings.SubwayDepotPercent / 100f;
                     break;
 
-                // ship / ferry / airplane depots were removed from UI:
-                // leave them on vanilla values if the game ever gives them to us
+                // ship / ferry / airplane depots were not in original code → do nothing
                 default:
                     return 1f;
             }
 
-            // clamp to 1x–10x so bad saves can't wipe depots
             if (scalar < 1f)
             {
                 scalar = 1f;
@@ -236,12 +238,13 @@ namespace DepotCapacityRedux
         }
 
         /// <summary>
-        /// Passenger multipliers: 100%–1000% → 1.0–10.0.
-        /// Unknown / removed types → 1.0 (vanilla).
+        /// Passenger multipliers: applied to all city passenger vehicles.
+        /// Values are 100–1000 → 1.0–10.0.
         /// </summary>
         private static float GetPassengerScalar(Setting settings, TransportType type)
         {
             float scalar;
+
             switch (type)
             {
                 case TransportType.Bus:
@@ -259,8 +262,15 @@ namespace DepotCapacityRedux
                 case TransportType.Subway:
                     scalar = settings.SubwayPassengerPercent / 100f;
                     break;
-
-                // passenger ship / ferry / airplane -> keep vanilla
+                case TransportType.Ship:
+                    scalar = settings.ShipPassengerPercent / 100f;
+                    break;
+                case TransportType.Ferry:
+                    scalar = settings.FerryPassengerPercent / 100f;
+                    break;
+                case TransportType.Airplane:
+                    scalar = settings.AirplanePassengerPercent / 100f;
+                    break;
                 default:
                     return 1f;
             }

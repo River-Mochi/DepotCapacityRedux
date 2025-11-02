@@ -16,6 +16,7 @@ namespace DepotCapacityRedux
         public const string ModId = "DepotCapacityRedux";
         public const string ModTag = "[DCR]";
         public const string ModVersion = "1.2.0";
+        public const string SettingsPath = "ModsSettings/DepotCapacityRedux/DepotCapacityRedux";
 
         public static readonly ILog Log =
             LogManager.GetLogger(ModId).SetShowsErrorsInUI(false);
@@ -26,42 +27,43 @@ namespace DepotCapacityRedux
         {
             Log.Info($"{ModName} v{ModVersion} OnLoad");
 
-            // 1) Settings first
-            var setting = new Setting(this);
+            // 1) Settings
+            Setting setting = new Setting(this);
             Settings = setting;
 
             // 2) Locales
             var lm = GameManager.instance?.localizationManager;
             if (lm != null)
             {
-                lm.AddSource("en-US", new LocaleEN(setting));
-                lm.AddSource("fr-FR", new LocaleFR(setting));
-                lm.AddSource("es-ES", new LocaleES(setting));
-                lm.AddSource("de-DE", new LocaleDE(setting));
-                lm.AddSource("zh-HANS", new LocaleZH(setting));
+                lm.AddSource("en-US", new Setting.LocaleEN(setting));
+                lm.AddSource("fr-FR", new Setting.LocaleFR(setting));
+                lm.AddSource("es-ES", new Setting.LocaleES(setting));
+                lm.AddSource("de-DE", new Setting.LocaleDE(setting));
+                lm.AddSource("zh-HANS", new Setting.LocaleZH(setting));
             }
             else
             {
                 Log.Warn("LocalizationManager not found; settings UI texts may be missing.");
             }
 
-            // 3) Load saved settings (file name from [FileLocation] in Setting)
-            AssetDatabase.global.LoadSettings(ModId, setting, new Setting(this));
+            // 3) Load saved settings from fixed path
+            AssetDatabase.global.LoadSettings(SettingsPath, setting, new Setting(this));
 
-            // 4) show in Options
+            // 4) Show in Options Menu
             setting.RegisterInOptionsUI();
 
-            // 5) Update the system AFTER prefab data is ready
+            // 5) Schedule system after prefab update
             updateSystem.UpdateAfter<DepotCapacityReduxSystem>(SystemUpdatePhase.PrefabUpdate);
 
-            // 6) If world is already running, poke system to apply current values
-            var world = World.DefaultGameObjectInjectionWorld;
+            // 6) if world already exists, apply once
+            World world = World.DefaultGameObjectInjectionWorld;
             if (world != null)
             {
-                var sys = world.GetExistingSystemManaged<DepotCapacityReduxSystem>();
-                if (sys != null)
+                DepotCapacityReduxSystem system =
+                    world.GetExistingSystemManaged<DepotCapacityReduxSystem>();
+                if (system != null)
                 {
-                    sys.Enabled = true;
+                    system.Enabled = true;
                 }
             }
         }
