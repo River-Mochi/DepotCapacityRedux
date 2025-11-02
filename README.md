@@ -36,6 +36,11 @@ English (en-US), French (fr-FR), Spanish (es-ES), German (de-DE), Simplified Chi
 
 ---
 
+## Links
+
+- https://github.com/River-Mochi/DepotCapacityRedux
+- [Paradox Mods page](https://mods.paradoxplaza.com/uploaded?orderBy=desc&sortBy=best&time=alltime)
+
 ## Name / Tags
 
 - Display name: **Depot Capacity Redux**  
