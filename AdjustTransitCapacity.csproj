@@ -13,7 +13,7 @@
 		<CustomManagedPath></CustomManagedPath>
 	</PropertyGroup>
 
-	<!-- CS2 toolchain (this is what actually sets net48 for you) -->
+	<!-- CS2 toolchain -->
 	<Import Project="$([System.Environment]::GetEnvironmentVariable('CSII_TOOLPATH', 'EnvironmentVariableTarget.User'))\Mod.props" />
 	<Import Project="$([System.Environment]::GetEnvironmentVariable('CSII_TOOLPATH', 'EnvironmentVariableTarget.User'))\Mod.targets" />
 

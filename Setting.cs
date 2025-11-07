@@ -47,12 +47,6 @@ namespace AdjustTransitCapacity
             TrainDepotPercent = 100;
             SubwayDepotPercent = 100;
 
-            BusDepotLastPercent = 100;
-            TaxiDepotLastPercent = 100;
-            TramDepotLastPercent = 100;
-            TrainDepotLastPercent = 100;
-            SubwayDepotLastPercent = 100;
-
             // Passengers (taxis stay vanilla 4 seats in game)
             BusPassengerPercent = 100;
             TramPassengerPercent = 100;
@@ -61,14 +55,6 @@ namespace AdjustTransitCapacity
             ShipPassengerPercent = 100;
             FerryPassengerPercent = 100;
             AirplanePassengerPercent = 100;
-
-            BusPassengerLastPercent = 100;
-            TramPassengerLastPercent = 100;
-            TrainPassengerLastPercent = 100;
-            SubwayPassengerLastPercent = 100;
-            ShipPassengerLastPercent = 100;
-            FerryPassengerLastPercent = 100;
-            AirplanePassengerLastPercent = 100;
         }
 
         // ---- APPLY CALLBACK ----
@@ -98,72 +84,35 @@ namespace AdjustTransitCapacity
         [SettingsUISection(MainTab, DepotGroup)]
         public int BusDepotPercent
         {
-            get;
-            set;
+            get; set;
         }
 
         [SettingsUISlider(min = MinPercent, max = MaxPercent, step = StepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
         [SettingsUISection(MainTab, DepotGroup)]
         public int TaxiDepotPercent
         {
-            get;
-            set;
+            get; set;
         }
 
         [SettingsUISlider(min = MinPercent, max = MaxPercent, step = StepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
         [SettingsUISection(MainTab, DepotGroup)]
         public int TramDepotPercent
         {
-            get;
-            set;
+            get; set;
         }
 
         [SettingsUISlider(min = MinPercent, max = MaxPercent, step = StepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
         [SettingsUISection(MainTab, DepotGroup)]
         public int TrainDepotPercent
         {
-            get;
-            set;
+            get; set;
         }
 
         [SettingsUISlider(min = MinPercent, max = MaxPercent, step = StepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
         [SettingsUISection(MainTab, DepotGroup)]
         public int SubwayDepotPercent
         {
-            get;
-            set;
-        }
-
-        // ---- HIDDEN: LAST APPLIED DEPOT PERCENTS ----
-        // Stored in settings file, not shown in UI. Used to avoid stacking.
-        public int BusDepotLastPercent
-        {
-            get;
-            set;
-        }
-
-        public int TaxiDepotLastPercent
-        {
-            get;
-            set;
-        }
-
-        public int TramDepotLastPercent
-        {
-            get;
-            set;
-        }
-
-        public int TrainDepotLastPercent
-        {
-            get;
-            set;
-        }
-
-        public int SubwayDepotLastPercent
-        {
-            get;
-            set;
+            get; set;
         }
 
         // ---- PASSENGER CAPACITY (max passengers per vehicle) ----
@@ -173,32 +122,28 @@ namespace AdjustTransitCapacity
         [SettingsUISection(MainTab, PassengerGroup)]
         public int BusPassengerPercent
         {
-            get;
-            set;
+            get; set;
         }
 
         [SettingsUISlider(min = MinPercent, max = MaxPercent, step = StepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
         [SettingsUISection(MainTab, PassengerGroup)]
         public int TramPassengerPercent
         {
-            get;
-            set;
+            get; set;
         }
 
         [SettingsUISlider(min = MinPercent, max = MaxPercent, step = StepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
         [SettingsUISection(MainTab, PassengerGroup)]
         public int TrainPassengerPercent
         {
-            get;
-            set;
+            get; set;
         }
 
         [SettingsUISlider(min = MinPercent, max = MaxPercent, step = StepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
         [SettingsUISection(MainTab, PassengerGroup)]
         public int SubwayPassengerPercent
         {
-            get;
-            set;
+            get; set;
         }
 
         // Passenger-only types (not depots)
@@ -206,67 +151,21 @@ namespace AdjustTransitCapacity
         [SettingsUISection(MainTab, PassengerGroup)]
         public int ShipPassengerPercent
         {
-            get;
-            set;
+            get; set;
         }
 
         [SettingsUISlider(min = MinPercent, max = MaxPercent, step = StepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
         [SettingsUISection(MainTab, PassengerGroup)]
         public int FerryPassengerPercent
         {
-            get;
-            set;
+            get; set;
         }
 
         [SettingsUISlider(min = MinPercent, max = MaxPercent, step = StepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
         [SettingsUISection(MainTab, PassengerGroup)]
         public int AirplanePassengerPercent
         {
-            get;
-            set;
-        }
-
-        // ---- HIDDEN: LAST APPLIED PASSENGER PERCENTS ----
-        public int BusPassengerLastPercent
-        {
-            get;
-            set;
-        }
-
-        public int TramPassengerLastPercent
-        {
-            get;
-            set;
-        }
-
-        public int TrainPassengerLastPercent
-        {
-            get;
-            set;
-        }
-
-        public int SubwayPassengerLastPercent
-        {
-            get;
-            set;
-        }
-
-        public int ShipPassengerLastPercent
-        {
-            get;
-            set;
-        }
-
-        public int FerryPassengerLastPercent
-        {
-            get;
-            set;
-        }
-
-        public int AirplanePassengerLastPercent
-        {
-            get;
-            set;
+            get; set;
         }
     }
 }

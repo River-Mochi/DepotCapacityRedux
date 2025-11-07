@@ -15,7 +15,7 @@ namespace AdjustTransitCapacity
         public const string ModName = "Adjust Transit Capacity";
         public const string ModId = "AdjustTransitCapacity";
         public const string ModTag = "[ATC]";
-        public const string ModVersion = "1.2.5";
+        public const string ModVersion = "1.2.6";
 
         public static readonly ILog Log =
             LogManager.GetLogger(ModId).SetShowsErrorsInUI(false);

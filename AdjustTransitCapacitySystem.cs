@@ -1,10 +1,10 @@
 // AdjustTransitCapacitySystem.cs
 // Purpose: apply multipliers for depot max vehicles and passenger max riders
-//          based on current settings. Avoids stacking by tracking last
-//          applied percentages per transport type.
+//          based on current settings. Uses per-entity baselines to avoid stacking.
 
 namespace AdjustTransitCapacity
 {
+    using System.Collections.Generic;
     using Colossal.Serialization.Entities; // Purpose, GameMode
     using Game;
     using Game.Prefabs;
@@ -13,6 +13,19 @@ namespace AdjustTransitCapacity
 
     public sealed partial class AdjustTransitCapacitySystem : GameSystemBase
     {
+        // ---- DEBUG ----
+        // Set this to true while testing if for lots of log output.
+        private const bool DebugLogging = true;
+
+        // ---- BASELINE CACHES ----
+        // depot entity -> vanilla vehicle capacity (per process, per entity)
+        private readonly Dictionary<Entity, int> m_OriginalDepotCapacity =
+            new Dictionary<Entity, int>();
+
+        // vehicle entity -> vanilla passenger capacity (per process, per entity)
+        private readonly Dictionary<Entity, int> m_OriginalPassengerCapacity =
+            new Dictionary<Entity, int>();
+
         // ---- QUERIES ----
         private EntityQuery m_DepotQuery;
         private EntityQuery m_VehicleQuery;
@@ -50,6 +63,7 @@ namespace AdjustTransitCapacity
         /// <summary>
         /// Called after a save or new game has finished loading.
         /// Re-applies settings once in the newly loaded city.
+        /// NOTE: baselines are NOT cleared here to avoid stacking between reloads.
         /// </summary>
         protected override void OnGameLoadingComplete(Purpose purpose, GameMode mode)
         {
@@ -64,11 +78,18 @@ namespace AdjustTransitCapacity
                 return;
             }
 
+            if (DebugLogging)
+            {
+                Mod.Log.Info("[ATC] OnGameLoadingComplete → enabling system for one pass.");
+            }
+
             Enabled = true;
         }
 
         protected override void OnDestroy()
         {
+            m_OriginalDepotCapacity.Clear();
+            m_OriginalPassengerCapacity.Clear();
             base.OnDestroy();
         }
 
@@ -93,25 +114,27 @@ namespace AdjustTransitCapacity
                     TransportDepotData depotData =
                         EntityManager.GetComponentData<TransportDepotData>(depotEntity);
 
-                    float currentScalar;
-                    float lastScalar;
-                    if (!GetDepotScalars(settings, depotData.m_TransportType, out currentScalar, out lastScalar))
+                    // Determine baseline capacity (only once per entity)
+                    if (!m_OriginalDepotCapacity.TryGetValue(depotEntity, out int baseCapacity))
                     {
-                        // Not a handled depot type → leave vanilla
-                        continue;
+                        baseCapacity = depotData.m_VehicleCapacity;
+                        if (baseCapacity < 1)
+                        {
+                            baseCapacity = 1;
+                        }
+
+                        m_OriginalDepotCapacity[depotEntity] = baseCapacity;
+
+                        if (DebugLogging)
+                        {
+                            Mod.Log.Info(
+                                $"[ATC] Depot baseline capture: entity={depotEntity.Index}, " +
+                                $"type={depotData.m_TransportType}, base={baseCapacity}");
+                        }
                     }
 
-                    int currentCapacity = depotData.m_VehicleCapacity;
-                    if (currentCapacity < 1)
-                    {
-                        currentCapacity = 1;
-                    }
-
-                    // Undo previous multiplier, then apply the new one.
-                    // base ≈ current / lastScalar
-                    float baseCapacity = currentCapacity / lastScalar;
-                    int newCapacity = (int)(baseCapacity * currentScalar);
-
+                    float scalar = GetDepotScalar(settings, depotData.m_TransportType);
+                    int newCapacity = (int)(baseCapacity * scalar);
                     if (newCapacity < 1)
                     {
                         newCapacity = 1;
@@ -119,6 +142,14 @@ namespace AdjustTransitCapacity
 
                     if (newCapacity != depotData.m_VehicleCapacity)
                     {
+                        if (DebugLogging)
+                        {
+                            Mod.Log.Info(
+                                $"[ATC] Depot apply: entity={depotEntity.Index}, type={depotData.m_TransportType}, " +
+                                $"base={baseCapacity}, scalar={scalar:F2}, " +
+                                $"old={depotData.m_VehicleCapacity}, new={newCapacity}");
+                        }
+
                         depotData.m_VehicleCapacity = newCapacity;
                         EntityManager.SetComponentData(depotEntity, depotData);
                     }
@@ -139,23 +170,26 @@ namespace AdjustTransitCapacity
                     PublicTransportVehicleData vehicleData =
                         EntityManager.GetComponentData<PublicTransportVehicleData>(vehicleEntity);
 
-                    float currentScalar;
-                    float lastScalar;
-                    if (!GetPassengerScalars(settings, vehicleData.m_TransportType, out currentScalar, out lastScalar))
+                    if (!m_OriginalPassengerCapacity.TryGetValue(vehicleEntity, out int basePassengers))
                     {
-                        // Not a handled passenger type → leave vanilla
-                        continue;
+                        basePassengers = vehicleData.m_PassengerCapacity;
+                        if (basePassengers < 1)
+                        {
+                            basePassengers = 1;
+                        }
+
+                        m_OriginalPassengerCapacity[vehicleEntity] = basePassengers;
+
+                        if (DebugLogging)
+                        {
+                            Mod.Log.Info(
+                                $"[ATC] Vehicle baseline capture: entity={vehicleEntity.Index}, " +
+                                $"type={vehicleData.m_TransportType}, base={basePassengers}");
+                        }
                     }
 
-                    int currentPassengers = vehicleData.m_PassengerCapacity;
-                    if (currentPassengers < 1)
-                    {
-                        currentPassengers = 1;
-                    }
-
-                    float basePassengers = currentPassengers / lastScalar;
-                    int newPassengers = (int)(basePassengers * currentScalar);
-
+                    float scalar = GetPassengerScalar(settings, vehicleData.m_TransportType);
+                    int newPassengers = (int)(basePassengers * scalar);
                     if (newPassengers < 1)
                     {
                         newPassengers = 1;
@@ -163,6 +197,14 @@ namespace AdjustTransitCapacity
 
                     if (newPassengers != vehicleData.m_PassengerCapacity)
                     {
+                        if (DebugLogging)
+                        {
+                            Mod.Log.Info(
+                                $"[ATC] Vehicle apply: entity={vehicleEntity.Index}, type={vehicleData.m_TransportType}, " +
+                                $"base={basePassengers}, scalar={scalar:F2}, " +
+                                $"old={vehicleData.m_PassengerCapacity}, new={newPassengers}");
+                        }
+
                         vehicleData.m_PassengerCapacity = newPassengers;
                         EntityManager.SetComponentData(vehicleEntity, vehicleData);
                     }
@@ -173,172 +215,114 @@ namespace AdjustTransitCapacity
                 vehicles.Dispose();
             }
 
-            // ---- UPDATE LAST PERCENTS ----
-            SyncLastDepotPercents(settings);
-            SyncLastPassengerPercents(settings);
-
             // Run-once; either Setting.Apply() or city load will enable again.
             Enabled = false;
         }
 
-        // ---- HELPERS: COMMON ----
-
-        private static float PercentToScalar(int percent)
-        {
-            if (percent < Setting.MinPercent)
-            {
-                percent = Setting.MinPercent;
-            }
-            else if (percent > Setting.MaxPercent)
-            {
-                percent = Setting.MaxPercent;
-            }
-
-            return percent / 100f;
-        }
-
-        // ---- HELPERS: DEPOT SCALARS ----
+        // ---- HELPERS: DEPOT SCALAR ----
 
         /// <summary>
-        /// Returns current and last scalars for depot capacity.
-        /// true = handled type, false = leave vanilla.
+        /// Depot multipliers: 100%–1000%, internal scalar 1.0–10.0.
+        /// Any other depot type is left at vanilla (1.0).
         /// </summary>
-        private static bool GetDepotScalars(
-            Setting settings,
-            TransportType type,
-            out float currentScalar,
-            out float lastScalar)
+        private static float GetDepotScalar(Setting settings, TransportType type)
         {
-            int currentPercent;
-            int lastPercent;
-
+            int percent;
             switch (type)
             {
                 case TransportType.Bus:
-                    currentPercent = settings.BusDepotPercent;
-                    lastPercent = settings.BusDepotLastPercent;
+                    percent = settings.BusDepotPercent;
                     break;
                 case TransportType.Taxi:
-                    currentPercent = settings.TaxiDepotPercent;
-                    lastPercent = settings.TaxiDepotLastPercent;
+                    percent = settings.TaxiDepotPercent;
                     break;
                 case TransportType.Tram:
-                    currentPercent = settings.TramDepotPercent;
-                    lastPercent = settings.TramDepotLastPercent;
+                    percent = settings.TramDepotPercent;
                     break;
                 case TransportType.Train:
-                    currentPercent = settings.TrainDepotPercent;
-                    lastPercent = settings.TrainDepotLastPercent;
+                    percent = settings.TrainDepotPercent;
                     break;
                 case TransportType.Subway:
-                    currentPercent = settings.SubwayDepotPercent;
-                    lastPercent = settings.SubwayDepotLastPercent;
+                    percent = settings.SubwayDepotPercent;
                     break;
                 default:
-                    currentScalar = 1f;
-                    lastScalar = 1f;
-                    return false;
+                    return 1f;
             }
 
-            currentScalar = PercentToScalar(currentPercent);
-
-            // First-run or bad save → treat last as same as current
-            if (lastPercent <= 0)
+            if (percent <= 0)
             {
-                lastScalar = currentScalar;
-            }
-            else
-            {
-                lastScalar = PercentToScalar(lastPercent);
+                return 1f;
             }
 
-            return true;
+            float scalar = percent / 100f;
+
+            // Clamp to 1x–10x for safety.
+            if (scalar < 1f)
+            {
+                scalar = 1f;
+            }
+            else if (scalar > 10f)
+            {
+                scalar = 10f;
+            }
+
+            return scalar;
         }
 
-        private static void SyncLastDepotPercents(Setting settings)
-        {
-            settings.BusDepotLastPercent = settings.BusDepotPercent;
-            settings.TaxiDepotLastPercent = settings.TaxiDepotPercent;
-            settings.TramDepotLastPercent = settings.TramDepotPercent;
-            settings.TrainDepotLastPercent = settings.TrainDepotPercent;
-            settings.SubwayDepotLastPercent = settings.SubwayDepotPercent;
-        }
-
-        // ---- HELPERS: PASSENGER SCALARS ----
+        // ---- HELPERS: PASSENGER SCALAR ----
 
         /// <summary>
-        /// Returns current and last scalars for passenger capacity.
-        /// Taxi is intentionally skipped (game keeps 4 seats).
+        /// Passenger multipliers: 100%–1000% → 1.0–10.0.
+        /// Taxi is skipped on purpose (game keeps 4 seats).
         /// </summary>
-        private static bool GetPassengerScalars(
-            Setting settings,
-            TransportType type,
-            out float currentScalar,
-            out float lastScalar)
+        private static float GetPassengerScalar(Setting settings, TransportType type)
         {
-            int currentPercent;
-            int lastPercent;
-
+            int percent;
             switch (type)
             {
                 case TransportType.Bus:
-                    currentPercent = settings.BusPassengerPercent;
-                    lastPercent = settings.BusPassengerLastPercent;
+                    percent = settings.BusPassengerPercent;
                     break;
                 case TransportType.Tram:
-                    currentPercent = settings.TramPassengerPercent;
-                    lastPercent = settings.TramPassengerLastPercent;
+                    percent = settings.TramPassengerPercent;
                     break;
                 case TransportType.Train:
-                    currentPercent = settings.TrainPassengerPercent;
-                    lastPercent = settings.TrainPassengerLastPercent;
+                    percent = settings.TrainPassengerPercent;
                     break;
                 case TransportType.Subway:
-                    currentPercent = settings.SubwayPassengerPercent;
-                    lastPercent = settings.SubwayPassengerLastPercent;
+                    percent = settings.SubwayPassengerPercent;
                     break;
                 case TransportType.Ship:
-                    currentPercent = settings.ShipPassengerPercent;
-                    lastPercent = settings.ShipPassengerLastPercent;
+                    percent = settings.ShipPassengerPercent;
                     break;
                 case TransportType.Ferry:
-                    currentPercent = settings.FerryPassengerPercent;
-                    lastPercent = settings.FerryPassengerLastPercent;
+                    percent = settings.FerryPassengerPercent;
                     break;
                 case TransportType.Airplane:
-                    currentPercent = settings.AirplanePassengerPercent;
-                    lastPercent = settings.AirplanePassengerLastPercent;
+                    percent = settings.AirplanePassengerPercent;
                     break;
                 default:
                     // Includes Taxi → leave at vanilla value.
-                    currentScalar = 1f;
-                    lastScalar = 1f;
-                    return false;
+                    return 1f;
             }
 
-            currentScalar = PercentToScalar(currentPercent);
-
-            if (lastPercent <= 0)
+            if (percent <= 0)
             {
-                lastScalar = currentScalar;
+                return 1f;
             }
-            else
+
+            float scalar = percent / 100f;
+
+            if (scalar < 1f)
             {
-                lastScalar = PercentToScalar(lastPercent);
+                scalar = 1f;
+            }
+            else if (scalar > 10f)
+            {
+                scalar = 10f;
             }
 
-            return true;
-        }
-
-        private static void SyncLastPassengerPercents(Setting settings)
-        {
-            settings.BusPassengerLastPercent = settings.BusPassengerPercent;
-            settings.TramPassengerLastPercent = settings.TramPassengerPercent;
-            settings.TrainPassengerLastPercent = settings.TrainPassengerPercent;
-            settings.SubwayPassengerLastPercent = settings.SubwayPassengerPercent;
-            settings.ShipPassengerLastPercent = settings.ShipPassengerPercent;
-            settings.FerryPassengerLastPercent = settings.FerryPassengerPercent;
-            settings.AirplanePassengerLastPercent = settings.AirplanePassengerPercent;
+            return scalar;
         }
     }
 }
