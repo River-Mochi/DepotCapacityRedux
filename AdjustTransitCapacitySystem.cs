@@ -14,7 +14,7 @@ namespace AdjustTransitCapacity
     public sealed partial class AdjustTransitCapacitySystem : GameSystemBase
     {
         // ---- DEBUG ----
-        // Set this to true while testing if for lots of log output.
+        // Set this to true while testing for lots of log output.
         private const bool DebugLogging = true;
 
         // ---- BASELINE CACHES ----
