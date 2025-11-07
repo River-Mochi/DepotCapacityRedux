@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.14.36623.8 d17.14
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DepotCapacityRedux", "DepotCapacityRedux.csproj", "{B15E936C-0887-B42C-3037-E751A0C47578}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AdjustTransitCapacity", "AdjustTransitCapacity.csproj", "{5BFFC928-AF7D-8346-B5CD-40230CE315D2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,15 +11,15 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{B15E936C-0887-B42C-3037-E751A0C47578}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B15E936C-0887-B42C-3037-E751A0C47578}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B15E936C-0887-B42C-3037-E751A0C47578}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B15E936C-0887-B42C-3037-E751A0C47578}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5BFFC928-AF7D-8346-B5CD-40230CE315D2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5BFFC928-AF7D-8346-B5CD-40230CE315D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5BFFC928-AF7D-8346-B5CD-40230CE315D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5BFFC928-AF7D-8346-B5CD-40230CE315D2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {4363B257-06D2-43A3-8FEA-E926DFA1D466}
+		SolutionGuid = {CA0BC004-B7F4-415D-A3F4-EDB195613FE9}
 	EndGlobalSection
 EndGlobal

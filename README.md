@@ -1,6 +1,6 @@
-﻿# Depot Capacity Redux
+﻿# Adjust Transit Capacity
 
-**Depot Capacity Redux**
+**Adjust Transit Capacity**
 - Lets players scale how many vehicles each transport depot can maintain or spawn in *Cities: Skylines II*
 — plus how many passengers each public transic vehicle can carry.
 
@@ -38,14 +38,14 @@ English (en-US), French (fr-FR), Spanish (es-ES), German (de-DE), Simplified Chi
 
 ## Links
 
-- https://github.com/River-Mochi/DepotCapacityRedux
+- https://github.com/River-Mochi/AdjustTransitCapacity
 - [Paradox Mods page](https://mods.paradoxplaza.com/uploaded?orderBy=desc&sortBy=best&time=alltime)
 
 ## Name / Tags
 
-- Display name: **Depot Capacity Redux**  
-- Internal namespace: `DepotCapacityRedux`  
-- Mod tag: `[DCR]`
+- Display name: **Adjust Transit Capacity**  
+- Internal namespace: `AdjustTransitCapacity`  
+- Mod tag: `[ATC]`
 
 ---
 
