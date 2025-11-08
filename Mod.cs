@@ -13,11 +13,14 @@ namespace AdjustTransitCapacity
     /// <summary>Mod entry point: registers settings, locales, and the ECS system.</summary>
     public sealed class Mod : IMod
     {
+        // ----- Public constants / metadata -----
         public const string ModName = "Adjust Transit Capacity";
         public const string ModId = "AdjustTransitCapacity";
         public const string ModTag = "[ATC]";
-        public const string ModVersion = "1.2.6";
+        public const string ModVersion = "1.2.7";
+        private static bool s_BannerLogged;
 
+        // ----- Logger & public properties ----
         public static readonly ILog Log =
             LogManager.GetLogger(ModId).SetShowsErrorsInUI(false);
 
@@ -25,13 +28,17 @@ namespace AdjustTransitCapacity
 
         public void OnLoad(UpdateSystem updateSystem)
         {
+            // metadata banner (once only)
             Log.Info($"{ModName} v{ModVersion} OnLoad");
+            if (!s_BannerLogged)
+                s_BannerLogged = true;
 
-            // Settings
+
+            // Settings (must exist before locales so labels resolve)
             var setting = new Setting(this);
             Settings = setting;
 
-            // Locales
+            // Register locales BEFORE Options UI
             var lm = GameManager.instance?.localizationManager;
             if (lm != null)
             {
@@ -55,7 +62,7 @@ namespace AdjustTransitCapacity
             // ECS system scheduling
             updateSystem.UpdateAfter<AdjustTransitCapacitySystem>(SystemUpdatePhase.PrefabUpdate);
 
-            // Apply immediately for already-running world
+            // Apply immediately for already-running city
             World world = World.DefaultGameObjectInjectionWorld;
             if (world != null)
             {

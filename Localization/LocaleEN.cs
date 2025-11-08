@@ -21,16 +21,16 @@ namespace AdjustTransitCapacity
         {
             return new Dictionary<string, string>
             {
-                // Mod title / tabs / groups
+                // Mod Title / Tabs / Groups
                 { m_Setting.GetSettingsLocaleID(), "Adjust Transit Capacity [ATC]" },
 
-                { m_Setting.GetOptionTabLocaleID(Setting.MainTab),  "Main"  },
+                { m_Setting.GetOptionTabLocaleID(Setting.MainTab),  "Actions"  },
                 { m_Setting.GetOptionTabLocaleID(Setting.AboutTab), "About" },
 
                 { m_Setting.GetOptionGroupLocaleID(Setting.DepotGroup),
                     "Depot capacity (max vehicles per depot)" },
                 { m_Setting.GetOptionGroupLocaleID(Setting.PassengerGroup),
-                    "Passenger capacity (max riders per vehicle)" },
+                    "Passenger capacity (max people per vehicle)" },
                 { m_Setting.GetOptionGroupLocaleID(Setting.AboutInfoGroup),
                     "Info" },
                 { m_Setting.GetOptionGroupLocaleID(Setting.AboutLinksGroup),
@@ -38,67 +38,67 @@ namespace AdjustTransitCapacity
                 { m_Setting.GetOptionGroupLocaleID(Setting.DebugGroup),
                     "Debug / Logging" },
 
-                // Depot labels & descriptions (1.0–10.0x)
+                // DEPOT labels & descriptions (1.0–10.0x)
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.BusDepotScalar)), "Bus depots" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.BusDepotScalar)),
-                    "How many buses each bus depot can maintain/spawn.\n" +
+                    "How many buses each **Bus Depot** building can maintain/spawn.\n" +
                     "Use a multiplier between **1.0×** (vanilla) and **10.0×**." },
 
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TaxiDepotScalar)), "Taxi depots" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.TaxiDepotScalar)),
-                    "How many taxis each taxi depot can maintain (1.0× – 10.0×)." },
+                    "How many taxis each **taxi depot** can maintain." },
 
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TramDepotScalar)), "Tram depots" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.TramDepotScalar)),
-                    "How many trams each tram depot can maintain (1.0× – 10.0×)." },
+                    "How many trams each tram depot can maintain." },
 
-                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TrainDepotScalar)), "Train depots" },
+                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TrainDepotScalar)), "Train Depots" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.TrainDepotScalar)),
-                    "How many trains each train depot can maintain (1.0× – 10.0×)." },
+                    "How many trains each **train depot** can maintain." },
 
-                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.SubwayDepotScalar)), "Subway depots" },
+                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.SubwayDepotScalar)), "Subway Depots" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.SubwayDepotScalar)),
-                    "How many subway vehicles each depot can maintain (1.0× – 10.0×)." },
+                    "How many **subway vehicles** each depot can maintain (increase to base only)." },
 
                 // Depot reset button
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.ResetDepotToVanillaButton)),
-                    "Reset Depot to Defaults" },
+                    "Reset All Depots" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.ResetDepotToVanillaButton)),
-                    "Set all depot multipliers back to **1.0×** (game's default capacity - vanilla)." },
+                    "Set all Depot multipliers back to **1.0×** (game's default capacity - vanilla)." },
 
                 // Passenger labels & descriptions (1.0–10.0x)
-                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.BusPassengerScalar)), "Bus passengers" },
+                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.BusPassengerScalar)), "Bus Passengers" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.BusPassengerScalar)),
-                    "Multiplier for bus passenger seats.\n" +
+                    "Change **Bus Passenger** seats.\n" +
                     "**1.0×** = vanilla seats, **10.0×** = ten times more seats." },
 
-                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TramPassengerScalar)), "Tram passengers" },
+                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TramPassengerScalar)), "Tram Passengers" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.TramPassengerScalar)),
-                    "Multiplier for tram passenger seats (1.0× – 10.0×)." },
+                    "Change **Tram Passenger** seats." },
 
-                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TrainPassengerScalar)), "Train passengers" },
+                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TrainPassengerScalar)), "Train Passengers" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.TrainPassengerScalar)),
-                    "Multiplier for train passenger seats (1.0× – 10.0×)." },
+                    "Change **Train Passenger** seats." },
 
-                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.SubwayPassengerScalar)), "Subway passengers" },
+                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.SubwayPassengerScalar)), "Subway Passengers" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.SubwayPassengerScalar)),
-                    "Multiplier for subway passenger seats (1.0× – 10.0×)." },
+                    "Change **Subway Passenger** seats." },
 
-                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.ShipPassengerScalar)), "Ship passengers" },
+                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.ShipPassengerScalar)), "Ship Passengers" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.ShipPassengerScalar)),
-                    "Multiplier for **passenger** ships only (not cargo ships)." },
+                    "Change **Passenger** ships only (not cargo ships)." },
 
-                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.FerryPassengerScalar)), "Ferry passengers" },
+                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.FerryPassengerScalar)), "Ferry Passengers" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.FerryPassengerScalar)),
-                    "Multiplier for ferry passenger capacity." },
+                    "Change **Ferry Passenger** seats." },
 
-                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.AirplanePassengerScalar)), "Airplane passengers" },
+                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.AirplanePassengerScalar)), "Airplane Passengers" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.AirplanePassengerScalar)),
-                    "Multiplier for passenger airplane capacity." },
+                    "Change **Airplane Passenger** seats." },
 
                 // Passenger reset button
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.ResetPassengerToVanillaButton)),
-                    "Reset to defaults" },
+                    "Reset All Passengers" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.ResetPassengerToVanillaButton)),
                     "Set all passenger multipliers back to **1.0×** (game's default capacity - vanilla)." },
 
@@ -112,7 +112,7 @@ namespace AdjustTransitCapacity
                 // About tab: links
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.OpenParadoxMods)), "Paradox Mods" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.OpenParadoxMods)),
-                    "Open this mod on the Paradox Mods site in a browser." },
+                    "Open the Paradox Mods website for this mod." },
 
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.OpenDiscord)), "Discord" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.OpenDiscord)),
@@ -121,8 +121,11 @@ namespace AdjustTransitCapacity
                 // About tab: debug
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.EnableDebugLogging)), "Enable debug logging" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.EnableDebugLogging)),
-                    "When enabled, the mod writes extra capacity details to the game log.\n" +
-                    "Useful for troubleshooting, but may spam the log." },
+                    "When enabled, many extra debug details are sent to AdjustTransitCapacity.log.\n" +
+                    "Useful for troubleshooting, but will spam the log.\n" +
+                    "Recommend **Disable** for normal gameplay.\n" +
+                    "If you don't know what this is for, leave it disabled."
+                },
             };
         }
 
