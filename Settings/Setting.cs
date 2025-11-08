@@ -12,7 +12,7 @@ namespace AdjustTransitCapacity
     using UnityEngine;
 
     /// <summary>
-    /// ATC options: depot/passenger scalars, about info, links, and debug toggle.
+    /// ATC options: depot/passenger percent sliders, about info, links, and debug toggle.
     /// </summary>
     [FileLocation("ModsSettings/AdjustTransitCapacity/AdjustTransitCapacity")]
     [SettingsUITabOrder(
@@ -47,10 +47,10 @@ namespace AdjustTransitCapacity
         public const string AboutLinksGroup = "AboutLinks";
         public const string DebugGroup = "Debug";
 
-        // Slider range (1.0x–10.0x; UI shows 100%–1000%)
-        public const float MinScalar = 1f;
-        public const float MaxScalar = 10f;
-        public const float StepScalar = 0.2f;
+        // Slider range in percent: 100–1000 (100% = vanilla 1.0x, 1000% = 10.0x)
+        public const float MinPercent = 100f;
+        public const float MaxPercent = 1000f;
+        public const float StepPercent = 20f;
 
         // External links
         private const string UrlParadox =
@@ -100,42 +100,42 @@ namespace AdjustTransitCapacity
         }
 
         // Actions tab: depot capacity (max vehicles per depot)
-        // 1.0x = vanilla, 10.0x = 10x; UI shows 100%–1000%.
+        // Stored as percent: 100–1000. Runtime scalar = value / 100f.
 
-        [SettingsUISlider(min = MinScalar, max = MaxScalar, step = StepScalar,
-            scalarMultiplier = 100, unit = Unit.kPercentage)]
+        [SettingsUISlider(min = MinPercent, max = MaxPercent, step = StepPercent,
+            scalarMultiplier = 1, unit = Unit.kPercentage)]
         [SettingsUISection(ActionsTab, DepotGroup)]
         public float BusDepotScalar
         {
             get; set;
         }
 
-        [SettingsUISlider(min = MinScalar, max = MaxScalar, step = StepScalar,
-            scalarMultiplier = 100, unit = Unit.kPercentage)]
+        [SettingsUISlider(min = MinPercent, max = MaxPercent, step = StepPercent,
+            scalarMultiplier = 1, unit = Unit.kPercentage)]
         [SettingsUISection(ActionsTab, DepotGroup)]
         public float TaxiDepotScalar
         {
             get; set;
         }
 
-        [SettingsUISlider(min = MinScalar, max = MaxScalar, step = StepScalar,
-            scalarMultiplier = 100, unit = Unit.kPercentage)]
+        [SettingsUISlider(min = MinPercent, max = MaxPercent, step = StepPercent,
+            scalarMultiplier = 1, unit = Unit.kPercentage)]
         [SettingsUISection(ActionsTab, DepotGroup)]
         public float TramDepotScalar
         {
             get; set;
         }
 
-        [SettingsUISlider(min = MinScalar, max = MaxScalar, step = StepScalar,
-            scalarMultiplier = 100, unit = Unit.kPercentage)]
+        [SettingsUISlider(min = MinPercent, max = MaxPercent, step = StepPercent,
+            scalarMultiplier = 1, unit = Unit.kPercentage)]
         [SettingsUISection(ActionsTab, DepotGroup)]
         public float TrainDepotScalar
         {
             get; set;
         }
 
-        [SettingsUISlider(min = MinScalar, max = MaxScalar, step = StepScalar,
-            scalarMultiplier = 100, unit = Unit.kPercentage)]
+        [SettingsUISlider(min = MinPercent, max = MaxPercent, step = StepPercent,
+            scalarMultiplier = 1, unit = Unit.kPercentage)]
         [SettingsUISection(ActionsTab, DepotGroup)]
         public float SubwayDepotScalar
         {
@@ -161,34 +161,34 @@ namespace AdjustTransitCapacity
 
         // Actions tab: passenger capacity (max passengers per vehicle)
         // Taxi passenger capacity is not changed (CS2 keeps 4 seats).
-        // 1.0x = vanilla, 10.0x = 10x; UI shows 100%–1000%.
+        // Stored as percent: 100–1000. Runtime scalar = value / 100f.
 
-        [SettingsUISlider(min = MinScalar, max = MaxScalar, step = StepScalar,
-            scalarMultiplier = 100, unit = Unit.kPercentage)]
+        [SettingsUISlider(min = MinPercent, max = MaxPercent, step = StepPercent,
+            scalarMultiplier = 1, unit = Unit.kPercentage)]
         [SettingsUISection(ActionsTab, PassengerGroup)]
         public float BusPassengerScalar
         {
             get; set;
         }
 
-        [SettingsUISlider(min = MinScalar, max = MaxScalar, step = StepScalar,
-            scalarMultiplier = 100, unit = Unit.kPercentage)]
+        [SettingsUISlider(min = MinPercent, max = MaxPercent, step = StepPercent,
+            scalarMultiplier = 1, unit = Unit.kPercentage)]
         [SettingsUISection(ActionsTab, PassengerGroup)]
         public float TramPassengerScalar
         {
             get; set;
         }
 
-        [SettingsUISlider(min = MinScalar, max = MaxScalar, step = StepScalar,
-            scalarMultiplier = 100, unit = Unit.kPercentage)]
+        [SettingsUISlider(min = MinPercent, max = MaxPercent, step = StepPercent,
+            scalarMultiplier = 1, unit = Unit.kPercentage)]
         [SettingsUISection(ActionsTab, PassengerGroup)]
         public float TrainPassengerScalar
         {
             get; set;
         }
 
-        [SettingsUISlider(min = MinScalar, max = MaxScalar, step = StepScalar,
-            scalarMultiplier = 100, unit = Unit.kPercentage)]
+        [SettingsUISlider(min = MinPercent, max = MaxPercent, step = StepPercent,
+            scalarMultiplier = 1, unit = Unit.kPercentage)]
         [SettingsUISection(ActionsTab, PassengerGroup)]
         public float SubwayPassengerScalar
         {
@@ -197,24 +197,24 @@ namespace AdjustTransitCapacity
 
         // Passenger-only types (not depots).
 
-        [SettingsUISlider(min = MinScalar, max = MaxScalar, step = StepScalar,
-            scalarMultiplier = 100, unit = Unit.kPercentage)]
+        [SettingsUISlider(min = MinPercent, max = MaxPercent, step = StepPercent,
+            scalarMultiplier = 1, unit = Unit.kPercentage)]
         [SettingsUISection(ActionsTab, PassengerGroup)]
         public float ShipPassengerScalar
         {
             get; set;
         }
 
-        [SettingsUISlider(min = MinScalar, max = MaxScalar, step = StepScalar,
-            scalarMultiplier = 100, unit = Unit.kPercentage)]
+        [SettingsUISlider(min = MinPercent, max = MaxPercent, step = StepPercent,
+            scalarMultiplier = 1, unit = Unit.kPercentage)]
         [SettingsUISection(ActionsTab, PassengerGroup)]
         public float FerryPassengerScalar
         {
             get; set;
         }
 
-        [SettingsUISlider(min = MinScalar, max = MaxScalar, step = StepScalar,
-            scalarMultiplier = 100, unit = Unit.kPercentage)]
+        [SettingsUISlider(min = MinPercent, max = MaxPercent, step = StepPercent,
+            scalarMultiplier = 1, unit = Unit.kPercentage)]
         [SettingsUISection(ActionsTab, PassengerGroup)]
         public float AirplanePassengerScalar
         {
@@ -306,22 +306,22 @@ namespace AdjustTransitCapacity
 
         public void ResetDepotToVanilla()
         {
-            BusDepotScalar = 1f;
-            TaxiDepotScalar = 1f;
-            TramDepotScalar = 1f;
-            TrainDepotScalar = 1f;
-            SubwayDepotScalar = 1f;
+            BusDepotScalar = 100f;
+            TaxiDepotScalar = 100f;
+            TramDepotScalar = 100f;
+            TrainDepotScalar = 100f;
+            SubwayDepotScalar = 100f;
         }
 
         public void ResetPassengerToVanilla()
         {
-            BusPassengerScalar = 1f;
-            TramPassengerScalar = 1f;
-            TrainPassengerScalar = 1f;
-            SubwayPassengerScalar = 1f;
-            ShipPassengerScalar = 1f;
-            FerryPassengerScalar = 1f;
-            AirplanePassengerScalar = 1f;
+            BusPassengerScalar = 100f;
+            TramPassengerScalar = 100f;
+            TrainPassengerScalar = 100f;
+            SubwayPassengerScalar = 100f;
+            ShipPassengerScalar = 100f;
+            FerryPassengerScalar = 100f;
+            AirplanePassengerScalar = 100f;
         }
     }
 }
