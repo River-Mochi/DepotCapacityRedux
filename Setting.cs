@@ -45,7 +45,7 @@ namespace AdjustTransitCapacity
         // All sliders represent a direct multiplier: 1.0 = vanilla, 10.0 = 10x.
         public const float MinScalar = 1f;
         public const float MaxScalar = 10f;
-        public const float StepScalar = 0.25f;
+        public const float StepScalar = 0.1f;
 
         // ---- External links ----
         private const string UrlParadox =
@@ -69,13 +69,28 @@ namespace AdjustTransitCapacity
         public override void SetDefaults()
         {
             // Depots (5 original types) — 1x vanilla
+            ResetDepotToVanilla();
+
+            // Passengers (taxis stay vanilla 4 seats in game)
+            ResetPassengerToVanilla();
+
+            // Debug off by default
+            EnableDebugLogging = false;
+        }
+
+        // ---- Helper: reset depot sliders to vanilla (1.0x) ----
+        public void ResetDepotToVanilla()
+        {
             BusDepotScalar = 1f;
             TaxiDepotScalar = 1f;
             TramDepotScalar = 1f;
             TrainDepotScalar = 1f;
             SubwayDepotScalar = 1f;
+        }
 
-            // Passengers (taxis stay vanilla 4 seats in game)
+        // ---- Helper: reset passenger sliders to vanilla (1.0x) ----
+        public void ResetPassengerToVanilla()
+        {
             BusPassengerScalar = 1f;
             TramPassengerScalar = 1f;
             TrainPassengerScalar = 1f;
@@ -83,9 +98,6 @@ namespace AdjustTransitCapacity
             ShipPassengerScalar = 1f;
             FerryPassengerScalar = 1f;
             AirplanePassengerScalar = 1f;
-
-            // Debug off by default
-            EnableDebugLogging = false;
         }
 
         // ---- APPLY CALLBACK ----
@@ -152,6 +164,22 @@ namespace AdjustTransitCapacity
             get; set;
         }
 
+        // ---- Depot: Reset to vanilla button ----
+        [SettingsUIButtonGroup(DepotGroup)]
+        [SettingsUIButton]
+        [SettingsUISection(MainTab, DepotGroup)]
+        public bool ResetDepotToVanillaButton
+        {
+            set
+            {
+                if (!value)
+                    return;
+
+                ResetDepotToVanilla();
+                Apply();
+            }
+        }
+
         // --------------------------------------------------------------------
         // MAIN TAB: PASSENGER CAPACITY (max passengers per vehicle)
         // Taxi passenger capacity is not changed (CS2 keeps 4 seats).
@@ -213,6 +241,22 @@ namespace AdjustTransitCapacity
         public float AirplanePassengerScalar
         {
             get; set;
+        }
+
+        // ---- Passenger: Reset to vanilla button ----
+        [SettingsUIButtonGroup(PassengerGroup)]
+        [SettingsUIButton]
+        [SettingsUISection(MainTab, PassengerGroup)]
+        public bool ResetPassengerToVanillaButton
+        {
+            set
+            {
+                if (!value)
+                    return;
+
+                ResetPassengerToVanilla();
+                Apply();
+            }
         }
 
         // --------------------------------------------------------------------
