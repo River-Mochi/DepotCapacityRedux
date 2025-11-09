@@ -18,9 +18,10 @@
 - **Sliders** can be adjusted without restarting (up to 10x of vanilla default values).
 - Does not use Harmony or Reflection, making it more compatible and less likely to break with game updates.
 
-## Languages
+## 8 Languages
 
-- Français French, Deutsch German, Español Spanish, 简体中文 (Simplified Chinese)
+- Français French, Deutsch German, Español Spanish, Italiano Italian
+- 한국어 Korean, 日本語 Japanese, 简体中文 (Simplified Chinese)
 
 ### Notes
 - Depot capacity = maximum number of vehicles a single depot can maintain or spawn (scales off base building, not extensions).
@@ -55,7 +56,8 @@
 	<!--Dependency for the mod, can be set multiple times-->
 	<Dependency Id="" />
 	<!-- Change log for new version. Single line or multi line. Supports minimal markdown subset -->
-	<ChangeLog>* Adds Korean, Japanese</ChangeLog>
+	<ChangeLog>* Adds Korean, Japanese, Italian
+* Adds Open Log</ChangeLog>
 	<!--External link. supported types are discord, github, youtube, twitch, x, paypal, patreon-->
 <ExternalLink Type="discord" Url="https://discord.gg/HTav7ARPs2" />
 <ExternalLink Type="github" Url="https://github.com/River-Mochi/AdjustTransitCapacity" />
