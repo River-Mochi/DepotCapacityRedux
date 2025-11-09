@@ -131,7 +131,8 @@ namespace AdjustTransitCapacity
                     "启用后，许多额外的调试信息会写入 AdjustTransitCapacity.log。\n" +
                     "有助于排查问题，但会产生大量日志。\n" +
                     "建议在正常游戏时 **关闭**。\n" +
-                    "<如果你不知道这是做什么用的，请保持关闭，不要勾选此复选框。>"
+                    "<如果你不知道这是做什么用的，请保持关闭，>\n" +
+                    "<不要勾选此复选框。>"
                 },
 
                 // About tab: log button

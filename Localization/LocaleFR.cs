@@ -131,7 +131,8 @@ namespace AdjustTransitCapacity
                     "Lorsqu’elle est activée, de nombreux détails de debug supplémentaires sont envoyés dans AdjustTransitCapacity.log.\n" +
                     "Utile pour le dépannage, mais remplit le journal.\n" +
                     "Recommandé : **Désactiver** pour une partie normale.\n" +
-                    "<Si vous ne savez pas à quoi cela sert, laissez-le désactivé et ne cochez pas la case.>"
+                    "<Si vous ne savez pas à quoi cela sert, laissez-le désactivé>\n" +
+                    "<et ne cochez pas la case.>"
                 },
 
                 // About tab: log button

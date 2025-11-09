@@ -131,7 +131,8 @@ namespace AdjustTransitCapacity
                     "Cuando está activado, se envían muchos detalles extra de depuración a AdjustTransitCapacity.log.\n" +
                     "Útil para solucionar problemas, pero llenará el registro.\n" +
                     "Se recomienda **Desactivar** para el juego normal.\n" +
-                    "<Si no sabes para qué sirve, déjalo desactivado y no marques la casilla.>"
+                    "<Si no sabes para qué sirve, déjalo desactivado y no > \n" +
+                    "marques la casilla.>"
                 },
 
                 // About tab: log button

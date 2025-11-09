@@ -8,7 +8,9 @@ namespace AdjustTransitCapacity
     using System.IO;
     using Colossal.IO.AssetDatabase;
     using Colossal.Logging;
+    using Game;
     using Game.Modding;
+    using Game.SceneFlow;
     using Game.Settings;
     using Game.UI;
     using Unity.Entities;
@@ -75,7 +77,9 @@ namespace AdjustTransitCapacity
             }
         }
 
-        // Defaults
+        // ----------------
+        // Defaults / Apply
+        // ----------------
 
         public override void SetDefaults()
         {
@@ -86,11 +90,19 @@ namespace AdjustTransitCapacity
             EnableDebugLogging = false;
         }
 
-        // Apply callback
-
         public override void Apply()
         {
             base.Apply();
+
+            // Always save slider values, but only try to apply them
+            // when actual gameplay is running (a city is loaded).
+            GameManager? gm = GameManager.instance;
+            if (gm == null || !gm.gameMode.IsGame())
+            {
+                // Main menu / editor: settings are saved, first use will be
+                // when a GameMode.Game city finishes loading.
+                return;
+            }
 
             World world = World.DefaultGameObjectInjectionWorld;
             if (world == null)
@@ -98,14 +110,19 @@ namespace AdjustTransitCapacity
                 return;
             }
 
-            var system = world.GetExistingSystemManaged<AdjustTransitCapacitySystem>();
+            AdjustTransitCapacitySystem system =
+                world.GetExistingSystemManaged<AdjustTransitCapacitySystem>();
             if (system != null)
             {
+                // Run one more tick in the CURRENT city to reapply new slider values.
                 system.Enabled = true;
             }
         }
 
-        // Actions tab: depot capacity (max vehicles per depot)
+        // ------------------------
+        // Actions tab: depot (max)
+        // ------------------------
+
         // Stored as percent: 100–1000. Runtime scalar = value / 100f.
 
         [SettingsUISlider(min = MinPercent, max = MaxPercent, step = StepPercent,
@@ -165,7 +182,10 @@ namespace AdjustTransitCapacity
             }
         }
 
-        // Actions tab: passenger capacity (max passengers per vehicle)
+        // -----------------------------
+        // Actions tab: passengers (max)
+        // -----------------------------
+
         // Taxi passenger capacity is not changed (CS2 keeps 4 seats).
         // Stored as percent: 100–1000. Runtime scalar = value / 100f.
 
@@ -244,7 +264,9 @@ namespace AdjustTransitCapacity
             }
         }
 
-        // About tab: info
+        // --------------------
+        // About tab: info/link
+        // --------------------
 
         [SettingsUISection(AboutTab, AboutInfoGroup)]
         public string ModNameDisplay => $"{Mod.ModName} {Mod.ModTag}";
@@ -308,9 +330,9 @@ namespace AdjustTransitCapacity
             get; set;
         }
 
-        // ABOUT TAB: Open Log Button
+        // About tab: Open Log Button
         // Opens the log file if it exists, or the log folder if not.
-        // uses real logger path if possible, else fallback to Process.Start.
+
         [SettingsUIButtonGroup(LogGroup)]
         [SettingsUIButton]
         [SettingsUISection(AboutTab, LogGroup)]
@@ -399,6 +421,10 @@ namespace AdjustTransitCapacity
             }
         }
 
+        // ----------------
+        // Helpers: logging
+        // ----------------
+
         // Helper: open a file or folder via Unity, using a file:/// URI.
         private static void OpenWithUnityFileUrl(string path, bool isDirectory = false)
         {
@@ -406,7 +432,7 @@ namespace AdjustTransitCapacity
             string normalized = path.Replace('\\', '/');
 
             // Some platforms like a trailing slash for directories.
-            if (isDirectory && !normalized.EndsWith("/"))
+            if (isDirectory && !normalized.EndsWith("/", StringComparison.Ordinal))
             {
                 normalized += "/";
             }
@@ -415,7 +441,9 @@ namespace AdjustTransitCapacity
             Application.OpenURL(uri);
         }
 
-        // HELPERS
+        // -------------------------
+        // Helpers: slider defaults
+        // -------------------------
 
         public void ResetDepotToVanilla()
         {

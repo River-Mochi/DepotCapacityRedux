@@ -131,7 +131,8 @@ namespace AdjustTransitCapacity
                     "Quando è attivo, molti dettagli di debug aggiuntivi vengono scritti in AdjustTransitCapacity.log.\n" +
                     "Utile per la risoluzione dei problemi, ma riempie il log.\n" +
                     "Consigliato **Disattivare** per il gioco normale.\n" +
-                    "<Se non sai a cosa serve, lascialo disattivato e non selezionare la casella.>"
+                    "<Se non sai a cosa serve, lascialo disattivato e non> \n" +
+                    "<selezionare la casella.>"
                 },
 
                 // About tab: log button

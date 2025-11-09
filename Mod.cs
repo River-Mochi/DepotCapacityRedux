@@ -4,6 +4,7 @@
 namespace AdjustTransitCapacity
 {
     using Colossal.IO.AssetDatabase;
+    using Colossal.Localization;
     using Colossal.Logging;
     using Game;
     using Game.Modding;
@@ -36,7 +37,7 @@ namespace AdjustTransitCapacity
             Setting setting = new Setting(this);
             Settings = setting;
 
-            var lm = GameManager.instance?.localizationManager;
+            LocalizationManager? lm = GameManager.instance?.localizationManager;
             if (lm != null)
             {
                 lm.AddSource("en-US", new LocaleEN(setting));
@@ -60,15 +61,21 @@ namespace AdjustTransitCapacity
             // Scheduled after PrefabUpdate so prefab data and components are initialized.
             updateSystem.UpdateAfter<AdjustTransitCapacitySystem>(SystemUpdatePhase.PrefabUpdate);
 
-            // Enable once for an already-running city (if any city exists).
-            World world = World.DefaultGameObjectInjectionWorld;
-            if (world != null)
+            // If the mod is loaded while a city is already running, apply once.
+            // In main menu/editor, we stay idle here; first real run happens
+            // in AdjustTransitCapacitySystem.OnGameLoadingComplete.
+            GameManager? gm = GameManager.instance;
+            if (gm != null && gm.gameMode.IsGame())
             {
-                AdjustTransitCapacitySystem system =
-                    world.GetExistingSystemManaged<AdjustTransitCapacitySystem>();
-                if (system != null)
+                World world = World.DefaultGameObjectInjectionWorld;
+                if (world != null)
                 {
-                    system.Enabled = true;
+                    AdjustTransitCapacitySystem system =
+                        world.GetExistingSystemManaged<AdjustTransitCapacitySystem>();
+                    if (system != null)
+                    {
+                        system.Enabled = true;
+                    }
                 }
             }
         }
