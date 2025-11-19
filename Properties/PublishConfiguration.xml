@@ -4,7 +4,7 @@
 	<!--Name of the mod to display to players-->
 	<DisplayName Value="Adjust Transit Capacity" />
 	<!--Short description of the mod-->
-	<ShortDescription Value="Easy change of max capacity of all Transit Depots and Total Passengers" />
+	<ShortDescription Value="Easy change the max sizes of all Transit Depots and Total Passengers" />
 	<!--Long description of the mod. Single line or multi line. Supports minimal markdown subset-->
 	<!--LongDescription Value="This is a long description" /-->
 	<LongDescription>### Adjust Transit Capacity (Redux)
