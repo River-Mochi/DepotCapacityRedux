@@ -51,16 +51,14 @@ tags: ATC, city transit, control municipal, public transit system, change size, 
 	<!--Link to the forum post where the mod can be discussed-->
 	<ForumLink Value="https://forum.paradoxplaza.com/forum/threads/adjust-transit-capacity.1866178/" />
 	<!--Version of the mod-->
-	<ModVersion Value="1.2.9" />
+	<ModVersion Value="1.3.0" />
 	<!--Recommended version of the base game to use the mod-->
-	<GameVersion Value="1.3.6*" />
+	<GameVersion Value="1.4.2*" />
 	<!--Dependency for the mod, can be set multiple times-->
 	<Dependency Id="" />
 	<!-- Change log for new version. Single line or multi line. Supports minimal markdown subset -->
 	<ChangeLog>
-* Adds ability to reduce passenger capacities as well as increase it.
-* Allows 10% increments for passengers now versus larger 20% steps before.
-* Adds convenience button to double up all passengers.
+* Updated for 1.4.2* game patch
 * Adds Traditional Chinese 繁體中文
 * Adds Português Brazilian Portuguese
 </ChangeLog>
