@@ -43,14 +43,9 @@
 
 ## Links
 
-- https://github.com/River-Mochi/AdjustTransitCapacity
+- [Github repo](https://github.com/River-Mochi/AdjustTransitCapacity)
 - [Paradox Mods page](https://mods.paradoxplaza.com/uploaded?orderBy=desc&sortBy=best&time=alltime)
-
-## Name / Tags
-
-- Display name: **Adjust Transit Capacity**  
-- Internal namespace: `AdjustTransitCapacity`  
-- Mod tag: `[ATC]`
+- [Support Discord](https://discord.gg/HTav7ARPs2)
 
 ---
 
