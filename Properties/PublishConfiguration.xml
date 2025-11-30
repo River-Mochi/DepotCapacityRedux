@@ -11,30 +11,31 @@
 
 ### What it does
 
-- **Depots**: change the maximum vehicles per Depot type (Bus, Taxi, Tram, Train, Subway)
+- **Depots**: change maximum vehicles per Depot (Bus, Taxi, Tram, Train, Subway)
 - **Passengers**:  increase how many passengers each vehicle can carry (bus, tram, trains, subway, airplane, ship, ferry)
-- **Sliders** can be adjusted without restarting.
+- **Sliders** adjust any time, no restart needed.
 - Supports switching cities.
 
-## 9+ Languages
+## 11 Languages
 
-- Français French, Deutsch German, Español Spanish, Italiano Italian
+- English, Français, Deutsch German, Español Spanish, Italiano Italian
 - 한국어 Korean, 日本語 Japanese, 简体中文 (Simplified Chinese)
-- 繁體中文 Traditional Chinese, Português Brazilian
+- 繁體中文 Traditional Chinese, Português Brazilian, Polski Polish
 
 ### Notes 🚍🚋🚆✈️🚢
 - Depot capacity = maximum number of vehicles a single depot can maintain or spawn (scales off base building, not extensions).
 - Passenger capacity = maximum passengers each vehicle can carry.
 - Remove other depot/passenger capacity mods to avoid conflicts (they override each other).
-- Does not use Harmony or Reflection, making it more compatible and less likely to break with game updates.
+- Does not use Harmony or Reflection; more compatible - less likely to break with game updates.
 - Safe to remove any time. Use reset all button to run as vanilla game default.
 
 ### Credits
-- River-Mochi - current author/maintainer
-- Thanks to Wayz author of the original Depot Capacity Changer.
+- River-Mochi - author and maintainer
+- Inspired by Wayz's original Depot Capacity Changer.
+- yenyang - code review and technical advice
 - Necko1996 - testing
 - BugsyG - testing
-- StarQ for technical support
+- StarQ for technical advice
 
 tags: ATC, city transit, control municipal, public transit system, change size, increase people passengers, increase depot size demand, decrease passengers
 
@@ -51,16 +52,16 @@ tags: ATC, city transit, control municipal, public transit system, change size, 
 	<!--Link to the forum post where the mod can be discussed-->
 	<ForumLink Value="https://forum.paradoxplaza.com/forum/threads/adjust-transit-capacity.1866178/" />
 	<!--Version of the mod-->
-	<ModVersion Value="1.3.0" />
+	<ModVersion Value="1.3.1" />
 	<!--Recommended version of the base game to use the mod-->
 	<GameVersion Value="1.4.2*" />
 	<!--Dependency for the mod, can be set multiple times-->
 	<Dependency Id="" />
 	<!-- Change log for new version. Single line or multi line. Supports minimal markdown subset -->
 	<ChangeLog>
-* Updated for 1.4.2* game patch
-* Adds Traditional Chinese 繁體中文
-* Adds Português Brazilian Portuguese
+* Add Polish Polski language
+* Refactored localization system, better handling
+* Fix Paradox link
 </ChangeLog>
 	<!--External link. supported types are discord, github, youtube, twitch, x, paypal, patreon-->
 <ExternalLink Type="discord" Url="https://discord.gg/HTav7ARPs2" />

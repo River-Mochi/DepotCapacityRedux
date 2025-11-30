@@ -132,7 +132,7 @@ namespace AdjustTransitCapacity
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.EnableDebugLogging)),
                     "Enabled = send many extra debug details to AdjustTransitCapacity.log.\n" +
                     "Useful for troubleshooting, but will spam the log.\n" +
-                    "**Disable** (do not check the box) for normal gameplay.\n" +
+                    "**Disable** for normal gameplay.\n" +
                     "<If you do not know what this is, leave it **OFF**, and> \n" +
                     "<do not check the box as Log spam affects performance.>"
                 },

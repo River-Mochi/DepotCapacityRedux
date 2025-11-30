@@ -3,15 +3,16 @@
 
 namespace AdjustTransitCapacity
 {
-    using System.Reflection;            // Metadata: Assembly version
-    using Colossal.IO.AssetDatabase;    // AssetDatabase.LoadSettings
-    using Colossal.Localization;        // LocalizationManager
-    using Colossal.Logging;             // ILog, defines shared s_Log
-    using Game;                         // UpdateSystem, GameManager
-    using Game.Modding;                 // IMod, ModSetting base
-    using Game.SceneFlow;               // GameMode, GameManager access
-    using Unity.Entities;               // World, ECS system registration
-
+    using System;                         // Exception (localization wrapper)
+    using System.Reflection;              // Metadata: Assembly version
+    using Colossal;                       // IDictionarySource
+    using Colossal.IO.AssetDatabase;      // AssetDatabase.LoadSettings
+    using Colossal.Localization;          // LocalizationManager
+    using Colossal.Logging;               // ILog, defines shared s_Log
+    using Game;                           // UpdateSystem, GameManager
+    using Game.Modding;                   // IMod, ModSetting base
+    using Game.SceneFlow;                 // GameMode, GameManager access
+    using Unity.Entities;                 // World, ECS system registration
 
     /// <summary>Mod entry point: registers settings, locales, and ECS system.</summary>
     public sealed class Mod : IMod
@@ -27,12 +28,11 @@ namespace AdjustTransitCapacity
         public static readonly string ModVersion =
             Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "1.0.0";
 
-
         private static bool s_BannerLogged;
 
         // ----- Logger & public properties -----
         public static readonly ILog s_Log =
-           LogManager.GetLogger(ModId).SetShowsErrorsInUI(false);
+            LogManager.GetLogger(ModId).SetShowsErrorsInUI(false);
 
         public static Setting? Settings;
 
@@ -42,68 +42,77 @@ namespace AdjustTransitCapacity
             if (!s_BannerLogged)
             {
                 s_BannerLogged = true;
-               s_Log.Info($"{ModName} v{ModVersion} OnLoad");
+                s_Log.Info($"{ModName} v{ModVersion} OnLoad");
             }
 
+            // Settings first so locale labels can resolve
             Setting setting = new Setting(this);
             Settings = setting;
 
-            // Register languages here
-            LocalizationManager? lm = GameManager.instance?.localizationManager;
-            if (lm != null)
-            {
-                lm.AddSource("en-US", new LocaleEN(setting));
-                lm.AddSource("fr-FR", new LocaleFR(setting));
-                lm.AddSource("es-ES", new LocaleES(setting));
-                lm.AddSource("de-DE", new LocaleDE(setting));
-                lm.AddSource("it-IT", new LocaleIT(setting));
-                lm.AddSource("ja-JP", new LocaleJA(setting));
-                lm.AddSource("ko-KR", new LocaleKO(setting));
-                lm.AddSource("pt-BR", new LocalePT_BR(setting));
-                lm.AddSource("zh-HANS", new LocaleZH_CN(setting));   // Simplified Chinese
-                lm.AddSource("zh-HANT", new LocaleZH_HANT(setting)); // Traditional Chinese
+            // Register languages via helper (safe AddSource wrapper)
+            AddLocaleSource("en-US", new LocaleEN(setting));
+            AddLocaleSource("fr-FR", new LocaleFR(setting));
+            AddLocaleSource("es-ES", new LocaleES(setting));
+            AddLocaleSource("de-DE", new LocaleDE(setting));
+            AddLocaleSource("it-IT", new LocaleIT(setting));
+            AddLocaleSource("ja-JP", new LocaleJA(setting));
+            AddLocaleSource("ko-KR", new LocaleKO(setting));
+            AddLocaleSource("pl-PL", new LocalePL(setting));
+            AddLocaleSource("pt-BR", new LocalePT_BR(setting));
+            AddLocaleSource("zh-HANS", new LocaleZH_CN(setting));    // Simplified Chinese
+            AddLocaleSource("zh-HANT", new LocaleZH_HANT(setting));  // Traditional Chinese
 
-
-            }
-            else
-            {
-               s_Log.Warn($"{ModTag} LocalizationManager not found; settings UI texts may be missing.");
-            }
-
+            // Load saved settings (location is in Setting.cs [FileLocation])
             AssetDatabase.global.LoadSettings(ModId, setting, new Setting(this));
 
+            // Show in Options -> Mods
             setting.RegisterInOptionsUI();
 
             // Scheduled after PrefabUpdate so prefab data and components are initialized.
             updateSystem.UpdateAfter<AdjustTransitCapacitySystem>(SystemUpdatePhase.PrefabUpdate);
-
-            // If the mod is loaded while a city is already running, apply once.
-            // In main menu, stay idle
-            // First real run in OnGameLoadingComplete.
-            GameManager? gm = GameManager.instance;
-            if (gm != null && gm.gameMode.IsGame())
-            {
-                World world = World.DefaultGameObjectInjectionWorld;
-                if (world != null)
-                {
-                    AdjustTransitCapacitySystem system =
-                        world.GetExistingSystemManaged<AdjustTransitCapacitySystem>();
-                    if (system != null)
-                    {
-                        system.Enabled = true;
-                    }
-                }
-            }
         }
 
         public void OnDispose()
         {
-           s_Log.Info("OnDispose");
+            s_Log.Info("OnDispose");
 
             if (Settings != null)
             {
                 Settings.UnregisterInOptionsUI();
                 Settings = null;
+            }
+        }
+
+        // --------------------------------------------------------------------
+        // Localization helper
+        // --------------------------------------------------------------------
+
+        /// <summary>
+        /// Wrapper for LocalizationManager.AddSource that catches exceptions
+        /// so localization issues can't break mod loading.
+        /// </summary>
+        private static void AddLocaleSource(string localeId, IDictionarySource source)
+        {
+            if (string.IsNullOrEmpty(localeId))
+            {
+                return;
+            }
+
+            LocalizationManager? lm = GameManager.instance?.localizationManager;
+            if (lm == null)
+            {
+                s_Log.Warn($"AddLocaleSource: No LocalizationManager; cannot add source for '{localeId}'.");
+                return;
+            }
+
+            try
+            {
+                lm.AddSource(localeId, source);
+            }
+            catch (Exception ex)
+            {
+                s_Log.Warn(
+                    $"AddLocaleSource: AddSource for '{localeId}' failed: {ex.GetType().Name}: {ex.Message}");
             }
         }
     }

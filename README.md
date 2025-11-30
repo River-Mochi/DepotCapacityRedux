@@ -24,21 +24,23 @@
 
 ---
 
-## Languages
+## 11 Languages
 
 - English (en-US), Français French, Deutsch German, Español Spanish, Italiano Italian
 - 한국어 Korean, 日本語 Japanese, 简体中文 (Simplified Chinese)
-- 繁體中文 Traditional Chinese, Português Brazilian Portuguese
+- 繁體中文 Traditional Chinese, Português Brazilian, Polski Polish
 
 ---
 
 ## Credits
 
-- **River-Mochi** current author/maintainer, improvements, localization  
+- **River-Mochi** author/maintainer, localization  
 - Thanks to **Wayz** for the original *Depot Capacity Changer* (retired from modding)
+- yenyang - code review and technical advice
 - Necko1996 - testing
 - BugsyG - testing
 - StarQ for technical support
+
 ---
 
 ## Links
