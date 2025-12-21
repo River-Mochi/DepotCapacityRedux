@@ -4,7 +4,7 @@
 	<!--Name of the mod to display to players-->
 	<DisplayName Value="Adjust Transit Capacity" />
 	<!--Short description of the mod-->
-	<ShortDescription Value="Easy change the max sizes of all Transit Depots and Total Passengers" />
+	<ShortDescription Value="Easy change max sizes of all Transit Passengers and Depot vehicles" />
 	<!--Long description of the mod. Single line or multi line. Supports minimal markdown subset-->
 	<!--LongDescription Value="This is a long description" /-->
 	<LongDescription>### Adjust Transit Capacity (Redux)
@@ -16,18 +16,18 @@
 - **Sliders** adjust any time, no restart needed.
 - Supports switching cities.
 
-## 11 Languages
-
-- English, Français, Deutsch German, Español Spanish, Italiano Italian
-- 한국어 Korean, 日本語 Japanese, 简体中文 (Simplified Chinese)
-- 繁體中文 Traditional Chinese, Português Brazilian, Polski Polish
-
 ### Notes 🚍🚋🚆✈️🚢
 - Depot capacity = maximum number of vehicles a single depot can maintain or spawn (scales off base building, not extensions).
 - Passenger capacity = maximum passengers each vehicle can carry.
 - Remove other depot/passenger capacity mods to avoid conflicts (they override each other).
 - Does not use Harmony or Reflection; more compatible - less likely to break with game updates.
 - Safe to remove any time. Use reset all button to run as vanilla game default.
+
+## 11 Languages
+
+- English, Français, Deutsch German, Español Spanish, Italiano Italian
+- 한국어 Korean, 日本語 Japanese, 简体中文 (Simplified Chinese)
+- 繁體中文 Traditional Chinese, Português Brazilian, Polski Polish
 
 ### Credits
 - River-Mochi - author and maintainer
@@ -52,15 +52,14 @@ tags: ATC, city transit, control municipal, public transit system, change size, 
 	<!--Link to the forum post where the mod can be discussed-->
 	<ForumLink Value="https://forum.paradoxplaza.com/forum/threads/adjust-transit-capacity.1866178/" />
 	<!--Version of the mod-->
-	<ModVersion Value="1.3.3" />
+	<ModVersion Value="1.3.4" />
 	<!--Recommended version of the base game to use the mod-->
 	<GameVersion Value="1.5.*" />
 	<!--Dependency for the mod, can be set multiple times-->
 	<Dependency Id="" />
 	<!-- Change log for new version. Single line or multi line. Supports minimal markdown subset -->
 	<ChangeLog>
-* minor sync for Skyve and PDX.
-* Updated for patch 1.5.*
+* update/fix paradox link for name
 </ChangeLog>
 	<!--External link. supported types are discord, github, youtube, twitch, x, paypal, patreon-->
 <ExternalLink Type="discord" Url="https://discord.gg/HTav7ARPs2" />

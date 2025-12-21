@@ -4,37 +4,37 @@
 namespace AdjustTransitCapacity
 {
 
-        using System;                               // Exception
-        using System.Diagnostics;                   // Process, ProcessStartInfo
-        using System.IO;                            // Path, File, Directory
-        using Colossal.IO.AssetDatabase;            // FileLocation, LoadSettings
-        using Colossal.Logging;                     // UnityLogger
-        using Game;                                 // GameManager, GameMode
-        using Game.Modding;                         // ModSetting
-        using Game.SceneFlow;                       // GameMode
-        using Game.Settings;                        // SettingsUI attributes, ModSetting APIs
-        using Game.UI;                              // Unit enum (kPercentage)
-        using Unity.Entities;                       // World, ECS system lookup
-        using UnityEngine;                          // Application.OpenURL, persistentDataPath
+    using System;                               // Exception
+    using System.Diagnostics;                   // Process, ProcessStartInfo
+    using System.IO;                            // Path, File, Directory
+    using Colossal.IO.AssetDatabase;            // FileLocation, LoadSettings
+    using Colossal.Logging;                     // UnityLogger
+    using Game;                                 // GameManager, GameMode
+    using Game.Modding;                         // ModSetting
+    using Game.SceneFlow;                       // GameMode
+    using Game.Settings;                        // SettingsUI attributes, ModSetting APIs
+    using Game.UI;                              // Unit enum (kPercentage)
+    using Unity.Entities;                       // World, ECS system lookup
+    using UnityEngine;                          // Application.OpenURL, persistentDataPath
 
 
-        /// <summary>
-        /// ATC options: depot/passenger percent sliders, about info, links, and debug toggle.
-        /// </summary>
-        [FileLocation("ModsSettings/AdjustTransitCapacity/AdjustTransitCapacity")]  // Settings file location.
+    /// <summary>
+    /// ATC options: depot/passenger percent sliders, about info, links, and debug toggle.
+    /// </summary>
+    [FileLocation("ModsSettings/AdjustTransitCapacity/AdjustTransitCapacity")]  // Settings file location.
     [SettingsUITabOrder(
-        ActionsTab,
-        AboutTab
-    )]
+    ActionsTab,
+    AboutTab
+)]
     [SettingsUIGroupOrder(
-        DepotGroup, PassengerGroup,
-        AboutInfoGroup, AboutLinksGroup,
-        DebugGroup, LogGroup
-    )]
+    DepotGroup, PassengerGroup,
+    AboutInfoGroup, AboutLinksGroup,
+    DebugGroup, LogGroup
+)]
     [SettingsUIShowGroupName(
-        DepotGroup, PassengerGroup,
-        AboutLinksGroup, DebugGroup, LogGroup
-    )]
+    DepotGroup, PassengerGroup,
+    AboutLinksGroup, DebugGroup, LogGroup
+)]
     public sealed class Setting : ModSetting
     {
         // Tabs
@@ -61,7 +61,7 @@ namespace AdjustTransitCapacity
 
         // External links
         private const string UrlParadox =
-            "https://mods.paradoxplaza.com/authors/kimosabe1/cities_skylines_2?games=cities_skylines_2&orderBy=desc&sortBy=best&time=alltime";
+            "https://mods.paradoxplaza.com/authors/River-mochi/cities_skylines_2?games=cities_skylines_2&orderBy=desc&sortBy=best&time=alltime";
 
         private const string UrlDiscord =
             "https://discord.gg/HTav7ARPs2";
