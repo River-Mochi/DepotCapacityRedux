@@ -1,65 +1,89 @@
-// Settings/Setting.cs
-// Options UI + saved settings
+// File: Settings/Setting.cs
+// Purpose: Options UI + saved settings for Adjust Transit Capacity (Public Transit + Services + About).
 
 namespace AdjustTransitCapacity
 {
+    using System;
+    using System.Diagnostics;
+    using System.IO;
+    using Colossal.IO.AssetDatabase;
+    using Colossal.Logging;
+    using Game;
+    using Game.Modding;
+    using Game.SceneFlow;
+    using Game.Settings;
+    using Game.UI;
+    using Unity.Entities;
+    using UnityEngine;
 
-    using System;                               // Exception
-    using System.Diagnostics;                   // Process, ProcessStartInfo
-    using System.IO;                            // Path, File, Directory
-    using Colossal.IO.AssetDatabase;            // FileLocation, LoadSettings
-    using Colossal.Logging;                     // UnityLogger
-    using Game;                                 // GameManager, GameMode
-    using Game.Modding;                         // ModSetting
-    using Game.SceneFlow;                       // GameMode
-    using Game.Settings;                        // SettingsUI attributes, ModSetting APIs
-    using Game.UI;                              // Unit enum (kPercentage)
-    using Unity.Entities;                       // World, ECS system lookup
-    using UnityEngine;                          // Application.OpenURL, persistentDataPath
-
-
-    /// <summary>
-    /// ATC options: depot/passenger percent sliders, about info, links, and debug toggle.
-    /// </summary>
-    [FileLocation("ModsSettings/AdjustTransitCapacity/AdjustTransitCapacity")]  // Settings file location.
+    [FileLocation("ModsSettings/AdjustTransitCapacity/AdjustTransitCapacity")]
     [SettingsUITabOrder(
-    ActionsTab,
-    AboutTab
-)]
+        PublicTransitTab, ServicesTab, AboutTab
+    )]
     [SettingsUIGroupOrder(
-    DepotGroup, PassengerGroup,
-    AboutInfoGroup, AboutLinksGroup,
-    DebugGroup, LogGroup
-)]
+        // Public-Transit tab
+        PassengerGroup, DepotGroup,
+
+        // Services tab
+        DeliveryGroup,
+        CargoStationsGroup,
+        RoadMaintenanceGroup,
+        ParkMaintenanceGroup,
+
+        // About tab
+        AboutInfoGroup,
+        AboutLinksGroup,
+        DebugGroup,
+        LogGroup
+    )]
     [SettingsUIShowGroupName(
-    DepotGroup, PassengerGroup,
-    AboutLinksGroup, DebugGroup, LogGroup
-)]
+        // Public-Transit tab
+        DepotGroup,
+        PassengerGroup,
+
+        // Services tab
+        DeliveryGroup,
+        CargoStationsGroup,
+        RoadMaintenanceGroup,
+        ParkMaintenanceGroup,
+
+        // About tab
+        AboutLinksGroup,
+        DebugGroup,
+        LogGroup
+    )]
     public sealed class Setting : ModSetting
     {
-        // Tabs
-        public const string ActionsTab = "Actions";
+        // Tab ids (must match Locale ids).
+        public const string PublicTransitTab = "Public-Transit";
+        public const string ServicesTab = "Services";
         public const string AboutTab = "About";
 
-        // Groups (Actions tab)
+        // Group ids (must match Locale ids).
         public const string DepotGroup = "DepotCapacity";
         public const string PassengerGroup = "PassengerCapacity";
 
-        // Groups (About tab)
+        public const string DeliveryGroup = "DeliveryVehicles";
+        public const string CargoStationsGroup = "CargoStations";
+        public const string RoadMaintenanceGroup = "RoadMaintenance";
+        public const string ParkMaintenanceGroup = "ParkMaintenance";
+
         public const string AboutInfoGroup = "AboutInfo";
         public const string AboutLinksGroup = "AboutLinks";
         public const string DebugGroup = "Debug";
         public const string LogGroup = "Log";
 
-        // Slider ranges in percent:
-        // Depots    : 100–1000 (100% = vanilla 1.0x, 1000% = 10.0x)
-        // Passengers: 10–1000  (10% = 0.1x,    1000% = 10.0x)
+        // Public-Transit sliders (percent).
         public const float DepotMinPercent = 100f;
         public const float PassengerMinPercent = 10f;
         public const float MaxPercent = 1000f;
         public const float StepPercent = 10f;
 
-        // External links
+        // Services sliders (scalar).
+        public const float ServiceMinScalar = 1f;
+        public const float ServiceMaxScalar = 10f;
+        public const float ServiceStepScalar = 1f;
+
         private const string UrlParadox =
             "https://mods.paradoxplaza.com/authors/River-mochi/cities_skylines_2?games=cities_skylines_2&orderBy=desc&sortBy=best&time=alltime";
 
@@ -69,23 +93,38 @@ namespace AdjustTransitCapacity
         public Setting(IMod mod)
             : base(mod)
         {
-            // For brand-new settings file -> populate defaults.
+            // Existing sentinel: older configs can load 0 for percent sliders.
             if (BusDepotScalar == 0f)
             {
                 SetDefaults();
             }
-        }
 
-        // ----------------
-        // Defaults / Apply
-        // ----------------
+            // Services scalars should never be 0 (older configs won’t have them).
+            EnsureServiceDefaults();
+        }
 
         public override void SetDefaults()
         {
+            // Public-Transit defaults (percent).
             ResetDepotToVanilla();
             ResetPassengerToVanilla();
 
-            // Verbose logging off by default.
+            // Services defaults (scalar).
+            SemiTruckCargoScalar = 1f;
+            DeliveryVanCargoScalar = 1f;
+            OilTruckCargoScalar = 1f;                // Label/desc: Raw Materials Trucks (oil, coal, ore, stone)
+            MotorbikeDeliveryCargoScalar = 1f;
+            CargoStationMaxTrucksScalar = 1f;
+
+            RoadMaintenanceVehicleCapacityScalar = 1f;
+            RoadMaintenanceVehicleRateScalar = 1f;
+            RoadMaintenanceDepotScalar = 1f;
+
+            ParkMaintenanceVehicleCapacityScalar = 1f;
+            ParkMaintenanceVehicleRateScalar = 1f;
+            ParkMaintenanceDepotScalar = 1f;
+
+            // Debug.
             EnableDebugLogging = false;
         }
 
@@ -93,13 +132,9 @@ namespace AdjustTransitCapacity
         {
             base.Apply();
 
-            // Always save slider values, but only try to apply them
-            // when actual gameplay is running (city is loaded).
             GameManager? gm = GameManager.instance;
             if (gm == null || !gm.gameMode.IsGame())
             {
-                // Main menu - settings are saved.
-                // First use when city finishes loading.
                 return;
             }
 
@@ -109,65 +144,80 @@ namespace AdjustTransitCapacity
                 return;
             }
 
-            AdjustTransitCapacitySystem system =
-                world.GetExistingSystemManaged<AdjustTransitCapacitySystem>();
-            if (system != null)
+            // Settings changes should re-run the systems once.
+            try
             {
-                // Run one more tick in the current city to reapply new slider values.
-                system.Enabled = true;
+                AdjustTransitCapacitySystem transitSystem =
+                    world.GetExistingSystemManaged<AdjustTransitCapacitySystem>();
+                if (transitSystem != null)
+                {
+                    transitSystem.Enabled = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                Mod.s_Log.Warn($"{Mod.ModTag} Apply: failed enabling AdjustTransitCapacitySystem: {ex.GetType().Name}: {ex.Message}");
+            }
+
+            try
+            {
+                ServiceVehiclesSystem serviceSystem =
+                    world.GetExistingSystemManaged<ServiceVehiclesSystem>();
+                if (serviceSystem != null)
+                {
+                    serviceSystem.Enabled = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                Mod.s_Log.Warn($"{Mod.ModTag} Apply: failed enabling ServiceVehiclesSystem: {ex.GetType().Name}: {ex.Message}");
             }
         }
 
-        // ------------------------
-        // Actions tab: depot (max)
-        // ------------------------
+        // ----------------------------
+        // Public-Transit tab (Tab 1)
+        // ----------------------------
 
-        // Stored as percent: 100–1000. Runtime scalar = value / 100f.
+        // Depot capacity (percent).
 
-        [SettingsUISlider(min = DepotMinPercent, max = MaxPercent, step = StepPercent,
-            scalarMultiplier = 1, unit = Unit.kPercentage)]
-        [SettingsUISection(ActionsTab, DepotGroup)]
+        [SettingsUISlider(min = DepotMinPercent, max = MaxPercent, step = StepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
+        [SettingsUISection(PublicTransitTab, DepotGroup)]
         public float BusDepotScalar
         {
             get; set;
         }
 
-        [SettingsUISlider(min = DepotMinPercent, max = MaxPercent, step = StepPercent,
-            scalarMultiplier = 1, unit = Unit.kPercentage)]
-        [SettingsUISection(ActionsTab, DepotGroup)]
+        [SettingsUISlider(min = DepotMinPercent, max = MaxPercent, step = StepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
+        [SettingsUISection(PublicTransitTab, DepotGroup)]
         public float TaxiDepotScalar
         {
             get; set;
         }
 
-        [SettingsUISlider(min = DepotMinPercent, max = MaxPercent, step = StepPercent,
-            scalarMultiplier = 1, unit = Unit.kPercentage)]
-        [SettingsUISection(ActionsTab, DepotGroup)]
+        [SettingsUISlider(min = DepotMinPercent, max = MaxPercent, step = StepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
+        [SettingsUISection(PublicTransitTab, DepotGroup)]
         public float TramDepotScalar
         {
             get; set;
         }
 
-        [SettingsUISlider(min = DepotMinPercent, max = MaxPercent, step = StepPercent,
-            scalarMultiplier = 1, unit = Unit.kPercentage)]
-        [SettingsUISection(ActionsTab, DepotGroup)]
+        [SettingsUISlider(min = DepotMinPercent, max = MaxPercent, step = StepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
+        [SettingsUISection(PublicTransitTab, DepotGroup)]
         public float TrainDepotScalar
         {
             get; set;
         }
 
-        [SettingsUISlider(min = DepotMinPercent, max = MaxPercent, step = StepPercent,
-            scalarMultiplier = 1, unit = Unit.kPercentage)]
-        [SettingsUISection(ActionsTab, DepotGroup)]
+        [SettingsUISlider(min = DepotMinPercent, max = MaxPercent, step = StepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
+        [SettingsUISection(PublicTransitTab, DepotGroup)]
         public float SubwayDepotScalar
         {
             get; set;
         }
 
-        // Convenience button to reset all depots.
         [SettingsUIButtonGroup(DepotGroup)]
         [SettingsUIButton]
-        [SettingsUISection(ActionsTab, DepotGroup)]
+        [SettingsUISection(PublicTransitTab, DepotGroup)]
         public bool ResetDepotToVanillaButton
         {
             set
@@ -178,79 +228,64 @@ namespace AdjustTransitCapacity
                 }
 
                 ResetDepotToVanilla();
-                Apply();
+                ApplyAndSave();
             }
         }
 
-        // -----------------------------
-        // Actions tab: passengers (max)
-        // -----------------------------
+        // Passenger capacity (percent).
 
-        // Stored as percent: 10–1000. Runtime scalar = value / 100f.
-        // Taxi passengers is not changed (CS2 keeps 4 seats, more complex dispatch system).
-
-        [SettingsUISlider(min = PassengerMinPercent, max = MaxPercent, step = StepPercent,
-            scalarMultiplier = 1, unit = Unit.kPercentage)]
-        [SettingsUISection(ActionsTab, PassengerGroup)]
+        [SettingsUISlider(min = PassengerMinPercent, max = MaxPercent, step = StepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
+        [SettingsUISection(PublicTransitTab, PassengerGroup)]
         public float BusPassengerScalar
         {
             get; set;
         }
 
-        [SettingsUISlider(min = PassengerMinPercent, max = MaxPercent, step = StepPercent,
-            scalarMultiplier = 1, unit = Unit.kPercentage)]
-        [SettingsUISection(ActionsTab, PassengerGroup)]
+        [SettingsUISlider(min = PassengerMinPercent, max = MaxPercent, step = StepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
+        [SettingsUISection(PublicTransitTab, PassengerGroup)]
         public float TramPassengerScalar
         {
             get; set;
         }
 
-        [SettingsUISlider(min = PassengerMinPercent, max = MaxPercent, step = StepPercent,
-            scalarMultiplier = 1, unit = Unit.kPercentage)]
-        [SettingsUISection(ActionsTab, PassengerGroup)]
+        [SettingsUISlider(min = PassengerMinPercent, max = MaxPercent, step = StepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
+        [SettingsUISection(PublicTransitTab, PassengerGroup)]
         public float TrainPassengerScalar
         {
             get; set;
         }
 
-        [SettingsUISlider(min = PassengerMinPercent, max = MaxPercent, step = StepPercent,
-            scalarMultiplier = 1, unit = Unit.kPercentage)]
-        [SettingsUISection(ActionsTab, PassengerGroup)]
+        [SettingsUISlider(min = PassengerMinPercent, max = MaxPercent, step = StepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
+        [SettingsUISection(PublicTransitTab, PassengerGroup)]
         public float SubwayPassengerScalar
         {
             get; set;
         }
 
-        // Passenger-only types (not cargo).
-
-        [SettingsUISlider(min = PassengerMinPercent, max = MaxPercent, step = StepPercent,
-            scalarMultiplier = 1, unit = Unit.kPercentage)]
-        [SettingsUISection(ActionsTab, PassengerGroup)]
+        [SettingsUISlider(min = PassengerMinPercent, max = MaxPercent, step = StepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
+        [SettingsUISection(PublicTransitTab, PassengerGroup)]
         public float ShipPassengerScalar
         {
             get; set;
         }
 
-        [SettingsUISlider(min = PassengerMinPercent, max = MaxPercent, step = StepPercent,
-            scalarMultiplier = 1, unit = Unit.kPercentage)]
-        [SettingsUISection(ActionsTab, PassengerGroup)]
+        [SettingsUISlider(min = PassengerMinPercent, max = MaxPercent, step = StepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
+        [SettingsUISection(PublicTransitTab, PassengerGroup)]
         public float FerryPassengerScalar
         {
             get; set;
         }
 
-        [SettingsUISlider(min = PassengerMinPercent, max = MaxPercent, step = StepPercent,
-            scalarMultiplier = 1, unit = Unit.kPercentage)]
-        [SettingsUISection(ActionsTab, PassengerGroup)]
+        [SettingsUISlider(min = PassengerMinPercent, max = MaxPercent, step = StepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
+        [SettingsUISection(PublicTransitTab, PassengerGroup)]
         public float AirplanePassengerScalar
         {
             get; set;
         }
 
-        // Convenience button: set all passenger sliders to 200% (2.0x).
         [SettingsUIButtonGroup(PassengerGroup)]
         [SettingsUIButton]
-        [SettingsUISection(ActionsTab, PassengerGroup)]
+        [SettingsUISection(PublicTransitTab, PassengerGroup)]
         public bool DoublePassengersButton
         {
             set
@@ -268,14 +303,13 @@ namespace AdjustTransitCapacity
                 FerryPassengerScalar = 200f;
                 AirplanePassengerScalar = 200f;
 
-                Apply();
+                ApplyAndSave();
             }
         }
 
-        // Convenience button: set all passenger to vanilla defaults (100%).
         [SettingsUIButtonGroup(PassengerGroup)]
         [SettingsUIButton]
-        [SettingsUISection(ActionsTab, PassengerGroup)]
+        [SettingsUISection(PublicTransitTab, PassengerGroup)]
         public bool ResetPassengerToVanillaButton
         {
             set
@@ -286,21 +320,154 @@ namespace AdjustTransitCapacity
                 }
 
                 ResetPassengerToVanilla();
-                Apply();
+                ApplyAndSave();
             }
         }
 
-        // --------------------
-        // About tab: info/link
-        // --------------------
+        // ----------------------------
+        // Services tab (Tab 2)
+        // ----------------------------
+
+        // Delivery / cargo (scalar).
+
+        [SettingsUISlider(min = ServiceMinScalar, max = ServiceMaxScalar, step = ServiceStepScalar)]
+        [SettingsUISection(ServicesTab, DeliveryGroup)]
+        public float SemiTruckCargoScalar { get; set; } = 1f;
+
+        [SettingsUISlider(min = ServiceMinScalar, max = ServiceMaxScalar, step = ServiceStepScalar)]
+        [SettingsUISection(ServicesTab, DeliveryGroup)]
+        public float DeliveryVanCargoScalar { get; set; } = 1f;
+
+        // Property name retained for backward compatibility.
+        [SettingsUISlider(min = ServiceMinScalar, max = ServiceMaxScalar, step = ServiceStepScalar)]
+        [SettingsUISection(ServicesTab, DeliveryGroup)]
+        public float OilTruckCargoScalar { get; set; } = 1f;
+
+        [SettingsUISlider(min = ServiceMinScalar, max = ServiceMaxScalar, step = ServiceStepScalar)]
+        [SettingsUISection(ServicesTab, DeliveryGroup)]
+        public float MotorbikeDeliveryCargoScalar { get; set; } = 1f;
+
+        [SettingsUIButtonGroup(DeliveryGroup)]
+        [SettingsUIButton]
+        [SettingsUISection(ServicesTab, DeliveryGroup)]
+        public bool ResetDeliveryToVanillaButton
+        {
+            set
+            {
+                if (!value)
+                {
+                    return;
+                }
+
+                SemiTruckCargoScalar = 1f;
+                DeliveryVanCargoScalar = 1f;
+                OilTruckCargoScalar = 1f;
+                MotorbikeDeliveryCargoScalar = 1f;
+
+                ApplyAndSave();
+            }
+        }
+
+        // Cargo stations (scalar).
+
+        [SettingsUISlider(min = ServiceMinScalar, max = ServiceMaxScalar, step = ServiceStepScalar)]
+        [SettingsUISection(ServicesTab, CargoStationsGroup)]
+        public float CargoStationMaxTrucksScalar { get; set; } = 1f;
+
+        [SettingsUIButtonGroup(CargoStationsGroup)]
+        [SettingsUIButton]
+        [SettingsUISection(ServicesTab, CargoStationsGroup)]
+        public bool ResetCargoStationsToVanillaButton
+        {
+            set
+            {
+                if (!value)
+                {
+                    return;
+                }
+
+                CargoStationMaxTrucksScalar = 1f;
+                ApplyAndSave();
+            }
+        }
+
+        // Road maintenance (scalar).
+
+        [SettingsUISlider(min = ServiceMinScalar, max = ServiceMaxScalar, step = ServiceStepScalar)]
+        [SettingsUISection(ServicesTab, RoadMaintenanceGroup)]
+        public float RoadMaintenanceVehicleCapacityScalar { get; set; } = 1f;
+
+        [SettingsUISlider(min = ServiceMinScalar, max = ServiceMaxScalar, step = ServiceStepScalar)]
+        [SettingsUISection(ServicesTab, RoadMaintenanceGroup)]
+        public float RoadMaintenanceVehicleRateScalar { get; set; } = 1f;
+
+        [SettingsUISlider(min = ServiceMinScalar, max = ServiceMaxScalar, step = ServiceStepScalar)]
+        [SettingsUISection(ServicesTab, RoadMaintenanceGroup)]
+        public float RoadMaintenanceDepotScalar { get; set; } = 1f;
+
+        [SettingsUIButtonGroup(RoadMaintenanceGroup)]
+        [SettingsUIButton]
+        [SettingsUISection(ServicesTab, RoadMaintenanceGroup)]
+        public bool ResetRoadMaintenanceToVanillaButton
+        {
+            set
+            {
+                if (!value)
+                {
+                    return;
+                }
+
+                RoadMaintenanceVehicleCapacityScalar = 1f;
+                RoadMaintenanceVehicleRateScalar = 1f;
+                RoadMaintenanceDepotScalar = 1f;
+
+                ApplyAndSave();
+            }
+        }
+
+        // Park maintenance (scalar).
+
+        [SettingsUISlider(min = ServiceMinScalar, max = ServiceMaxScalar, step = ServiceStepScalar)]
+        [SettingsUISection(ServicesTab, ParkMaintenanceGroup)]
+        public float ParkMaintenanceVehicleCapacityScalar { get; set; } = 1f;
+
+        [SettingsUISlider(min = ServiceMinScalar, max = ServiceMaxScalar, step = ServiceStepScalar)]
+        [SettingsUISection(ServicesTab, ParkMaintenanceGroup)]
+        public float ParkMaintenanceVehicleRateScalar { get; set; } = 1f;
+
+        [SettingsUISlider(min = ServiceMinScalar, max = ServiceMaxScalar, step = ServiceStepScalar)]
+        [SettingsUISection(ServicesTab, ParkMaintenanceGroup)]
+        public float ParkMaintenanceDepotScalar { get; set; } = 1f;
+
+        [SettingsUIButtonGroup(ParkMaintenanceGroup)]
+        [SettingsUIButton]
+        [SettingsUISection(ServicesTab, ParkMaintenanceGroup)]
+        public bool ResetParkMaintenanceToVanillaButton
+        {
+            set
+            {
+                if (!value)
+                {
+                    return;
+                }
+
+                ParkMaintenanceVehicleCapacityScalar = 1f;
+                ParkMaintenanceVehicleRateScalar = 1f;
+                ParkMaintenanceDepotScalar = 1f;
+
+                ApplyAndSave();
+            }
+        }
+
+        // -------------------------
+        // About tab (Tab 3)
+        // -------------------------
 
         [SettingsUISection(AboutTab, AboutInfoGroup)]
         public string ModNameDisplay => $"{Mod.ModName} {Mod.ModTag}";
 
         [SettingsUISection(AboutTab, AboutInfoGroup)]
         public string ModVersionDisplay => Mod.ModVersion;
-
-        // About tab: links
 
         [SettingsUIButtonGroup(AboutLinksGroup)]
         [SettingsUIButton]
@@ -318,9 +485,8 @@ namespace AdjustTransitCapacity
                 {
                     Application.OpenURL(UrlParadox);
                 }
-                catch (Exception)
+                catch
                 {
-                    // ignore
                 }
             }
         }
@@ -341,23 +507,17 @@ namespace AdjustTransitCapacity
                 {
                     Application.OpenURL(UrlDiscord);
                 }
-                catch (Exception)
+                catch
                 {
-                    // ignore
                 }
             }
         }
-
-        // About tab: debug toggle
 
         [SettingsUISection(AboutTab, DebugGroup)]
         public bool EnableDebugLogging
         {
             get; set;
         }
-
-        // ABOUT TAB: Open Log Button
-        // Opens the log file if it exists, or the log folder if not.
 
         [SettingsUIButtonGroup(LogGroup)]
         [SettingsUIButton]
@@ -373,7 +533,6 @@ namespace AdjustTransitCapacity
 
                 try
                 {
-                    // 1. Prefer logPath from the logger if available.
                     string? logPath = null;
 
                     if (Mod.s_Log is UnityLogger unityLogger &&
@@ -383,21 +542,17 @@ namespace AdjustTransitCapacity
                     }
                     else
                     {
-                        // Fallback orig method path
-                        var logsDir = Path.Combine(Application.persistentDataPath, "Logs");
+                        string logsDir = Path.Combine(Application.persistentDataPath, "Logs");
                         logPath = Path.Combine(logsDir, "AdjustTransitCapacity.log");
                     }
 
-                    // 2. Try to open the log file with Unity (works cross-platform)
                     if (!string.IsNullOrEmpty(logPath) && File.Exists(logPath))
                     {
                         OpenWithUnityFileUrl(logPath);
                         return;
                     }
 
-                    // 3. If no file, try the folder.
-                    var folder = Path.GetDirectoryName(logPath ?? string.Empty);
-
+                    string? folder = Path.GetDirectoryName(logPath ?? string.Empty);
                     if (!string.IsNullOrEmpty(folder) && Directory.Exists(folder))
                     {
                         OpenWithUnityFileUrl(folder, isDirectory: true);
@@ -408,15 +563,14 @@ namespace AdjustTransitCapacity
                 }
                 catch (Exception ex)
                 {
-                    // Unity fails for any reason, then use Windows shell (always works).
                     try
                     {
-                        var logsDir = Path.Combine(Application.persistentDataPath, "Logs");
-                        var logPath = Path.Combine(logsDir, "AdjustTransitCapacity.log");
+                        string logsDir = Path.Combine(Application.persistentDataPath, "Logs");
+                        string logPath2 = Path.Combine(logsDir, "AdjustTransitCapacity.log");
 
-                        if (File.Exists(logPath))
+                        if (File.Exists(logPath2))
                         {
-                            var psi = new ProcessStartInfo(logPath)
+                            var psi = new ProcessStartInfo(logPath2)
                             {
                                 UseShellExecute = true,
                                 ErrorDialog = false,
@@ -439,7 +593,6 @@ namespace AdjustTransitCapacity
                     }
                     catch
                     {
-                        // Do not crash options UI, just log problem.
                     }
 
                     Mod.s_Log.Warn($"{Mod.ModTag} OpenLogButton failed: {ex.GetType().Name}: {ex.Message}");
@@ -447,29 +600,9 @@ namespace AdjustTransitCapacity
             }
         }
 
-        // ----------------
-        // HELPERS: logging
-        // ----------------
-
-        // Helper: open a file or folder via Unity, using a file:/// URI.
-        private static void OpenWithUnityFileUrl(string path, bool isDirectory = false)
-        {
-            // Normalize to forward slashes for URI.
-            string normalized = path.Replace('\\', '/');
-
-            // Some platforms like a trailing slash for directories.
-            if (isDirectory && !normalized.EndsWith("/", StringComparison.Ordinal))
-            {
-                normalized += "/";
-            }
-
-            string uri = "file:///" + normalized;
-            Application.OpenURL(uri);
-        }
-
-        // -------------------------
-        // Helpers: slider defaults
-        // -------------------------
+        // ------------------------------
+        // Helpers
+        // ------------------------------
 
         public void ResetDepotToVanilla()
         {
@@ -489,6 +622,38 @@ namespace AdjustTransitCapacity
             ShipPassengerScalar = 100f;
             FerryPassengerScalar = 100f;
             AirplanePassengerScalar = 100f;
+        }
+
+        private static void OpenWithUnityFileUrl(string path, bool isDirectory = false)
+        {
+            string normalized = path.Replace('\\', '/');
+
+            if (isDirectory && !normalized.EndsWith("/", StringComparison.Ordinal))
+            {
+                normalized += "/";
+            }
+
+            string uri = "file:///" + normalized;
+            Application.OpenURL(uri);
+        }
+
+        private void EnsureServiceDefaults()
+        {
+            // Older config files can load missing fields as 0; clamp to safe defaults.
+
+            if (SemiTruckCargoScalar <= 0f) SemiTruckCargoScalar = 1f;
+            if (DeliveryVanCargoScalar <= 0f) DeliveryVanCargoScalar = 1f;
+            if (OilTruckCargoScalar <= 0f)  OilTruckCargoScalar = 1f;
+            if (MotorbikeDeliveryCargoScalar <= 0f) MotorbikeDeliveryCargoScalar = 1f;
+            if (CargoStationMaxTrucksScalar <= 0f) CargoStationMaxTrucksScalar = 1f;
+
+            if (RoadMaintenanceVehicleCapacityScalar <= 0f) RoadMaintenanceVehicleCapacityScalar = 1f;
+            if (RoadMaintenanceVehicleRateScalar <= 0f) RoadMaintenanceVehicleRateScalar = 1f;
+            if (RoadMaintenanceDepotScalar <= 0f) RoadMaintenanceDepotScalar = 1f;
+
+            if (ParkMaintenanceVehicleCapacityScalar <= 0f) ParkMaintenanceVehicleCapacityScalar = 1f;
+            if (ParkMaintenanceVehicleRateScalar <= 0f) ParkMaintenanceVehicleRateScalar = 1f;
+            if (ParkMaintenanceDepotScalar <= 0f) ParkMaintenanceDepotScalar = 1f;
         }
     }
 }

@@ -10,7 +10,7 @@
 		<PublishConfigurationPath>Properties\PublishConfiguration.xml</PublishConfigurationPath>
 
   <!-- Single source of truth for version number -->
-	  <Version>1.3.4</Version>
+	  <Version>1.3.5</Version>
 	<AssemblyVersion>$(Version).0</AssemblyVersion>
 	<FileVersion>$(Version).0</FileVersion>  <!-- for file properties -->
 
@@ -23,6 +23,15 @@
 	<!-- CS2 toolchain -->
 	<Import Project="$([System.Environment]::GetEnvironmentVariable('CSII_TOOLPATH', 'EnvironmentVariableTarget.User'))\Mod.props" />
 	<Import Project="$([System.Environment]::GetEnvironmentVariable('CSII_TOOLPATH', 'EnvironmentVariableTarget.User'))\Mod.targets" />
+	<ItemGroup>
+	  <Compile Remove="Localization\LocaleIT.cs" />
+	  <Compile Remove="Localization\LocaleJA.cs" />
+	  <Compile Remove="Localization\LocaleKO.cs" />
+	  <Compile Remove="Localization\LocalePL.cs" />
+	  <Compile Remove="Localization\LocalePT_BR.cs" />
+	  <Compile Remove="Localization\LocaleZH_CN.cs" />
+	  <Compile Remove="Localization\LocaleZH_HANT.cs" />
+	</ItemGroup>
 
 	<ItemGroup>
 		<Reference Include="Game">

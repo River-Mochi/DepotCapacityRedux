@@ -33,8 +33,7 @@
 - River-Mochi - author and maintainer
 - Inspired by Wayz's original Depot Capacity Changer.
 - yenyang - code review and technical advice
-- Necko1996 - testing
-- BugsyG - testing
+- Necko1996, BugsyG - testing
 - StarQ for technical advice
 
 tags: ATC, city transit, control municipal, public transit system, change size, increase people passengers, increase depot size demand, decrease passengers
@@ -52,14 +51,16 @@ tags: ATC, city transit, control municipal, public transit system, change size, 
 	<!--Link to the forum post where the mod can be discussed-->
 	<ForumLink Value="https://forum.paradoxplaza.com/forum/threads/adjust-transit-capacity.1866178/" />
 	<!--Version of the mod-->
-	<ModVersion Value="1.3.4" />
+	<ModVersion Value="1.3.5" />
 	<!--Recommended version of the base game to use the mod-->
 	<GameVersion Value="1.5.*" />
 	<!--Dependency for the mod, can be set multiple times-->
 	<Dependency Id="" />
 	<!-- Change log for new version. Single line or multi line. Supports minimal markdown subset -->
 	<ChangeLog>
-* update/fix paradox link for name
+* added Raw Materials dump trucks (oil, coal, ore, stone)
+* added Delivery Vans, Motorbike Delivery
+* added Road Maintenance, Park Maintenance
 </ChangeLog>
 	<!--External link. supported types are discord, github, youtube, twitch, x, paypal, patreon-->
 <ExternalLink Type="discord" Url="https://discord.gg/HTav7ARPs2" />
