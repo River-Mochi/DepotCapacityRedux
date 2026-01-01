@@ -26,7 +26,7 @@ namespace AdjustTransitCapacity
         }
 
         // Keep this conservative; keyword scan can explode logs fast.
-        private const int kMaxKeywordMatches = 800;
+        private const int kMaxKeywordMatches = 600;
 
         public static void RunServiceVerboseScan(ref SystemState state, PrefabSystem? prefabSystem)
         {
