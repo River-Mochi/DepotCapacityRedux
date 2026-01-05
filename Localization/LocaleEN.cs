@@ -3,8 +3,8 @@
 
 namespace AdjustTransitCapacity
 {
-    using System.Collections.Generic;
     using Colossal;
+    using System.Collections.Generic;
 
     public sealed class LocaleEN : IDictionarySource
     {
@@ -181,19 +181,19 @@ namespace AdjustTransitCapacity
 
                 // Road maintenance (scalar sliders)
 
-                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.RoadMaintenanceVehicleCapacityScalar)), "Road repair truck capacity" },
+                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.RoadMaintenanceVehicleCapacityScalar)), "Repair truck capacity" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.RoadMaintenanceVehicleCapacityScalar)),
                     "**Road maintenance** truck capacity.\n" +
                     "Capacity = how much total work a truck can do before it must return to a facility." },
 
-                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.RoadMaintenanceVehicleRateScalar)), "Road repair truck rate" },
+                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.RoadMaintenanceVehicleRateScalar)), "Repair truck rate" },
                 {  m_Setting.GetOptionDescLocaleID(nameof(Setting.RoadMaintenanceVehicleRateScalar)),
                     "**Road maintenance** truck work rate.\n" +
                     "How much work it does per tick while stopped (maxMaintenanceAmount).\n" +
                     "This directly controls “how long it sits and blocks a lane.\n" +
                     "There also seems to be animation time." },
 
-                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.RoadMaintenanceDepotScalar)), "Road Depot fleet size" },
+                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.RoadMaintenanceDepotScalar)), "Depot fleet size" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.RoadMaintenanceDepotScalar)),
                     "**Road Maintenance Depot** maximum allowed vehicles.\n" +
                     "Changes the number of vehicles each Road building is assigned." },
@@ -204,17 +204,17 @@ namespace AdjustTransitCapacity
 
                 // Park maintenance (scalar sliders)
 
-                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.ParkMaintenanceVehicleCapacityScalar)), "Park maintenance vehicle capacity" },
+                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.ParkMaintenanceVehicleCapacityScalar)), "Vehicle capacity" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.ParkMaintenanceVehicleCapacityScalar)),
                     "**Park maintenance** vehicle capacity.\n" +
                      "Capacity = how much total work a truck can do before it must return to a facility." },
 
-                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.ParkMaintenanceVehicleRateScalar)), "Park maintenance vehicle rate" },
+                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.ParkMaintenanceVehicleRateScalar)), "Vehicle rate" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.ParkMaintenanceVehicleRateScalar)),
                     "**Park maintenance** truck work rate.\n" +
                     "How much work it does per tick while stopped.\n" },
 
-                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.ParkMaintenanceDepotScalar)), "Park maintenance depot fleet size" },
+                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.ParkMaintenanceDepotScalar)), "Depot fleet size" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.ParkMaintenanceDepotScalar)),
                     "**Park Maintenance Depot** max vehicles allowed.\n" +
                     "Fleet size: how many trucks a building is allowed to have." },
