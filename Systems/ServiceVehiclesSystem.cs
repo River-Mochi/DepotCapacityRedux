@@ -6,17 +6,18 @@
 // - Uses PrefabSystem + PrefabBase to read vanilla/base values so results do NOT stack.
 // - Writes back vanilla values when scalar is 1x (fixes "stuck doubled" issue).
 // - Treats 0 base values as VALID for certain prefab types (tractors, sub-prefabs, etc.) and skips them.
+// - Also applies RoadWearScalar safely by scaling LaneDeteriorationData.m_TimeFactor on lane prefabs (non-stacking).
 
 namespace AdjustTransitCapacity
 {
-    using System;
-    using System.Collections.Generic;
     using Colossal.Serialization.Entities;
     using Game;
     using Game.Companies;
     using Game.Prefabs;
     using Game.SceneFlow;
     using Game.Simulation;      // MaintenanceType
+    using System;
+    using System.Collections.Generic;
     using Unity.Entities;
 
     public sealed partial class ServiceVehiclesSystem : GameSystemBase
@@ -29,7 +30,11 @@ namespace AdjustTransitCapacity
         private Dictionary<Entity, (int Cap, int Rate)> m_MaintenanceBase = null!;
         private Dictionary<Entity, int> m_MaintenanceDepotBaseVehicleCapacity = null!;
 
+        // Road wear cache (per city) — prevents stacking when player changes slider.
+        private Dictionary<Entity, float> m_LaneDeteriorationBaseTimeFactor = null!;
+
         private bool m_DidVerboseScanThisRun; // one-time scan guard when Verbose is enabled
+        private static bool s_LoggedPrefabNameException;
 
         protected override void OnCreate()
         {
@@ -41,10 +46,11 @@ namespace AdjustTransitCapacity
             m_DeliveryTruckBaseCargoCapacity = new Dictionary<Entity, int>();
             m_MaintenanceBase = new Dictionary<Entity, (int Cap, int Rate)>();
             m_MaintenanceDepotBaseVehicleCapacity = new Dictionary<Entity, int>();
+            m_LaneDeteriorationBaseTimeFactor = new Dictionary<Entity, float>();
 
             EntityQuery anyPrefabQuery = SystemAPI.QueryBuilder()
                 .WithAll<PrefabData>()
-                .WithAny<TransportCompanyData, DeliveryTruckData, MaintenanceVehicleData, MaintenanceDepotData>()
+                .WithAny<TransportCompanyData, DeliveryTruckData, MaintenanceVehicleData, MaintenanceDepotData, LaneDeteriorationData>()
                 .Build();
 
             RequireForUpdate(anyPrefabQuery);
@@ -69,6 +75,8 @@ namespace AdjustTransitCapacity
             m_DeliveryTruckBaseCargoCapacity.Clear();
             m_MaintenanceBase.Clear();
             m_MaintenanceDepotBaseVehicleCapacity.Clear();
+            m_LaneDeteriorationBaseTimeFactor.Clear();
+
             m_DidVerboseScanThisRun = false;
 
             Mod.s_Log.Info($"{Mod.ModTag} City Loading Complete -> applying ServiceVehicles settings");
@@ -100,11 +108,43 @@ namespace AdjustTransitCapacity
             }
 
             // -------------------------
+            // Road wear speed: LaneDeteriorationData.m_TimeFactor (prefab lanes)
+            // -------------------------
+            {
+                float wearScalar = ClampRoadWearScalar(settings.RoadWearScalar);
+
+                foreach ((RefRW<LaneDeteriorationData> laneRef, Entity prefabEntity) in SystemAPI
+                             .Query<RefRW<LaneDeteriorationData>>()
+                             .WithAll<PrefabData>()
+                             .WithEntityAccess())
+                {
+                    ref LaneDeteriorationData data = ref laneRef.ValueRW;
+
+                    float baseFactor = GetOrCacheLaneDeteriorationBase(prefabEntity, data.m_TimeFactor);
+                    float newFactor = baseFactor * wearScalar;
+
+                    // Keep sane
+                    if (newFactor < 0f)
+                        newFactor = 0f;
+
+                    if (!Approximately(data.m_TimeFactor, newFactor))
+                    {
+                        if (verbose)
+                        {
+                            Mod.s_Log.Info($"{Mod.ModTag} RoadWear: '{GetPrefabName(prefabEntity)}' BaseTimeFactor={baseFactor:0.###} x{wearScalar:0.###} -> {newFactor:0.###}");
+                        }
+
+                        data.m_TimeFactor = newFactor;
+                    }
+                }
+            }
+
+            // -------------------------
             // Maintenance depots: max vehicles (prefabs)
             // -------------------------
             {
-                float roadDepotScalar = ClampScalar(settings.RoadMaintenanceDepotScalar);
-                float parkDepotScalar = ClampScalar(settings.ParkMaintenanceDepotScalar);
+                float roadDepotScalar = ClampMaintenanceFleetScalar(settings.RoadMaintenanceDepotScalar);
+                float parkDepotScalar = ClampMaintenanceFleetScalar(settings.ParkMaintenanceDepotScalar);
 
                 foreach ((RefRW<MaintenanceDepotData> depotRef, Entity prefabEntity) in SystemAPI
                              .Query<RefRW<MaintenanceDepotData>>()
@@ -147,6 +187,10 @@ namespace AdjustTransitCapacity
                     float scalar = isPark ? parkDepotScalar : roadDepotScalar;
                     int newVehicles = SafeMulIntAllowZero(baseVehicles, scalar);
 
+                    // Enforce a practical minimum of 2 when base > 0 (your preference).
+                    if (baseVehicles > 0 && newVehicles == 1)
+                        newVehicles = 2;
+
                     if (newVehicles != data.m_VehicleCapacity)
                     {
                         if (verbose)
@@ -164,7 +208,7 @@ namespace AdjustTransitCapacity
             // Cargo Stations: max trucks (TransportCompanyData.m_MaxTransports)
             // -------------------------
             {
-                float scalar = ClampScalar(settings.CargoStationMaxTrucksScalar);
+                float scalar = ClampServiceScalar(settings.CargoStationMaxTrucksScalar);
 
                 foreach ((RefRW<TransportCompanyData> companyRef, Entity prefabEntity) in SystemAPI
                              .Query<RefRW<TransportCompanyData>>()
@@ -199,10 +243,10 @@ namespace AdjustTransitCapacity
             // Delivery trucks: buckets (semi / vans / raw materials / motorbikes)
             // -------------------------
             {
-                float semiScalar = ClampScalar(settings.SemiTruckCargoScalar);
-                float vanScalar = ClampScalar(settings.DeliveryVanCargoScalar);
-                float rawScalar = ClampScalar(settings.OilTruckCargoScalar);            // UI label may change; keep data stable
-                float bikeScalar = ClampScalar(settings.MotorbikeDeliveryCargoScalar);
+                float semiScalar = ClampServiceScalar(settings.SemiTruckCargoScalar);
+                float vanScalar = ClampServiceScalar(settings.DeliveryVanCargoScalar);
+                float rawScalar = ClampServiceScalar(settings.OilTruckCargoScalar);            // UI label may change; keep data stable
+                float bikeScalar = ClampServiceScalar(settings.MotorbikeDeliveryCargoScalar);
 
                 foreach ((RefRW<DeliveryTruckData> truckRef, Entity prefabEntity) in SystemAPI
                              .Query<RefRW<DeliveryTruckData>>()
@@ -264,11 +308,11 @@ namespace AdjustTransitCapacity
             // Maintenance vehicles: capacity + rate (prefabs)
             // -------------------------
             {
-                float roadCapScalar = ClampScalar(settings.RoadMaintenanceVehicleCapacityScalar);
-                float roadRateScalar = ClampScalar(settings.RoadMaintenanceVehicleRateScalar);
+                float roadCapScalar = ClampServiceScalar(settings.RoadMaintenanceVehicleCapacityScalar);
+                float roadRateScalar = ClampMaintenanceRateScalar(settings.RoadMaintenanceVehicleRateScalar);
 
-                float parkCapScalar = ClampScalar(settings.ParkMaintenanceVehicleCapacityScalar);
-                float parkRateScalar = ClampScalar(settings.ParkMaintenanceVehicleRateScalar);
+                float parkCapScalar = ClampServiceScalar(settings.ParkMaintenanceVehicleCapacityScalar);
+                float parkRateScalar = ClampMaintenanceRateScalar(settings.ParkMaintenanceVehicleRateScalar);
 
                 foreach ((RefRW<MaintenanceVehicleData> mvRef, Entity prefabEntity) in SystemAPI
                              .Query<RefRW<MaintenanceVehicleData>>()
@@ -338,13 +382,47 @@ namespace AdjustTransitCapacity
         // Helpers
         // -------------------------
 
-        private static float ClampScalar(float scalar)
+        private static float ClampServiceScalar(float scalar)
         {
             if (scalar < Setting.ServiceMinScalar)
                 return Setting.ServiceMinScalar;
             if (scalar > Setting.ServiceMaxScalar)
                 return Setting.ServiceMaxScalar;
             return scalar;
+        }
+
+        private static float ClampMaintenanceRateScalar(float scalar)
+        {
+            if (scalar < Setting.MaintenanceRateMinScalar)
+                return Setting.MaintenanceRateMinScalar;
+            if (scalar > Setting.MaintenanceRateMaxScalar)
+                return Setting.MaintenanceRateMaxScalar;
+            return scalar;
+        }
+
+        private static float ClampMaintenanceFleetScalar(float scalar)
+        {
+            if (scalar < Setting.MaintenanceFleetMinScalar)
+                return Setting.MaintenanceFleetMinScalar;
+            if (scalar > Setting.MaintenanceFleetMaxScalar)
+                return Setting.MaintenanceFleetMaxScalar;
+            return scalar;
+        }
+
+        private static float ClampRoadWearScalar(float scalar)
+        {
+            if (scalar < Setting.RoadWearMinScalar)
+                return Setting.RoadWearMinScalar;
+            if (scalar > Setting.RoadWearMaxScalar)
+                return Setting.RoadWearMaxScalar;
+            return scalar;
+        }
+
+        private static bool Approximately(float a, float b)
+        {
+            float d = a - b;
+            if (d < 0f) d = -d;
+            return d <= 0.0001f;
         }
 
         private static int SafeMulInt(int baseValue, float scalar)
@@ -361,6 +439,19 @@ namespace AdjustTransitCapacity
                 return 0;                // preserve 0 (tractor/sub-prefab/etc.)
             int v = (int)(baseValue * scalar);
             return v < 1 ? 1 : v;
+        }
+
+        private float GetOrCacheLaneDeteriorationBase(Entity prefabEntity, float currentFactor)
+        {
+            if (m_LaneDeteriorationBaseTimeFactor.TryGetValue(prefabEntity, out float baseFactor))
+            {
+                return baseFactor;
+            }
+
+            // First run after load: current is vanilla/base -> cache it.
+            baseFactor = currentFactor;
+            m_LaneDeteriorationBaseTimeFactor[prefabEntity] = baseFactor;
+            return baseFactor;
         }
 
         private int GetOrCacheCargoStationBase(Entity prefabEntity, int currentValue)
@@ -403,7 +494,7 @@ namespace AdjustTransitCapacity
 
             int vanilla = 0;
             if (TryGetDeliveryTruckVanillaCargo(prefabEntity, out vanilla) && vanilla >= 0)
-                baseCap = vanilla; // allow 0 (tractor-only) as a valid vanilla base
+                baseCap = vanilla; // allow 0 (tractors) as a valid vanilla base
             else
                 baseCap = currentValue;
 
@@ -511,9 +602,13 @@ namespace AdjustTransitCapacity
                     return prefabBase.name ?? "(unnamed)";
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // ignore (never crash a city because of logging)
+                if (!s_LoggedPrefabNameException)
+                {
+                    s_LoggedPrefabNameException = true;
+                    Mod.s_Log.Warn($"{Mod.ModTag} GetPrefabName failed once: {ex.GetType().Name}: {ex.Message}");
+                }
             }
 
             return $"PrefabEntity={prefabEntity.Index}:{prefabEntity.Version}";

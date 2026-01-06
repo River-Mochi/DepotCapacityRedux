@@ -3,9 +3,6 @@
 
 namespace AdjustTransitCapacity
 {
-    using System;
-    using System.Diagnostics;
-    using System.IO;
     using Colossal.IO.AssetDatabase;
     using Colossal.Logging;
     using Game;
@@ -13,51 +10,33 @@ namespace AdjustTransitCapacity
     using Game.SceneFlow;
     using Game.Settings;
     using Game.UI;
+    using System;
+    using System.Diagnostics;
+    using System.IO;
     using Unity.Entities;
     using UnityEngine;
 
     [FileLocation("ModsSettings/AdjustTransitCapacity/AdjustTransitCapacity")]
-    [SettingsUITabOrder(
-        PublicTransitTab, ServicesTab, AboutTab
-    )]
+    [SettingsUITabOrder( PublicTransitTab, IndustryTab, ParksRoadsTab, AboutTab )]
     [SettingsUIGroupOrder(
-        // Public-Transit tab
-        PassengerGroup, DepotGroup,
-
-        // Services tab
-        DeliveryGroup,
-        CargoStationsGroup,
-        RoadMaintenanceGroup,
-        ParkMaintenanceGroup,
-
-        // About tab
-        AboutInfoGroup,
-        AboutLinksGroup,
-        DebugGroup,
-        LogGroup
+        DepotGroup, PassengerGroup,                     // Public-Transit tab                           
+        DeliveryGroup, CargoStationsGroup,              // Industry tab                                     
+        RoadMaintenanceGroup, ParkMaintenanceGroup,     // Parks-Roads tab
+        AboutInfoGroup, AboutLinksGroup, DebugGroup, LogGroup   // About tab
     )]
     [SettingsUIShowGroupName(
-        // Public-Transit tab
-        DepotGroup,
-        PassengerGroup,
-
-        // Services tab
-        DeliveryGroup,
-        CargoStationsGroup,
-        RoadMaintenanceGroup,
-        ParkMaintenanceGroup,
-
-        // About tab
-        AboutLinksGroup,
-        DebugGroup,
-        LogGroup
+        DepotGroup, PassengerGroup,                     // Public-Transit tab                                               
+        DeliveryGroup, CargoStationsGroup,              // Industry tab
+        RoadMaintenanceGroup, ParkMaintenanceGroup,     // Parks-Roads tab
+        AboutLinksGroup, DebugGroup, LogGroup           // About tab
     )]
     public sealed class Setting : ModSetting
     {
         // Tab ids (must match Locale ids).
-        public const string PublicTransitTab = "Public-Transit";
-        public const string ServicesTab = "Services";
-        public const string AboutTab = "About";
+        public const string PublicTransitTab    = "Public-Transit";
+        public const string IndustryTab         = "Industry";
+        public const string ParksRoadsTab       = "Parks-Roads";
+        public const string AboutTab            = "About";
 
         // Group ids (must match Locale ids).
         public const string DepotGroup = "DepotCapacity";
@@ -65,6 +44,7 @@ namespace AdjustTransitCapacity
 
         public const string DeliveryGroup = "DeliveryVehicles";
         public const string CargoStationsGroup = "CargoStations";
+
         public const string RoadMaintenanceGroup = "RoadMaintenance";
         public const string ParkMaintenanceGroup = "ParkMaintenance";
 
@@ -79,10 +59,27 @@ namespace AdjustTransitCapacity
         public const float MaxPercent = 1000f;
         public const float StepPercent = 10f;
 
-        // Services sliders (scalar).
+        // Generic Services sliders (scalar).
         public const float ServiceMinScalar = 1f;
         public const float ServiceMaxScalar = 10f;
         public const float ServiceStepScalar = 1f;
+
+        // Maintenance-specific sliders.
+        // Fleet size: allow reducing traffic by lowering allowed vehicles per depot.
+        public const float MaintenanceFleetMinScalar = 0.2f; // 20% of vanilla fleet
+        public const float MaintenanceFleetMaxScalar = 10f;
+        public const float MaintenanceFleetStepScalar = 0.1f;
+
+        // Rate: make stops visibly shorter on heavily worn networks.
+        public const float MaintenanceRateMinScalar = 0.5f; // allow slower for experimentation
+        public const float MaintenanceRateMaxScalar = 20f;
+        public const float MaintenanceRateStepScalar = 0.5f;
+
+        // Road wear speed (LaneDeteriorationData.m_TimeFactor multiplier).
+        // 0.2x = 5x slower wear, 2.0x = 2x faster wear.
+        public const float RoadWearMinScalar = 0.2f;
+        public const float RoadWearMaxScalar = 2.0f;
+        public const float RoadWearStepScalar = 0.1f;
 
         private const string UrlParadox =
             "https://mods.paradoxplaza.com/authors/River-mochi/cities_skylines_2?games=cities_skylines_2&orderBy=desc&sortBy=best&time=alltime";
@@ -116,10 +113,13 @@ namespace AdjustTransitCapacity
             MotorbikeDeliveryCargoScalar = 1f;
             CargoStationMaxTrucksScalar = 1f;
 
+            // Road maintenance
+            RoadWearScalar = 1f; // vanilla wear speed
             RoadMaintenanceVehicleCapacityScalar = 1f;
             RoadMaintenanceVehicleRateScalar = 1f;
             RoadMaintenanceDepotScalar = 1f;
 
+            // Park maintenance
             ParkMaintenanceVehicleCapacityScalar = 1f;
             ParkMaintenanceVehicleRateScalar = 1f;
             ParkMaintenanceDepotScalar = 1f;
@@ -182,38 +182,23 @@ namespace AdjustTransitCapacity
 
         [SettingsUISlider(min = DepotMinPercent, max = MaxPercent, step = StepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
         [SettingsUISection(PublicTransitTab, DepotGroup)]
-        public float BusDepotScalar
-        {
-            get; set;
-        }
+        public float BusDepotScalar { get; set; }
 
         [SettingsUISlider(min = DepotMinPercent, max = MaxPercent, step = StepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
         [SettingsUISection(PublicTransitTab, DepotGroup)]
-        public float TaxiDepotScalar
-        {
-            get; set;
-        }
+        public float TaxiDepotScalar { get; set; }
 
         [SettingsUISlider(min = DepotMinPercent, max = MaxPercent, step = StepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
         [SettingsUISection(PublicTransitTab, DepotGroup)]
-        public float TramDepotScalar
-        {
-            get; set;
-        }
+        public float TramDepotScalar { get; set; }
 
         [SettingsUISlider(min = DepotMinPercent, max = MaxPercent, step = StepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
         [SettingsUISection(PublicTransitTab, DepotGroup)]
-        public float TrainDepotScalar
-        {
-            get; set;
-        }
+        public float TrainDepotScalar { get; set; }
 
         [SettingsUISlider(min = DepotMinPercent, max = MaxPercent, step = StepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
         [SettingsUISection(PublicTransitTab, DepotGroup)]
-        public float SubwayDepotScalar
-        {
-            get; set;
-        }
+        public float SubwayDepotScalar { get; set; }
 
         [SettingsUIButtonGroup(DepotGroup)]
         [SettingsUIButton]
@@ -222,10 +207,7 @@ namespace AdjustTransitCapacity
         {
             set
             {
-                if (!value)
-                {
-                    return;
-                }
+                if (!value) return;
 
                 ResetDepotToVanilla();
                 ApplyAndSave();
@@ -236,52 +218,31 @@ namespace AdjustTransitCapacity
 
         [SettingsUISlider(min = PassengerMinPercent, max = MaxPercent, step = StepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
         [SettingsUISection(PublicTransitTab, PassengerGroup)]
-        public float BusPassengerScalar
-        {
-            get; set;
-        }
+        public float BusPassengerScalar { get; set; }
 
         [SettingsUISlider(min = PassengerMinPercent, max = MaxPercent, step = StepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
         [SettingsUISection(PublicTransitTab, PassengerGroup)]
-        public float TramPassengerScalar
-        {
-            get; set;
-        }
+        public float TramPassengerScalar { get; set; }
 
         [SettingsUISlider(min = PassengerMinPercent, max = MaxPercent, step = StepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
         [SettingsUISection(PublicTransitTab, PassengerGroup)]
-        public float TrainPassengerScalar
-        {
-            get; set;
-        }
+        public float TrainPassengerScalar { get; set; }
 
         [SettingsUISlider(min = PassengerMinPercent, max = MaxPercent, step = StepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
         [SettingsUISection(PublicTransitTab, PassengerGroup)]
-        public float SubwayPassengerScalar
-        {
-            get; set;
-        }
+        public float SubwayPassengerScalar { get; set; }
 
         [SettingsUISlider(min = PassengerMinPercent, max = MaxPercent, step = StepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
         [SettingsUISection(PublicTransitTab, PassengerGroup)]
-        public float ShipPassengerScalar
-        {
-            get; set;
-        }
+        public float ShipPassengerScalar { get; set; }
 
         [SettingsUISlider(min = PassengerMinPercent, max = MaxPercent, step = StepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
         [SettingsUISection(PublicTransitTab, PassengerGroup)]
-        public float FerryPassengerScalar
-        {
-            get; set;
-        }
+        public float FerryPassengerScalar { get; set; }
 
         [SettingsUISlider(min = PassengerMinPercent, max = MaxPercent, step = StepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
         [SettingsUISection(PublicTransitTab, PassengerGroup)]
-        public float AirplanePassengerScalar
-        {
-            get; set;
-        }
+        public float AirplanePassengerScalar { get; set; }
 
         [SettingsUIButtonGroup(PassengerGroup)]
         [SettingsUIButton]
@@ -290,10 +251,7 @@ namespace AdjustTransitCapacity
         {
             set
             {
-                if (!value)
-                {
-                    return;
-                }
+                if (!value) return;
 
                 BusPassengerScalar = 200f;
                 TramPassengerScalar = 200f;
@@ -314,10 +272,7 @@ namespace AdjustTransitCapacity
         {
             set
             {
-                if (!value)
-                {
-                    return;
-                }
+                if (!value) return;
 
                 ResetPassengerToVanilla();
                 ApplyAndSave();
@@ -325,39 +280,36 @@ namespace AdjustTransitCapacity
         }
 
         // ----------------------------
-        // Services tab (Tab 2)
+        // Industry (Tab 2)
         // ----------------------------
 
         // Delivery / cargo (scalar).
 
         [SettingsUISlider(min = ServiceMinScalar, max = ServiceMaxScalar, step = ServiceStepScalar)]
-        [SettingsUISection(ServicesTab, DeliveryGroup)]
+        [SettingsUISection(IndustryTab, DeliveryGroup)]
         public float SemiTruckCargoScalar { get; set; } = 1f;
 
         [SettingsUISlider(min = ServiceMinScalar, max = ServiceMaxScalar, step = ServiceStepScalar)]
-        [SettingsUISection(ServicesTab, DeliveryGroup)]
+        [SettingsUISection(IndustryTab, DeliveryGroup)]
         public float DeliveryVanCargoScalar { get; set; } = 1f;
 
         // Property name retained for backward compatibility.
         [SettingsUISlider(min = ServiceMinScalar, max = ServiceMaxScalar, step = ServiceStepScalar)]
-        [SettingsUISection(ServicesTab, DeliveryGroup)]
+        [SettingsUISection(IndustryTab, DeliveryGroup)]
         public float OilTruckCargoScalar { get; set; } = 1f;
 
         [SettingsUISlider(min = ServiceMinScalar, max = ServiceMaxScalar, step = ServiceStepScalar)]
-        [SettingsUISection(ServicesTab, DeliveryGroup)]
+        [SettingsUISection(IndustryTab, DeliveryGroup)]
         public float MotorbikeDeliveryCargoScalar { get; set; } = 1f;
 
         [SettingsUIButtonGroup(DeliveryGroup)]
         [SettingsUIButton]
-        [SettingsUISection(ServicesTab, DeliveryGroup)]
+        [SettingsUISection(IndustryTab, DeliveryGroup)]
         public bool ResetDeliveryToVanillaButton
         {
             set
             {
-                if (!value)
-                {
-                    return;
-                }
+                if (!value) return;
 
                 SemiTruckCargoScalar = 1f;
                 DeliveryVanCargoScalar = 1f;
@@ -371,52 +323,55 @@ namespace AdjustTransitCapacity
         // Cargo stations (scalar).
 
         [SettingsUISlider(min = ServiceMinScalar, max = ServiceMaxScalar, step = ServiceStepScalar)]
-        [SettingsUISection(ServicesTab, CargoStationsGroup)]
+        [SettingsUISection(IndustryTab, CargoStationsGroup)]
         public float CargoStationMaxTrucksScalar { get; set; } = 1f;
 
         [SettingsUIButtonGroup(CargoStationsGroup)]
         [SettingsUIButton]
-        [SettingsUISection(ServicesTab, CargoStationsGroup)]
+        [SettingsUISection(IndustryTab, CargoStationsGroup)]
         public bool ResetCargoStationsToVanillaButton
         {
             set
             {
-                if (!value)
-                {
-                    return;
-                }
+                if (!value) return;
 
                 CargoStationMaxTrucksScalar = 1f;
                 ApplyAndSave();
             }
         }
 
-        // Road maintenance (scalar).
+        // ----------------------------
+        // Parks-Roads tab (Tab 3)
+        // ----------------------------
+
+        // Road maintenance (scalars).
+
+        [SettingsUISlider(min = RoadWearMinScalar, max = RoadWearMaxScalar, step = RoadWearStepScalar)]
+        [SettingsUISection(ParksRoadsTab, RoadMaintenanceGroup)]
+        public float RoadWearScalar { get; set; } = 1f;
 
         [SettingsUISlider(min = ServiceMinScalar, max = ServiceMaxScalar, step = ServiceStepScalar)]
-        [SettingsUISection(ServicesTab, RoadMaintenanceGroup)]
+        [SettingsUISection(ParksRoadsTab, RoadMaintenanceGroup)]
         public float RoadMaintenanceVehicleCapacityScalar { get; set; } = 1f;
 
-        [SettingsUISlider(min = ServiceMinScalar, max = ServiceMaxScalar, step = ServiceStepScalar)]
-        [SettingsUISection(ServicesTab, RoadMaintenanceGroup)]
+        [SettingsUISlider(min = MaintenanceRateMinScalar, max = MaintenanceRateMaxScalar, step = MaintenanceRateStepScalar)]
+        [SettingsUISection(ParksRoadsTab, RoadMaintenanceGroup)]
         public float RoadMaintenanceVehicleRateScalar { get; set; } = 1f;
 
-        [SettingsUISlider(min = ServiceMinScalar, max = ServiceMaxScalar, step = ServiceStepScalar)]
-        [SettingsUISection(ServicesTab, RoadMaintenanceGroup)]
+        [SettingsUISlider(min = MaintenanceFleetMinScalar, max = MaintenanceFleetMaxScalar, step = MaintenanceFleetStepScalar)]
+        [SettingsUISection(ParksRoadsTab, RoadMaintenanceGroup)]
         public float RoadMaintenanceDepotScalar { get; set; } = 1f;
 
         [SettingsUIButtonGroup(RoadMaintenanceGroup)]
         [SettingsUIButton]
-        [SettingsUISection(ServicesTab, RoadMaintenanceGroup)]
+        [SettingsUISection(ParksRoadsTab, RoadMaintenanceGroup)]
         public bool ResetRoadMaintenanceToVanillaButton
         {
             set
             {
-                if (!value)
-                {
-                    return;
-                }
+                if (!value) return;
 
+                RoadWearScalar = 1f;
                 RoadMaintenanceVehicleCapacityScalar = 1f;
                 RoadMaintenanceVehicleRateScalar = 1f;
                 RoadMaintenanceDepotScalar = 1f;
@@ -425,31 +380,28 @@ namespace AdjustTransitCapacity
             }
         }
 
-        // Park maintenance (scalar).
+        // Park maintenance (scalars).
 
         [SettingsUISlider(min = ServiceMinScalar, max = ServiceMaxScalar, step = ServiceStepScalar)]
-        [SettingsUISection(ServicesTab, ParkMaintenanceGroup)]
+        [SettingsUISection(ParksRoadsTab, ParkMaintenanceGroup)]
         public float ParkMaintenanceVehicleCapacityScalar { get; set; } = 1f;
 
-        [SettingsUISlider(min = ServiceMinScalar, max = ServiceMaxScalar, step = ServiceStepScalar)]
-        [SettingsUISection(ServicesTab, ParkMaintenanceGroup)]
+        [SettingsUISlider(min = MaintenanceRateMinScalar, max = MaintenanceRateMaxScalar, step = MaintenanceRateStepScalar)]
+        [SettingsUISection(ParksRoadsTab, ParkMaintenanceGroup)]
         public float ParkMaintenanceVehicleRateScalar { get; set; } = 1f;
 
-        [SettingsUISlider(min = ServiceMinScalar, max = ServiceMaxScalar, step = ServiceStepScalar)]
-        [SettingsUISection(ServicesTab, ParkMaintenanceGroup)]
+        [SettingsUISlider(min = MaintenanceFleetMinScalar, max = MaintenanceFleetMaxScalar, step = MaintenanceFleetStepScalar)]
+        [SettingsUISection(ParksRoadsTab, ParkMaintenanceGroup)]
         public float ParkMaintenanceDepotScalar { get; set; } = 1f;
 
         [SettingsUIButtonGroup(ParkMaintenanceGroup)]
         [SettingsUIButton]
-        [SettingsUISection(ServicesTab, ParkMaintenanceGroup)]
+        [SettingsUISection(ParksRoadsTab, ParkMaintenanceGroup)]
         public bool ResetParkMaintenanceToVanillaButton
         {
             set
             {
-                if (!value)
-                {
-                    return;
-                }
+                if (!value) return;
 
                 ParkMaintenanceVehicleCapacityScalar = 1f;
                 ParkMaintenanceVehicleRateScalar = 1f;
@@ -459,8 +411,9 @@ namespace AdjustTransitCapacity
             }
         }
 
+
         // -------------------------
-        // About tab (Tab 3)
+        // About tab (tab 4)
         // -------------------------
 
         [SettingsUISection(AboutTab, AboutInfoGroup)]
@@ -476,17 +429,15 @@ namespace AdjustTransitCapacity
         {
             set
             {
-                if (!value)
-                {
-                    return;
-                }
+                if (!value) return;
 
                 try
                 {
                     Application.OpenURL(UrlParadox);
                 }
-                catch
+                catch (Exception ex)
                 {
+                    Mod.s_Log.Warn($"{Mod.ModTag} OpenParadoxMods failed: {ex.GetType().Name}: {ex.Message}");
                 }
             }
         }
@@ -498,26 +449,21 @@ namespace AdjustTransitCapacity
         {
             set
             {
-                if (!value)
-                {
-                    return;
-                }
+                if (!value) return;
 
                 try
                 {
                     Application.OpenURL(UrlDiscord);
                 }
-                catch
+                catch (Exception ex)
                 {
+                    Mod.s_Log.Warn($"{Mod.ModTag} OpenDiscord failed: {ex.GetType().Name}: {ex.Message}");
                 }
             }
         }
 
         [SettingsUISection(AboutTab, DebugGroup)]
-        public bool EnableDebugLogging
-        {
-            get; set;
-        }
+        public bool EnableDebugLogging { get; set; }
 
         [SettingsUIButtonGroup(LogGroup)]
         [SettingsUIButton]
@@ -526,10 +472,7 @@ namespace AdjustTransitCapacity
         {
             set
             {
-                if (!value)
-                {
-                    return;
-                }
+                if (!value) return;
 
                 try
                 {
@@ -643,9 +586,11 @@ namespace AdjustTransitCapacity
 
             if (SemiTruckCargoScalar <= 0f) SemiTruckCargoScalar = 1f;
             if (DeliveryVanCargoScalar <= 0f) DeliveryVanCargoScalar = 1f;
-            if (OilTruckCargoScalar <= 0f)  OilTruckCargoScalar = 1f;
+            if (OilTruckCargoScalar <= 0f) OilTruckCargoScalar = 1f;
             if (MotorbikeDeliveryCargoScalar <= 0f) MotorbikeDeliveryCargoScalar = 1f;
             if (CargoStationMaxTrucksScalar <= 0f) CargoStationMaxTrucksScalar = 1f;
+
+            if (RoadWearScalar <= 0f) RoadWearScalar = 1f;
 
             if (RoadMaintenanceVehicleCapacityScalar <= 0f) RoadMaintenanceVehicleCapacityScalar = 1f;
             if (RoadMaintenanceVehicleRateScalar <= 0f) RoadMaintenanceVehicleRateScalar = 1f;
