@@ -1,6 +1,6 @@
-﻿## Internal Systems & Behaviour — Adjust Transit Capacity [ATC]
+﻿## Internal Systems & Behaviour — Dispatch Boss [DB]
 
-Quick reference for how ATC works under the hood.
+Quick reference for how DB works under the hood.
 
 ## Overview Table
 
@@ -18,7 +18,7 @@ Quick reference for how ATC works under the hood.
 | **Safe locale loading** | Localization issues can’t break mod startup. | `AddLocaleSource()` wraps `LocalizationManager.AddSource` in try/catch. |
 | **Options UI – Actions tab** | All depot sliders, passenger sliders, “Double Up”, and reset buttons. | Defined in `Setting` via `SettingsUISlider`, `SettingsUIButton`, etc. |
 | **Options UI – About tab** | Shows version, mod name, Paradox button, Discord, debug toggle, open log. | Locale-backed display fields in `Setting`. |
-| **Log file opener** | Opens the ATC log file or Logs folder. | Uses `file:///` URI + Windows shell fallback. |
+| **Log file opener** | Opens the DB log file or Logs folder. | Uses `file:///` URI + Windows shell fallback. |
 | **Defaults & slider ranges** | Depots: 100–1000%. Passengers: 10–1000%. Steps: 10%. | Constants in `Setting` (`DepotMinPercent`, etc.). |
 | **Settings persistence** | Saves values across sessions. | `AssetDatabase.global.LoadSettings(ModId, setting, new Setting(this));`. |
 | **System scheduling** | Ensures all prefabs exist before scaling. | `updateSystem.UpdateAfter(..., PrefabUpdate)`. |

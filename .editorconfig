@@ -100,6 +100,6 @@ dotnet_naming_rule.private_internal_const_fields_k_prefix.style = k_prefix_pasca
 dotnet_naming_rule.private_internal_const_fields_k_prefix.severity = suggestion
 
 # Turn off CA1822 for False positives for Settings.cs because the game’s Options UI binds to instance
-# properties via reflection + attributes. If we make them static, they’ll stop showing/working in the UI.
+# properties via reflection + attributes. If they are static, they’ll stop showing/working in the UI.
 [Settings/Settings.cs]
 dotnet_diagnostic.CA1822.severity = none

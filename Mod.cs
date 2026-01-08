@@ -1,10 +1,8 @@
 // File: Mod.cs
 // Entrypoint: registers settings, locales, and the ECS systems.
 
-namespace AdjustTransitCapacity
+namespace DispatchBoss
 {
-    using System;                         // Exception (localization wrapper)
-    using System.Reflection;              // Metadata: Assembly version
     using Colossal;                       // IDictionarySource
     using Colossal.IO.AssetDatabase;      // AssetDatabase.LoadSettings
     using Colossal.Localization;          // LocalizationManager
@@ -12,15 +10,17 @@ namespace AdjustTransitCapacity
     using Game;                           // UpdateSystem, GameManager
     using Game.Modding;                   // IMod, ModSetting base
     using Game.SceneFlow;                 // GameMode, GameManager access
+    using System;                         // Exception (localization wrapper)
+    using System.Reflection;              // Metadata: Assembly version
 
     /// <summary>Mod entry point: registers settings, locales, and ECS systems.</summary>
     public sealed class Mod : IMod
     {
         // ---- PUBLIC CONSTANTS / METADATA ----
-        public const string ModName = "Adjust Transit Capacity";
-        public const string ShortName = "Adjust Transit";
-        public const string ModId = "AdjustTransitCapacity";
-        public const string ModTag = "[ATC]";
+        public const string ModName = "Dispatch Boss";
+        public const string ShortName = "Dispatch Boss";
+        public const string ModId = "DispatchBoss";
+        public const string ModTag = "[DB]";
 
         public static readonly string ModVersion =
             Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "1.0.0";
@@ -62,8 +62,8 @@ namespace AdjustTransitCapacity
             setting.RegisterInOptionsUI();
 
             // Both systems need prefabs ready.
-            updateSystem.UpdateAfter<AdjustTransitCapacitySystem>(SystemUpdatePhase.PrefabUpdate);
-            updateSystem.UpdateAfter<ServiceVehiclesSystem>(SystemUpdatePhase.PrefabUpdate);
+            updateSystem.UpdateAfter<TransitCapacitySystem>(SystemUpdatePhase.PrefabUpdate);
+            updateSystem.UpdateAfter<ServiceVehicleSystem>(SystemUpdatePhase.PrefabUpdate);
         }
 
         public void OnDispose()

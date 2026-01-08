@@ -1,6 +1,6 @@
-﻿# Adjust Transit Capacity
+﻿# Dispatch Boss
 
-**Adjust Transit Capacity** (Redux)
+**Dispatch Boss**
 - ATC Lets players scale how many vehicles each transport depot can maintain or spawn in *Cities: Skylines II*
 — plus how many passengers each public transic vehicle can carry.
 
@@ -45,7 +45,7 @@
 
 ## Links
 
-- [Github repo](https://github.com/River-Mochi/AdjustTransitCapacity)
+- [Github repo](https://github.com/River-Mochi/DispatchBoss)
 - [Paradox Mods page](https://mods.paradoxplaza.com/authors/kimosabe1/cities_skylines_2?games=cities_skylines_2&orderBy=desc&sortBy=best&time=alltime)
 - [Support Discord](https://discord.gg/HTav7ARPs2)
 
