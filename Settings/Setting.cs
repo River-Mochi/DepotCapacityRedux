@@ -67,7 +67,7 @@ namespace DispatchBoss
         public const float ServiceMaxScalar = 10f;
         public const float ServiceStepScalar = 1f;
 
-        // Cargo station slider (scaler 1x..5x)
+        // Cargo station / extractors (scalar 1x..5x).
         public const float CargoStationMinScalar = 1f;
         public const float CargoStationMaxScalar = 5f;
         public const float CargoStationStepScalar = 1f;
@@ -90,7 +90,7 @@ namespace DispatchBoss
 
         // Toggle vanilla transit line vehicle count range tuner (global policy).
         [SettingsUISection(PublicTransitTab, LineVehiclesGroup)]
-        public bool EnableLineVehicleCountTuner { get; set; } = false;      // off default.
+        public bool EnableLineVehicleCountTuner { get; set; } = false;
 
         public Setting(IMod mod)
             : base(mod)
@@ -116,7 +116,9 @@ namespace DispatchBoss
             DeliveryVanCargoScalar = 1f;
             OilTruckCargoScalar = 1f;
             MotorbikeDeliveryCargoScalar = 1f;
+
             CargoStationMaxTrucksScalar = 1f;
+            ExtractorMaxTrucksScalar = 1f;
 
             // Parks-Roads defaults (percent).
             RoadWearScalar = 100f;
@@ -150,45 +152,27 @@ namespace DispatchBoss
             }
 
             // Settings changes should re-run the systems once.
+            TryEnableOnce<TransitSystem>(world, "TransitSystem");
+            TryEnableOnce<MaintenanceSystem>(world, "MaintenanceSystem");
+            TryEnableOnce<ExtractorTransportCompanySystem>(world, "ExtractorTransportCompanySystem");
+            TryEnableOnce<LaneWearSystem>(world, "LaneWearSystem");
+            TryEnableOnce<VehicleCountPolicyTunerSystem>(world, "VehicleCountPolicyTunerSystem");
+        }
+
+        private static void TryEnableOnce<T>(World world, string label) where T : GameSystemBase
+        {
             try
             {
-                TransitCapacitySystem transitSystem = world.GetExistingSystemManaged<TransitCapacitySystem>();
-                if (transitSystem != null)
+                T sys = world.GetExistingSystemManaged<T>();
+                if (sys != null)
                 {
-                    transitSystem.Enabled = true;
+                    sys.Enabled = true;
                 }
             }
             catch (Exception ex)
             {
-                Mod.s_Log.Warn($"{Mod.ModTag} Apply: failed enabling TransitCapacitySystem: {ex.GetType().Name}: {ex.Message}");
+                Mod.s_Log.Warn($"{Mod.ModTag} Apply: failed enabling {label}: {ex.GetType().Name}: {ex.Message}");
             }
-
-            try
-            {
-                ServiceVehicleSystem serviceSystem = world.GetExistingSystemManaged<ServiceVehicleSystem>();
-                if (serviceSystem != null)
-                {
-                    serviceSystem.Enabled = true;
-                }
-            }
-            catch (Exception ex)
-            {
-                Mod.s_Log.Warn($"{Mod.ModTag} Apply: failed enabling ServiceVehicleSystem: {ex.GetType().Name}: {ex.Message}");
-            }
-
-            try
-            {
-                VehicleCountPolicyTunerSystem tuner = world.GetExistingSystemManaged<VehicleCountPolicyTunerSystem>();
-                if (tuner != null)
-                {
-                    tuner.Enabled = true;
-                }
-            }
-            catch (Exception ex)
-            {
-                Mod.s_Log.Warn($"{Mod.ModTag} Apply: failed enabling VehicleCountPolicyTunerSystem: {ex.GetType().Name}: {ex.Message}");
-            }
-
         }
 
         // ----------------------------
@@ -334,6 +318,10 @@ namespace DispatchBoss
         [SettingsUISection(IndustryTab, CargoStationsGroup)]
         public float CargoStationMaxTrucksScalar { get; set; } = 1f;
 
+        [SettingsUISlider(min = CargoStationMinScalar, max = CargoStationMaxScalar, step = CargoStationStepScalar)]
+        [SettingsUISection(IndustryTab, CargoStationsGroup)]
+        public float ExtractorMaxTrucksScalar { get; set; } = 1f;
+
         [SettingsUIButtonGroup(CargoStationsGroup)]
         [SettingsUIButton]
         [SettingsUISection(IndustryTab, CargoStationsGroup)]
@@ -344,6 +332,8 @@ namespace DispatchBoss
                 if (!value) return;
 
                 CargoStationMaxTrucksScalar = 1f;
+                ExtractorMaxTrucksScalar = 1f;
+
                 ApplyAndSave();
             }
         }
@@ -600,7 +590,9 @@ namespace DispatchBoss
             if (DeliveryVanCargoScalar <= 0f) DeliveryVanCargoScalar = 1f;
             if (OilTruckCargoScalar <= 0f) OilTruckCargoScalar = 1f;
             if (MotorbikeDeliveryCargoScalar <= 0f) MotorbikeDeliveryCargoScalar = 1f;
+
             if (CargoStationMaxTrucksScalar <= 0f) CargoStationMaxTrucksScalar = 1f;
+            if (ExtractorMaxTrucksScalar <= 0f) ExtractorMaxTrucksScalar = 1f;
 
             // Old builds used scalars (1..10) and wear (0.2..2.0). New builds store percent.
             float NormalizeMaintenancePercent(float v)

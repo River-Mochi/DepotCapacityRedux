@@ -44,13 +44,15 @@ namespace DispatchBoss
                 // Public-Transit tab
                 // --------------------
 
-                // Line vehicle count (vanilla line panel limits)
+               // Line vehicle count (vanilla line panel limits)
                 { m_Setting.GetOptionGroupLocaleID(Setting.LineVehiclesGroup), "Transit Lines (in-game slider vehicle limits)" },
 
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.EnableLineVehicleCountTuner)), "Expand Line Vehicle Slider Limits" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.EnableLineVehicleCountTuner)),
-                    "Allows public transport lines slider in-game to be as **low as 1 vehicle** and higher maximum values.\n" +   
-                    "Leave this **OFF** if you use another mod that edits the same policy (e.g., **TransportPolicyAdjuster**)." },
+                    "Lets the vanilla line vehicle slider go as low as **1 vehicle**.\n" +
+                    "The **max varies by route length** (longer lines usually allow a higher max).\n" +
+                    "Works for: bus, tram, train, subway, ship, ferry, airplane.\n" +
+                    "Turn OFF if you use another mod that edits the same policy (example: **TransportPolicyAdjuster**)." },
 
                 // Depot Capacity sliders
                 { m_Setting.GetOptionGroupLocaleID(Setting.DepotGroup),           "Depot capacity (max vehicles per depot)" },  // group title
@@ -166,16 +168,23 @@ namespace DispatchBoss
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.ResetDeliveryToVanillaButton)),
                     "Set Delivery multipliers back to **1×** (game default / vanilla)." },
 
+                // Extractor Company Fleet
+                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.ExtractorMaxTrucksScalar)), "Extractor Fleet" },
+                { m_Setting.GetOptionDescLocaleID(nameof(Setting.ExtractorMaxTrucksScalar)),
+                    "Multiplier for Industrial **Extractors max trucks** (farms, forestry, fish, ore, oil, plus coal/stone when available).\n" +
+                    "**1×** = vanilla, **5×** = five times more." },
+
                 // Cargo stations
-                { m_Setting.GetOptionGroupLocaleID(Setting.CargoStationsGroup),   "Cargo stations (harbor, train)" },
+                { m_Setting.GetOptionGroupLocaleID(Setting.CargoStationsGroup),   "Cargo Fleet (harbor, train, airport)" },
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.CargoStationMaxTrucksScalar)), "Cargo station max fleet" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.CargoStationMaxTrucksScalar)),
                     "Multiplier for **Cargo Transport Stations** maximum active transporters.\n" +
                     "**1×** = vanilla, **5×** = five times more." },
 
-                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.ResetCargoStationsToVanillaButton)), "Reset Cargo station fleet" },
+                // Rename reset button (same property name, just better wording)
+                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.ResetCargoStationsToVanillaButton)), "Reset Cargo + Extractors Fleet" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.ResetCargoStationsToVanillaButton)),
-                    "Set Cargo Station multiplier back to **1×** (game default / vanilla)." },
+                    "Set Cargo Station + Extractor multipliers back to **1×** (game default / vanilla)." },
 
                 // -------------------
                 // Parks-Roads

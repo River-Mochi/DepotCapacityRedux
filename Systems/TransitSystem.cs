@@ -1,4 +1,4 @@
-// File: Systems/TransitCapacitySystem.cs
+// File: Systems/TransitSystem.cs
 // Purpose: apply multipliers for depot max vehicles and passenger max riders.
 // PrefabSystem + PrefabBase used for vanilla base values so they never change.
 
@@ -12,7 +12,7 @@ namespace DispatchBoss
     using System.Collections.Generic;
     using Unity.Entities;
 
-    public sealed partial class TransitCapacitySystem : GameSystemBase
+    public sealed partial class TransitSystem : GameSystemBase
     {
         private PrefabSystem m_PrefabSystem = null!;
 
@@ -109,7 +109,7 @@ namespace DispatchBoss
                 if (Mod.Settings != null && Mod.Settings.EnableDebugLogging)
                 {
                     GameMode mode = gm != null ? gm.gameMode : GameMode.None;
-                    Mod.s_Log.Info($"{Mod.ModTag} Debug: TransitCapacitySystem bail; gameMode={mode} (not Game) -> disabling system.");
+                    Mod.s_Log.Info($"{Mod.ModTag} Debug: TransitSystem bail; gameMode={mode} (not Game) -> disabling system.");
                 }
 
                 Enabled = false;

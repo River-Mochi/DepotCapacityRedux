@@ -5,6 +5,7 @@
 // - Runs only when requested (PrefabScanState.RequestScan()).
 // - Uses SystemAPI.Query (modern ECS pattern).
 // - Deduped + capped to prevent giant outputs and logger issues.
+// - Filters out known noise names (Male_/Female_, billboard/sign/poster/etc).
 // - Logs ONLY a summary to the mod log (no spam).
 
 namespace DispatchBoss
@@ -28,7 +29,7 @@ namespace DispatchBoss
         // Hard caps: protect users + protect logger/file size.
         private const int kMaxLines = 20000;
         private const int kMaxChars = 1 * 1024 * 1024; // ~1MB
-        private const int kMaxKeywordMatches = 400;
+        private const int kMaxKeywordMatches = 700;
 
         protected override void OnCreate()
         {
@@ -67,8 +68,10 @@ namespace DispatchBoss
             int depotTotal = 0;
             int cargoTotal = 0;
             int laneTotal = 0;
+
+            int extractorCompanies = 0;
+
             int keywordMatches = 0;
-            int fishCandidates = 0;
 
             try
             {
@@ -84,8 +87,6 @@ namespace DispatchBoss
                     if (lines >= kMaxLines || sb.Length >= kMaxChars)
                     {
                         truncated = true;
-
-                        // Best-effort: include a single truncation marker.
                         sb.AppendLine("!! TRUNCATED: Output hit cap (lines or size). Narrow keywords / reduce detail if needed.");
                         lines++;
                         return;
@@ -99,7 +100,7 @@ namespace DispatchBoss
 
                 // Header
                 Append("DispatchBoss Prefab Scan Report");
-                Append($"Timestamp (local): {DateTime.Now:HH:mm:ss}");
+                Append($"Timestamp (local): {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
                 Append($"Mod: {Mod.ModName} {Mod.ModVersion}");
                 Append("");
 
@@ -231,7 +232,42 @@ namespace DispatchBoss
                 Append($"Cargo station summary: Total={cargoTotal}");
                 Append("");
 
-                // ---- Lane wear (count only, useful for Road Builder / custom roads) ----
+                // ---- Industrial extractor transport companies (your slider target) ----
+                Append("== Industrial Extractor TransportCompanies (for Extractor trucks slider) ==");
+                Append("Filter: name starts with Industrial_ AND contains Extractor/Coal/Stone/Mine/Quarry. Skips CurMaxTransports=0. Deduped by name.");
+
+                var seenExtractors = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+                foreach ((RefRO<TransportCompanyData> tcRef, Entity e) in SystemAPI
+                             .Query<RefRO<TransportCompanyData>>()
+                             .WithAll<PrefabData>()
+                             .WithEntityAccess())
+                {
+                    if (truncated) break;
+
+                    string name = NameOf(e);
+                    if (IsExcludedName(name))
+                        continue;
+
+                    if (!IsTargetIndustrialExtractorCompany(name))
+                        continue;
+
+                    TransportCompanyData tc = tcRef.ValueRO;
+
+                    if (tc.m_MaxTransports == 0)
+                        continue;
+
+                    if (!seenExtractors.Add(name))
+                        continue;
+
+                    extractorCompanies++;
+                    Append($"- {name} ({e.Index}:{e.Version}) CurMaxTransports={tc.m_MaxTransports}");
+                }
+
+                Append($"Industrial extractor summary: Unique={extractorCompanies}");
+                Append("");
+
+                // ---- Lane wear (count + range) ----
                 float minTf = float.MaxValue;
                 float maxTf = float.MinValue;
 
@@ -256,37 +292,6 @@ namespace DispatchBoss
 
                 Append("");
 
-                // ---- Fish / Aquaculture candidates (name-based, safe) ----
-                Append("== Fish / Aquaculture TransportCompany candidates (name-based) ==");
-                Append("NOTE: This section is name-filtered so it compiles safely across versions. Use this to confirm prefabs for a future Fish Depot slider.");
-                foreach ((RefRO<TransportCompanyData> tcRef, Entity e) in SystemAPI
-                             .Query<RefRO<TransportCompanyData>>()
-                             .WithAll<PrefabData>()
-                             .WithEntityAccess())
-                {
-                    if (truncated) break;
-
-                    string name = NameOf(e);
-                    string lower = name.ToLowerInvariant();
-
-                    // Keep this intentionally broad for discovery; tighten it after seeing the report.
-                    if (!(lower.Contains("fish") ||
-                          lower.Contains("aquaculture") ||
-                          lower.Contains("aqua") ||
-                          lower.Contains("extractor") ||
-                          lower.Contains("industrialaqua") ||
-                          lower.Contains("industrialaquaculturehub")))
-                    {
-                        continue;
-                    }
-
-                    fishCandidates++;
-                    TransportCompanyData tc = tcRef.ValueRO;
-                    Append($"- {name} ({e.Index}:{e.Version}) CurMaxTransports={tc.m_MaxTransports}");
-                }
-                Append($"Fish/Aquaculture candidate summary: Matches={fishCandidates}");
-                Append("");
-
                 // ---- Keyword scan (deduped + capped) ----
                 Append("== Keyword Matches (deduped, capped) ==");
 
@@ -298,8 +303,11 @@ namespace DispatchBoss
                     // Maintenance
                     "roadmaintenance", "parkmaintenance",
 
-                    // Aquaculture / fishing discovery
-                    "fish", "aquaculture", "industrialaqua", "industrial_fishextractor", "industrialaquaculturehub"
+                    // Extractors
+                    "extractor", "coal", "stone", "mine", "quarry",
+
+                    // Fishing discovery
+                    "fish", "aquaculture", "industrialaqua", "industrialaquaculturehub"
                 };
 
                 var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -313,6 +321,9 @@ namespace DispatchBoss
 
                     string n = NameOf(e);
                     if (string.IsNullOrEmpty(n)) continue;
+
+                    if (IsExcludedName(n))
+                        continue;
 
                     string lower = n.ToLowerInvariant();
 
@@ -353,7 +364,7 @@ namespace DispatchBoss
 
                 // Log ONLY summary (avoid logger spam)
                 Mod.s_Log.Info($"{Mod.ModTag} Prefab scan done in {sw.Elapsed.TotalSeconds:0.0}s. Report: {reportPath}");
-                Mod.s_Log.Info($"{Mod.ModTag} Scan counts: Delivery={deliveryTotal} MaintVeh={mvTotal} MaintDepot={depotTotal} CargoStations={cargoTotal} Lanes={laneTotal} FishCandidates={fishCandidates} KeywordMatches={keywordMatches}");
+                Mod.s_Log.Info($"{Mod.ModTag} Scan counts: Delivery={deliveryTotal} MaintVeh={mvTotal} MaintDepot={depotTotal} CargoStations={cargoTotal} IndustrialExtractors={extractorCompanies} Lanes={laneTotal} KeywordMatches={keywordMatches}");
             }
             catch (Exception ex)
             {
@@ -363,6 +374,47 @@ namespace DispatchBoss
             }
 
             Enabled = false;
+        }
+
+        private static bool IsTargetIndustrialExtractorCompany(string name)
+        {
+            if (string.IsNullOrEmpty(name))
+                return false;
+
+            if (!name.StartsWith("Industrial_", StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            if (name.IndexOf("Extractor", StringComparison.OrdinalIgnoreCase) >= 0) return true;
+            if (name.IndexOf("Coal", StringComparison.OrdinalIgnoreCase) >= 0) return true;
+            if (name.IndexOf("Stone", StringComparison.OrdinalIgnoreCase) >= 0) return true;
+            if (name.IndexOf("Mine", StringComparison.OrdinalIgnoreCase) >= 0) return true;
+            if (name.IndexOf("Quarry", StringComparison.OrdinalIgnoreCase) >= 0) return true;
+
+            return false;
+        }
+
+        private static bool IsExcludedName(string name)
+        {
+            if (string.IsNullOrEmpty(name))
+                return false;
+
+            // Prefix exclusions (your explicit request)
+            if (name.StartsWith("Male_", StringComparison.OrdinalIgnoreCase)) return true;
+            if (name.StartsWith("Female_", StringComparison.OrdinalIgnoreCase)) return true;
+
+            // Contains exclusions (your explicit request)
+            string[] tokens =
+            {
+                "Billboard", "Sign", "Poster", "NetBasket", "NetBox", "GasStation", "FarmCage", "FarmPontoon", "FishTub", "FlyFish", "FarmFilterSystem"
+            };
+
+            for (int i = 0; i < tokens.Length; i++)
+            {
+                if (name.IndexOf(tokens[i], StringComparison.OrdinalIgnoreCase) >= 0)
+                    return true;
+            }
+
+            return false;
         }
 
         private static string GetReportPath()

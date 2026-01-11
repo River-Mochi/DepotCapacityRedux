@@ -1,4 +1,4 @@
-// File: Systems/ServiceVehicleSystem.cs
+// File: Systems/MaintenanceSystem.cs
 // Purpose: Apply non-transit service vehicle capacity multipliers (cargo stations, delivery trucks,
 //          maintenance vehicles) based on current settings.
 // Notes:
@@ -19,7 +19,7 @@ namespace DispatchBoss
     using System.Collections.Generic;
     using Unity.Entities;
 
-    public sealed partial class ServiceVehicleSystem : GameSystemBase
+    public sealed partial class MaintenanceSystem : GameSystemBase
     {
         private PrefabSystem m_PrefabSystem = null!;
 

@@ -1,10 +1,10 @@
 // File: Systems/VehicleCountPolicyTunerSystem.cs
 // Purpose: (Optional Toggle) Adjust VehicleCountPolicy VehicleInterval modifier so the vanilla transit line panel
-//          can reach as low as 1 vehicle, while keeping maximums from going too high.
+//          can reach as low as 1 vehicle, while letting maximums go a bit higher (still capped).
 // Notes:
 // - Global policy edit (affects all transit line types using VehicleCountPolicy).
 // - Runs once after city load, and once whenever Settings.Apply enables it.
-// - Toggle OFF restores the original policy values captured at first run.
+// - Toggle OFF restores the original policy values captured at first run (per city load).
 
 namespace DispatchBoss
 {
@@ -13,6 +13,7 @@ namespace DispatchBoss
     using Game;                              // GameMode
     using Game.Prefabs;                      // PrefabSystem, UITransportConfiguration*
     using Game.Routes;                       // RouteModifierData, RouteModifierType
+    using System;
     using Unity.Entities;                    // EntityQuery, ComponentType, DynamicBuffer
 
     public sealed partial class VehicleCountPolicyTunerSystem : GameSystemBase
@@ -22,6 +23,7 @@ namespace DispatchBoss
         private bool m_Done;
 
         // Store original so disabling the toggle undoes the change.
+        // Static is OK, but MUST reset on each city load to avoid cross-city contamination in one game session.
         private static bool s_HasOriginal;
         private static Bounds1 s_OriginalVehicleIntervalRange;
         private static ModifierValueMode s_OriginalVehicleIntervalMode;
@@ -29,13 +31,12 @@ namespace DispatchBoss
         // ---- TUNING (no Harmony) ----
         // Goals:
         // - Still able to hit "1 vehicle" minimum on all lines → needs a strong "fewer vehicles" side (longer interval).
-        // - But prevent huge max counts → cap the "more vehicles" side (shorter interval).
+        // - Allow a somewhat higher max count than before → allow a slightly shorter interval (more negative applied).
         //
-        // These are "applied deltas" (conceptually) that convert safely for InverseRelative.
-        // If max values is too high, then make kMoreVehiclesApplied less negative (e.g. -0.60f).
-        // If it doesn't reach 1 vehicle on some lines, increase kFewerVehiclesApplied (e.g. 30f).
-        private const float kFewerVehiclesApplied = 24f;  // pushes interval longer (helps reach 1 vehicle)
-        private const float kMoreVehiclesApplied = -0.75f; // caps how short interval can get (caps max vehicles)
+        // If max values still too low: make kMoreVehiclesApplied more negative (e.g. -0.82f or -0.85f).
+        // If it doesn't reach 1 vehicle on some lines: increase kFewerVehiclesApplied (e.g. 26f or 30f).
+        private const float kFewerVehiclesApplied = 24f;   // helps reach 1 vehicle
+        private const float kMoreVehiclesApplied = -0.80f; // was -0.75f; allows slightly higher max vehicles
 
         protected override void OnCreate()
         {
@@ -60,6 +61,11 @@ namespace DispatchBoss
             {
                 return;
             }
+
+            // IMPORTANT: reset original capture per city load.
+            s_HasOriginal = false;
+            s_OriginalVehicleIntervalRange = default;
+            s_OriginalVehicleIntervalMode = default;
 
             m_Done = false;
             Enabled = true;
@@ -115,7 +121,7 @@ namespace DispatchBoss
 
                 found = true;
 
-                // Capture original once (whatever it was before our mod changes it).
+                // Capture original once (whatever it was before our mod changes it) per city load.
                 if (!s_HasOriginal)
                 {
                     s_HasOriginal = true;
@@ -175,9 +181,6 @@ namespace DispatchBoss
                 }
                 else if (item.m_Mode == ModifierValueMode.Relative)
                 {
-                    // Relative can behave very differently depending on how the game consumes the delta.
-                    // We refuse to apply the extreme values to avoid runaway max counts.
-                    // If you ever see this warning in logs, we can tune a Relative-safe range separately.
                     Mod.s_Log.Warn(
                         $"{Mod.ModTag} VehicleCountPolicyTuner: VehicleInterval mode is Relative; leaving unchanged to avoid runaway max counts. " +
                         $"Range={item.m_Range.min:F3}..{item.m_Range.max:F3}");

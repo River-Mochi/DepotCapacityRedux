@@ -61,14 +61,20 @@ namespace DispatchBoss
             setting.RegisterInOptionsUI();
 
             // Systems
-            // Transit + service can stay in PrefabUpdate if that's been working for you.
-            updateSystem.UpdateAfter<TransitCapacitySystem>(SystemUpdatePhase.PrefabUpdate);
-            updateSystem.UpdateAfter<ServiceVehicleSystem>(SystemUpdatePhase.PrefabUpdate);
+            updateSystem.UpdateAfter<TransitSystem>(SystemUpdatePhase.PrefabUpdate);
+            updateSystem.UpdateAfter<MaintenanceSystem>(SystemUpdatePhase.PrefabUpdate);
 
-            // Prefab scan is user-triggered during gameplay → schedule it in GameSimulation so the button works.
-            updateSystem.UpdateAt<PrefabScanSystem>(SystemUpdatePhase.GameSimulation);
+
+            // New: extractors (TransportCompanyData.m_MaxTransports)
+            updateSystem.UpdateAfter<ExtractorTransportCompanySystem>(SystemUpdatePhase.PrefabUpdate);
+            updateSystem.UpdateAfter<LaneWearSystem>(SystemUpdatePhase.PrefabUpdate);
+
             // Allow transit lines range to be 1-50+
-            updateSystem.UpdateAfter<VehicleCountPolicyTunerSystem>(SystemUpdatePhase.GameSimulation);
+            // Policy tuner: also better in PrefabUpdate so it applies immediately while paused/Options UI
+            updateSystem.UpdateAfter<VehicleCountPolicyTunerSystem>(SystemUpdatePhase.PrefabUpdate);
+
+            // Prefab scan: must run even while Options UI is open
+            updateSystem.UpdateAt<PrefabScanSystem>(SystemUpdatePhase.PrefabUpdate);
 
         }
 
