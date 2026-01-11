@@ -17,13 +17,13 @@ namespace DispatchBoss
     [FileLocation("ModsSettings/DispatchBoss/DispatchBoss")]
     [SettingsUITabOrder(PublicTransitTab, IndustryTab, ParksRoadsTab, AboutTab)]
     [SettingsUIGroupOrder(
-        DepotGroup, PassengerGroup,
+        LineVehiclesGroup, DepotGroup, PassengerGroup,
         DeliveryGroup, CargoStationsGroup,
         RoadMaintenanceGroup, ParkMaintenanceGroup,
         AboutInfoGroup, AboutLinksGroup, DebugGroup, LogGroup
     )]
     [SettingsUIShowGroupName(
-        DepotGroup, PassengerGroup,
+        LineVehiclesGroup, DepotGroup, PassengerGroup,
         DeliveryGroup, CargoStationsGroup,
         RoadMaintenanceGroup, ParkMaintenanceGroup,
         AboutLinksGroup, DebugGroup, LogGroup
@@ -37,6 +37,7 @@ namespace DispatchBoss
         public const string AboutTab = "About";
 
         // Group ids (must match Locale ids).
+        public const string LineVehiclesGroup = "LineVehicles";
         public const string DepotGroup = "DepotCapacity";
         public const string PassengerGroup = "PassengerCapacity";
 
@@ -66,6 +67,11 @@ namespace DispatchBoss
         public const float ServiceMaxScalar = 10f;
         public const float ServiceStepScalar = 1f;
 
+        // Cargo station slider (scaler 1x..5x)
+        public const float CargoStationMinScalar = 1f;
+        public const float CargoStationMaxScalar = 5f;
+        public const float CargoStationStepScalar = 1f;
+
         // Parks-Roads: store/display as percent (100%..1000% = 1x..10x).
         public const float MaintenanceMinPercent = 100f;
         public const float MaintenanceMaxPercent = 1000f;
@@ -82,6 +88,10 @@ namespace DispatchBoss
         private const string UrlDiscord =
             "https://discord.gg/HTav7ARPs2";
 
+        // Toggle vanilla transit line vehicle count range tuner (global policy).
+        [SettingsUISection(PublicTransitTab, LineVehiclesGroup)]
+        public bool EnableLineVehicleCountTuner { get; set; } = false;      // off default.
+
         public Setting(IMod mod)
             : base(mod)
         {
@@ -97,6 +107,7 @@ namespace DispatchBoss
         public override void SetDefaults()
         {
             // Public-Transit defaults (percent).
+            EnableLineVehicleCountTuner = false;
             ResetDepotToVanilla();
             ResetPassengerToVanilla();
 
@@ -164,6 +175,20 @@ namespace DispatchBoss
             {
                 Mod.s_Log.Warn($"{Mod.ModTag} Apply: failed enabling ServiceVehicleSystem: {ex.GetType().Name}: {ex.Message}");
             }
+
+            try
+            {
+                VehicleCountPolicyTunerSystem tuner = world.GetExistingSystemManaged<VehicleCountPolicyTunerSystem>();
+                if (tuner != null)
+                {
+                    tuner.Enabled = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                Mod.s_Log.Warn($"{Mod.ModTag} Apply: failed enabling VehicleCountPolicyTunerSystem: {ex.GetType().Name}: {ex.Message}");
+            }
+
         }
 
         // ----------------------------
@@ -305,7 +330,7 @@ namespace DispatchBoss
             }
         }
 
-        [SettingsUISlider(min = ServiceMinScalar, max = ServiceMaxScalar, step = ServiceStepScalar)]
+        [SettingsUISlider(min = CargoStationMinScalar, max = CargoStationMaxScalar, step = CargoStationStepScalar)]
         [SettingsUISection(IndustryTab, CargoStationsGroup)]
         public float CargoStationMaxTrucksScalar { get; set; } = 1f;
 

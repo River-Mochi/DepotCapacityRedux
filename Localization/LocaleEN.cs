@@ -43,6 +43,15 @@ namespace DispatchBoss
                 // --------------------
                 // Public-Transit tab
                 // --------------------
+
+                // Line vehicle count (vanilla line panel limits)
+                { m_Setting.GetOptionGroupLocaleID(Setting.LineVehiclesGroup), "Transit Lines (in-game slider vehicle limits)" },
+
+                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.EnableLineVehicleCountTuner)), "Expand Line Vehicle Slider Limits" },
+                { m_Setting.GetOptionDescLocaleID(nameof(Setting.EnableLineVehicleCountTuner)),
+                    "Allows public transport lines slider in-game to be as **low as 1 vehicle** and higher maximum values.\n" +   
+                    "Leave this **OFF** if you use another mod that edits the same policy (e.g., **TransportPolicyAdjuster**)." },
+
                 // Depot Capacity sliders
                 { m_Setting.GetOptionGroupLocaleID(Setting.DepotGroup),           "Depot capacity (max vehicles per depot)" },  // group title
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.BusDepotScalar)), "Bus" },
@@ -159,12 +168,12 @@ namespace DispatchBoss
 
                 // Cargo stations
                 { m_Setting.GetOptionGroupLocaleID(Setting.CargoStationsGroup),   "Cargo stations (harbor, train)" },
-                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.CargoStationMaxTrucksScalar)), "Cargo station max transports" },
+                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.CargoStationMaxTrucksScalar)), "Cargo station max fleet" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.CargoStationMaxTrucksScalar)),
                     "Multiplier for **Cargo Transport Stations** maximum active transporters.\n" +
-                    "**1×** = vanilla, **10×** = ten times more." },
+                    "**1×** = vanilla, **5×** = five times more." },
 
-                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.ResetCargoStationsToVanillaButton)), "Reset cargo stations" },
+                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.ResetCargoStationsToVanillaButton)), "Reset Cargo station fleet" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.ResetCargoStationsToVanillaButton)),
                     "Set Cargo Station multiplier back to **1×** (game default / vanilla)." },
 
@@ -181,24 +190,26 @@ namespace DispatchBoss
                 { m_Setting.GetOptionGroupLocaleID(Setting.RoadMaintenanceGroup), "Road maintenance" }, // group title
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.RoadMaintenanceVehicleCapacityScalar)), "Work Shift capacity" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.RoadMaintenanceVehicleCapacityScalar)),
-                    "Multiplier for **road maintenance** truck capacity.\n" +
-                    "Work Shift/Capacity = how much total work a truck can do before it must return (fewer returns)." },
-
-                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.RoadMaintenanceVehicleRateScalar)), "Repair truck rate" },
-                { m_Setting.GetOptionDescLocaleID(nameof(Setting.RoadMaintenanceVehicleRateScalar)),
-                    "Multiplier for **road maintenance** truck work rate.\n" +
-                    "Rate = how much work it does per simulation tick while stopped.\n" +
-                    "Higher rate usually means shorter stops.\n" +
-                    "Roads have different amounts of damage; sometimes not all damage is repaired in one stop."
+                    "Multiplier for **road maintenance truck capacity**.\n" +
+                    "Work Shift = capacity in game code\n" +
+                    "It is how much total work a truck can do before it must return (higher capacity = fewer returns)."
                 },
 
-                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.RoadWearScalar)), "Road wear speed (Alpha)" },
+                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.RoadMaintenanceVehicleRateScalar)), "Repair truck rate (alpha)" },
+                { m_Setting.GetOptionDescLocaleID(nameof(Setting.RoadMaintenanceVehicleRateScalar)),
+                    "Multiplier for **road maintenance truck capacity** = Work Shift.\n" +
+                    "Rate = how much work it does per simulation tick while stopped.\n" +
+                    "Roads have different amounts of damage; in vanilla, sometimes not all damage is repaired in one stop.\n" +
+                    "Even if Rate is increased, the trucks still seem to stop briefly"
+                },
+
+                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.RoadWearScalar)), "Road wear speed (alpha)" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.RoadWearScalar)),
                     "Road Wear is Alpha feature still testing\n" +
                     "How fast roads accumulate wear over time.\n" +
-                    "**1×** = vanilla\n" +
-                    "**0.2×** = 5× slower wear (fewer repair trips).\n" +
-                    "**2×** = 2× faster wear (more repair trips)." },
+                    "**100%** = vanilla\n" +
+                    "**10%** = 10× slower wear (fewer repair trips).\n" +
+                    "**200%** = 2× faster wear (more repair trips)." },
 
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.ResetRoadMaintenanceToVanillaButton)), "Reset road maintenance" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.ResetRoadMaintenanceToVanillaButton)),
@@ -214,7 +225,9 @@ namespace DispatchBoss
 
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.ParkMaintenanceVehicleRateScalar)), "Vehicle rate" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.ParkMaintenanceVehicleRateScalar)),
-                    "Multiplier for **park maintenance** vehicle work rate." },
+                    "Multiplier for **park maintenance** vehicle work rate.\n" +
+                    "Rate = how much work it does per simulation tick while stopped."
+                },
 
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.ParkMaintenanceDepotScalar)), "Depot fleet size" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.ParkMaintenanceDepotScalar)),

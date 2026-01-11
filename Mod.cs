@@ -7,9 +7,9 @@ namespace DispatchBoss
     using Colossal.IO.AssetDatabase;      // AssetDatabase.LoadSettings
     using Colossal.Localization;          // LocalizationManager
     using Colossal.Logging;               // ILog, defines shared s_Log
-    using Game;                           // UpdateSystem, GameManager
+    using Game;                           // UpdateSystem, GameManager, SystemUpdatePhase
     using Game.Modding;                   // IMod, ModSetting base
-    using Game.SceneFlow;                 // GameMode, GameManager access
+    using Game.SceneFlow;
     using System;                         // Exception (localization wrapper)
     using System.Reflection;              // Metadata: Assembly version
 
@@ -51,19 +51,25 @@ namespace DispatchBoss
             //AddLocaleSource("de-DE", new LocaleDE(setting));
             //AddLocaleSource("it-IT", new LocaleIT(setting));
             //AddLocaleSource("ja-JP", new LocaleJA(setting));
-            // AddLocaleSource("ko-KR", new LocaleKO(setting));
+            //AddLocaleSource("ko-KR", new LocaleKO(setting));
             //AddLocaleSource("pl-PL", new LocalePL(setting));
-            // AddLocaleSource("pt-BR", new LocalePT_BR(setting));
+            //AddLocaleSource("pt-BR", new LocalePT_BR(setting));
             //AddLocaleSource("zh-HANS", new LocaleZH_CN(setting));    // Simplified Chinese
-            // AddLocaleSource("zh-HANT", new LocaleZH_HANT(setting));  // Traditional Chinese
+            //AddLocaleSource("zh-HANT", new LocaleZH_HANT(setting));  // Traditional Chinese
 
             AssetDatabase.global.LoadSettings(ModId, setting, new Setting(this));
-
             setting.RegisterInOptionsUI();
 
-            // Both systems need prefabs ready.
+            // Systems
+            // Transit + service can stay in PrefabUpdate if that's been working for you.
             updateSystem.UpdateAfter<TransitCapacitySystem>(SystemUpdatePhase.PrefabUpdate);
             updateSystem.UpdateAfter<ServiceVehicleSystem>(SystemUpdatePhase.PrefabUpdate);
+
+            // Prefab scan is user-triggered during gameplay → schedule it in GameSimulation so the button works.
+            updateSystem.UpdateAt<PrefabScanSystem>(SystemUpdatePhase.GameSimulation);
+            // Allow transit lines range to be 1-50+
+            updateSystem.UpdateAfter<VehicleCountPolicyTunerSystem>(SystemUpdatePhase.GameSimulation);
+
         }
 
         public void OnDispose()

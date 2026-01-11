@@ -2,7 +2,7 @@
 // Purpose: Shared helpers for classifying service vehicle prefabs (delivery buckets, trailer info).
 // Notes:
 // - NOT a system.
-// - No heavy scanning here anymore (scan moved to PrefabScanSystem via UI button).
+// - No heavy scanning here (scan moved to PrefabScanSystem via UI button for research/debug).
 
 namespace DispatchBoss
 {

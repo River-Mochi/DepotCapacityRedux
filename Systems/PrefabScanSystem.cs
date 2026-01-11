@@ -369,7 +369,7 @@ namespace DispatchBoss
         {
             // {EnvPath.kUserDataPath}/ModsData/DispatchBoss/PrefabScanReport.txt
             string root = EnvPath.kUserDataPath;
-            return Path.Combine(root, "ModsData", nameof(DispatchBoss), "PrefabScanReport.txt");
+            return Path.Combine(root, "ModsData", Mod.ModId, "PrefabScanReport.txt");
         }
 
         private string GetPrefabNameSafe(Entity prefabEntity)
