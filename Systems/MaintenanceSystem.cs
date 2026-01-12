@@ -1,11 +1,9 @@
 // File: Systems/MaintenanceSystem.cs
-// Purpose: Apply non-transit service vehicle capacity multipliers (cargo stations, delivery trucks,
-//          maintenance vehicles) based on current settings.
+// Purpose: Apply park/road maintenance vehicle and depot multipliers based on current settings.
 // Notes:
-// - Run-once system: enabled on city load or when settings Apply() toggles it.
+// - Run-once system: enabled on city load or when settings Apply() enables it.
 // - Uses PrefabSystem + PrefabBase to read vanilla/base values so results do NOT stack.
-// - Writes back vanilla values when scalar is 1x (fixes "stuck doubled" issue).
-// - Treats 0 base values as VALID for certain prefab types (tractors, sub-prefabs, etc.) and skips them.
+// - Includes name-based fallback for depots with MaintenanceType.None (extra garages / sub-prefabs).
 
 namespace DispatchBoss
 {
@@ -23,10 +21,8 @@ namespace DispatchBoss
     {
         private PrefabSystem m_PrefabSystem = null!;
 
-        // Prefab base caches (per city) — prevents stacking and keeps results stable.
-        private Dictionary<Entity, int> m_CargoStationBaseMaxTransports = null!;
-        private Dictionary<Entity, int> m_DeliveryTruckBaseCargoCapacity = null!;
-        private Dictionary<Entity, (int Cap, int Rate)> m_MaintenanceBase = null!;
+        // Prefab base caches (per city/session) — prevents stacking.
+        private Dictionary<Entity, (int Cap, int Rate)> m_MaintenanceVehicleBase = null!;
         private Dictionary<Entity, int> m_MaintenanceDepotBaseVehicleCapacity = null!;
 
         private static bool s_LoggedPrefabNameException;
@@ -37,17 +33,15 @@ namespace DispatchBoss
 
             m_PrefabSystem = World.GetOrCreateSystemManaged<PrefabSystem>();
 
-            m_CargoStationBaseMaxTransports = new Dictionary<Entity, int>();
-            m_DeliveryTruckBaseCargoCapacity = new Dictionary<Entity, int>();
-            m_MaintenanceBase = new Dictionary<Entity, (int Cap, int Rate)>();
+            m_MaintenanceVehicleBase = new Dictionary<Entity, (int Cap, int Rate)>();
             m_MaintenanceDepotBaseVehicleCapacity = new Dictionary<Entity, int>();
 
-            EntityQuery anyPrefabQuery = SystemAPI.QueryBuilder()
+            EntityQuery q = SystemAPI.QueryBuilder()
                 .WithAll<PrefabData>()
-                .WithAny<TransportCompanyData, DeliveryTruckData, MaintenanceVehicleData, MaintenanceDepotData>()
+                .WithAny<MaintenanceVehicleData, MaintenanceDepotData>()
                 .Build();
 
-            RequireForUpdate(anyPrefabQuery);
+            RequireForUpdate(q);
 
             Enabled = false;
         }
@@ -65,12 +59,10 @@ namespace DispatchBoss
                 return;
             }
 
-            m_CargoStationBaseMaxTransports.Clear();
-            m_DeliveryTruckBaseCargoCapacity.Clear();
-            m_MaintenanceBase.Clear();
+            m_MaintenanceVehicleBase.Clear();
             m_MaintenanceDepotBaseVehicleCapacity.Clear();
 
-            Mod.s_Log.Info($"{Mod.ModTag} City Loading Complete -> applying ServiceVehicles settings");
+            Mod.s_Log.Info($"{Mod.ModTag} City Loading Complete -> applying Maintenance settings");
             Enabled = true;
         }
 
@@ -93,103 +85,6 @@ namespace DispatchBoss
             bool verbose = settings.EnableDebugLogging;
 
             // -------------------------
-            // Cargo Stations: max trucks (TransportCompanyData.m_MaxTransports)
-            // -------------------------
-            {
-                float scalar = ClampServiceScalar(settings.CargoStationMaxTrucksScalar);
-
-                foreach ((RefRW<TransportCompanyData> companyRef, Entity prefabEntity) in SystemAPI
-                             .Query<RefRW<TransportCompanyData>>()
-                             .WithAll<CargoTransportStationData, PrefabData>()
-                             .WithEntityAccess())
-                {
-                    ref TransportCompanyData company = ref companyRef.ValueRW;
-
-                    int baseMax = GetOrCacheCargoStationBase(prefabEntity, company.m_MaxTransports);
-
-                    if (baseMax <= 0 && company.m_MaxTransports <= 0)
-                    {
-                        continue;
-                    }
-
-                    int newMax = SafeMulIntAllowZero(baseMax, scalar);
-
-                    if (newMax != company.m_MaxTransports)
-                    {
-                        if (verbose)
-                        {
-                            Mod.s_Log.Info($"{Mod.ModTag} CargoStation max trucks: '{GetPrefabName(prefabEntity)}' Base={baseMax} x{scalar:0.##} -> {newMax}");
-                        }
-
-                        company.m_MaxTransports = newMax;
-                    }
-                }
-            }
-
-            // -------------------------
-            // Delivery trucks: buckets (semi / vans / raw materials / motorbikes)
-            // -------------------------
-            {
-                float semiScalar = ClampServiceScalar(settings.SemiTruckCargoScalar);
-                float vanScalar = ClampServiceScalar(settings.DeliveryVanCargoScalar);
-                float rawScalar = ClampServiceScalar(settings.OilTruckCargoScalar);
-                float mbikeScalar = ClampServiceScalar(settings.MotorbikeDeliveryCargoScalar);
-
-                foreach ((RefRW<DeliveryTruckData> truckRef, Entity prefabEntity) in SystemAPI
-                             .Query<RefRW<DeliveryTruckData>>()
-                             .WithAll<PrefabData>()
-                             .WithEntityAccess())
-                {
-                    ref DeliveryTruckData data = ref truckRef.ValueRW;
-
-                    int baseCap = GetOrCacheDeliveryTruckBase(prefabEntity, data.m_CargoCapacity);
-
-                    if (baseCap <= 0 && data.m_CargoCapacity <= 0)
-                    {
-                        continue;
-                    }
-
-                    string prefabName = GetPrefabName(prefabEntity);
-
-                    VehicleHelpers.GetTrailerTypeInfo(
-                        EntityManager,
-                        prefabEntity,
-                        out bool hasTractor,
-                        out CarTrailerType tractorType,
-                        out bool hasTrailer,
-                        out CarTrailerType trailerType);
-
-                    VehicleHelpers.DeliveryBucket bucket = VehicleHelpers.ClassifyDeliveryTruckPrefab(
-                        prefabName,
-                        baseCap,
-                        data.m_TransportedResources,
-                        hasTractor,
-                        tractorType,
-                        hasTrailer,
-                        trailerType);
-
-                    float scalar =
-                        bucket == VehicleHelpers.DeliveryBucket.Semi ? semiScalar :
-                        bucket == VehicleHelpers.DeliveryBucket.Van ? vanScalar :
-                        bucket == VehicleHelpers.DeliveryBucket.RawMaterials ? rawScalar :
-                        bucket == VehicleHelpers.DeliveryBucket.Motorbike ? mbikeScalar :
-                        1f;
-
-                    int newCap = SafeMulIntAllowZero(baseCap, scalar);
-
-                    if (newCap != data.m_CargoCapacity)
-                    {
-                        if (verbose)
-                        {
-                            Mod.s_Log.Info($"{Mod.ModTag} Delivery cargo: '{prefabName}' Bucket={bucket} Base={baseCap} x{scalar:0.##} -> {newCap} Resources={data.m_TransportedResources}");
-                        }
-
-                        data.m_CargoCapacity = newCap;
-                    }
-                }
-            }
-
-            // -------------------------
             // Maintenance depots: max vehicles (prefabs)
             // -------------------------
             {
@@ -204,9 +99,56 @@ namespace DispatchBoss
                     ref MaintenanceDepotData data = ref depotRef.ValueRW;
 
                     MaintenanceType mt = data.m_MaintenanceType;
+
+                    string prefabName = GetPrefabName(prefabEntity);
+
+                    bool hasParkFlag = (mt & MaintenanceType.Park) != MaintenanceType.None;
+                    bool hasRoadFlags = (mt & (MaintenanceType.Road | MaintenanceType.Snow | MaintenanceType.Vehicle)) != MaintenanceType.None;
+
+                    // Some depot sub-prefabs / upgrades report Type=None. Use name fallback.
+                    bool isPark;
+                    bool isRecognized;
+
                     if (mt == MaintenanceType.None)
                     {
-                        continue;
+                        if (prefabName.IndexOf("ParkMaintenanceDepot", StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            isPark = true;
+                            isRecognized = true;
+                        }
+                        else if (prefabName.IndexOf("RoadMaintenanceDepot", StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            isPark = false;
+                            isRecognized = true;
+                        }
+                        else
+                        {
+                            continue;
+                        }
+                    }
+                    else
+                    {
+                        isPark = hasParkFlag && !hasRoadFlags;
+                        isRecognized = hasParkFlag || hasRoadFlags;
+
+                        if (!isRecognized && !string.IsNullOrEmpty(prefabName))
+                        {
+                            if (prefabName.IndexOf("ParkMaintenanceDepot", StringComparison.OrdinalIgnoreCase) >= 0)
+                            {
+                                isPark = true;
+                                isRecognized = true;
+                            }
+                            else if (prefabName.IndexOf("RoadMaintenanceDepot", StringComparison.OrdinalIgnoreCase) >= 0)
+                            {
+                                isPark = false;
+                                isRecognized = true;
+                            }
+                        }
+
+                        if (!isRecognized)
+                        {
+                            continue;
+                        }
                     }
 
                     int baseVehicles = GetOrCacheMaintenanceDepotBase(prefabEntity, data.m_VehicleCapacity);
@@ -216,25 +158,10 @@ namespace DispatchBoss
                         continue;
                     }
 
-                    bool hasParkFlag = (mt & MaintenanceType.Park) != MaintenanceType.None;
-                    bool hasRoadFlags = (mt & (MaintenanceType.Road | MaintenanceType.Snow | MaintenanceType.Vehicle)) != MaintenanceType.None;
-
-                    bool isPark = hasParkFlag && !hasRoadFlags;
-                    string prefabName = GetPrefabName(prefabEntity);
-
-                    // Name fallback for weird flag combos
-                    if (!hasParkFlag && !hasRoadFlags && !string.IsNullOrEmpty(prefabName))
-                    {
-                        if (prefabName.IndexOf("ParkMaintenance", StringComparison.OrdinalIgnoreCase) >= 0)
-                            isPark = true;
-                        else if (prefabName.IndexOf("RoadMaintenance", StringComparison.OrdinalIgnoreCase) >= 0)
-                            isPark = false;
-                    }
-
                     float scalar = isPark ? parkDepotScalar : roadDepotScalar;
                     int newVehicles = SafeMulIntAllowZero(baseVehicles, scalar);
 
-                    // If base is >0 and scalar tiny, avoid collapsing to 1 vehicle (usually broken gameplay).
+                    // If base is >0 and scalar tiny, avoid collapsing to 1 vehicle.
                     if (baseVehicles > 0 && newVehicles == 1)
                         newVehicles = 2;
 
@@ -292,7 +219,7 @@ namespace DispatchBoss
                     float capScalar = isPark ? parkCapScalar : roadCapScalar;
                     float rateScalar = isPark ? parkRateScalar : roadRateScalar;
 
-                    (int Cap, int Rate) baseVals = GetOrCacheMaintenanceBase(prefabEntity, data.m_MaintenanceCapacity, data.m_MaintenanceRate);
+                    (int Cap, int Rate) baseVals = GetOrCacheMaintenanceVehicleBase(prefabEntity, data.m_MaintenanceCapacity, data.m_MaintenanceRate);
 
                     int newCap = SafeMulInt(baseVals.Cap, capScalar);
                     int newRate = SafeMulInt(baseVals.Rate, rateScalar);
@@ -321,7 +248,7 @@ namespace DispatchBoss
                 }
             }
 
-            Enabled = false; // run-once behavior
+            Enabled = false;
         }
 
         // -------------------------
@@ -341,15 +268,6 @@ namespace DispatchBoss
             return percent / 100f;
         }
 
-        private static float ClampServiceScalar(float scalar)
-        {
-            if (scalar < Setting.ServiceMinScalar)
-                return Setting.ServiceMinScalar;
-            if (scalar > Setting.ServiceMaxScalar)
-                return Setting.ServiceMaxScalar;
-            return scalar;
-        }
-
         private static int SafeMulInt(int baseValue, float scalar)
         {
             if (baseValue < 1)
@@ -366,70 +284,6 @@ namespace DispatchBoss
 
             int v = (int)(baseValue * scalar);
             return v < 1 ? 1 : v;
-        }
-
-        private int GetOrCacheCargoStationBase(Entity prefabEntity, int currentValue)
-        {
-            if (m_CargoStationBaseMaxTransports.TryGetValue(prefabEntity, out int baseMax))
-            {
-                return baseMax;
-            }
-
-            int vanilla;
-            if (TryGetCargoStationVanillaMax(prefabEntity, out vanilla) && vanilla > 0)
-                baseMax = vanilla;
-            else
-                baseMax = currentValue;
-
-            m_CargoStationBaseMaxTransports[prefabEntity] = baseMax;
-            return baseMax;
-        }
-
-        private bool TryGetCargoStationVanillaMax(Entity prefabEntity, out int baseMax)
-        {
-            baseMax = 0;
-
-            if (m_PrefabSystem == null)
-                return false;
-            if (!m_PrefabSystem.TryGetPrefab(prefabEntity, out PrefabBase prefabBase))
-                return false;
-            if (!prefabBase.TryGet(out CargoTransportStation station))
-                return false;
-
-            baseMax = station.transports;
-            return true;
-        }
-
-        private int GetOrCacheDeliveryTruckBase(Entity prefabEntity, int currentValue)
-        {
-            if (m_DeliveryTruckBaseCargoCapacity.TryGetValue(prefabEntity, out int baseCap))
-            {
-                return baseCap;
-            }
-
-            int vanilla;
-            if (TryGetDeliveryTruckVanillaCargo(prefabEntity, out vanilla) && vanilla >= 0)
-                baseCap = vanilla;
-            else
-                baseCap = currentValue;
-
-            m_DeliveryTruckBaseCargoCapacity[prefabEntity] = baseCap;
-            return baseCap;
-        }
-
-        private bool TryGetDeliveryTruckVanillaCargo(Entity prefabEntity, out int baseCap)
-        {
-            baseCap = 0;
-
-            if (m_PrefabSystem == null)
-                return false;
-            if (!m_PrefabSystem.TryGetPrefab(prefabEntity, out PrefabBase prefabBase))
-                return false;
-            if (!prefabBase.TryGet(out Game.Prefabs.DeliveryTruck truck))
-                return false;
-
-            baseCap = truck.m_CargoCapacity;
-            return true;
         }
 
         private int GetOrCacheMaintenanceDepotBase(Entity prefabEntity, int currentValue)
@@ -464,9 +318,9 @@ namespace DispatchBoss
             return true;
         }
 
-        private (int Cap, int Rate) GetOrCacheMaintenanceBase(Entity prefabEntity, int currentCap, int currentRate)
+        private (int Cap, int Rate) GetOrCacheMaintenanceVehicleBase(Entity prefabEntity, int currentCap, int currentRate)
         {
-            if (m_MaintenanceBase.TryGetValue(prefabEntity, out (int Cap, int Rate) baseVals))
+            if (m_MaintenanceVehicleBase.TryGetValue(prefabEntity, out (int Cap, int Rate) baseVals))
             {
                 return baseVals;
             }
@@ -474,7 +328,7 @@ namespace DispatchBoss
             int baseCap;
             int baseRate;
 
-            if (!TryGetMaintenanceVanilla(prefabEntity, out baseCap, out baseRate))
+            if (!TryGetMaintenanceVehicleVanilla(prefabEntity, out baseCap, out baseRate))
             {
                 baseCap = currentCap;
                 baseRate = currentRate;
@@ -484,11 +338,11 @@ namespace DispatchBoss
             if (baseRate < 1) baseRate = 1;
 
             baseVals = (baseCap, baseRate);
-            m_MaintenanceBase[prefabEntity] = baseVals;
+            m_MaintenanceVehicleBase[prefabEntity] = baseVals;
             return baseVals;
         }
 
-        private bool TryGetMaintenanceVanilla(Entity prefabEntity, out int baseCap, out int baseRate)
+        private bool TryGetMaintenanceVehicleVanilla(Entity prefabEntity, out int baseCap, out int baseRate)
         {
             baseCap = 0;
             baseRate = 0;

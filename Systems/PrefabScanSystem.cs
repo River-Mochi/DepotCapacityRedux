@@ -232,7 +232,7 @@ namespace DispatchBoss
                 Append($"Cargo station summary: Total={cargoTotal}");
                 Append("");
 
-                // ---- Industrial extractor transport companies (your slider target) ----
+                // ---- Industrial extractor transport companies ----
                 Append("== Industrial Extractor TransportCompanies (for Extractor trucks slider) ==");
                 Append("Filter: name starts with Industrial_ AND contains Extractor/Coal/Stone/Mine/Quarry. Skips CurMaxTransports=0. Deduped by name.");
 
@@ -398,14 +398,16 @@ namespace DispatchBoss
             if (string.IsNullOrEmpty(name))
                 return false;
 
-            // Prefix exclusions (your explicit request)
+            // Prefix exclusions
             if (name.StartsWith("Male_", StringComparison.OrdinalIgnoreCase)) return true;
             if (name.StartsWith("Female_", StringComparison.OrdinalIgnoreCase)) return true;
+            if (name.IndexOf("_LOD", StringComparison.OrdinalIgnoreCase) >= 0) return true;
 
-            // Contains exclusions (your explicit request)
+            // Contains exclusions
             string[] tokens =
             {
-                "Billboard", "Sign", "Poster", "NetBasket", "NetBox", "GasStation", "FarmCage", "FarmPontoon", "FishTub", "FlyFish", "FarmFilterSystem"
+                "Tomestone", "StandingStone", "Crapfish", "PileStone", "Pilecoal", "Billboard", "Sign", "Poster", "NetBasket", "NetBox",
+                "GasStation", "FarmCage", "FarmPontoon", "FishTub", "FlyFish", "FarmFilterSystem"
             };
 
             for (int i = 0; i < tokens.Length; i++)

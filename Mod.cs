@@ -66,7 +66,7 @@ namespace DispatchBoss
 
 
             // New: extractors (TransportCompanyData.m_MaxTransports)
-            updateSystem.UpdateAfter<ExtractorTransportCompanySystem>(SystemUpdatePhase.PrefabUpdate);
+            updateSystem.UpdateAfter<IndustrySystem>(SystemUpdatePhase.PrefabUpdate);
             updateSystem.UpdateAfter<LaneWearSystem>(SystemUpdatePhase.PrefabUpdate);
 
             // Allow transit lines range to be 1-50+

@@ -20,13 +20,13 @@ namespace DispatchBoss
         LineVehiclesGroup, DepotGroup, PassengerGroup,
         DeliveryGroup, CargoStationsGroup,
         RoadMaintenanceGroup, ParkMaintenanceGroup,
-        AboutInfoGroup, AboutLinksGroup, DebugGroup, LogGroup
+        AboutInfoGroup, AboutLinksGroup, DebugGroup
     )]
     [SettingsUIShowGroupName(
         LineVehiclesGroup, DepotGroup, PassengerGroup,
         DeliveryGroup, CargoStationsGroup,
         RoadMaintenanceGroup, ParkMaintenanceGroup,
-        AboutLinksGroup, DebugGroup, LogGroup
+        AboutLinksGroup, DebugGroup
     )]
     public sealed class Setting : ModSetting
     {
@@ -50,7 +50,6 @@ namespace DispatchBoss
         public const string AboutInfoGroup = "AboutInfo";
         public const string AboutLinksGroup = "AboutLinks";
         public const string DebugGroup = "Debug";
-        public const string LogGroup = "Log";
 
         // ----------------------------
         // Slider ranges
@@ -79,7 +78,7 @@ namespace DispatchBoss
 
         // Road wear speed: percent (10%..200% = 0.1x..2.0x).
         public const float RoadWearMinPercent = 10f;
-        public const float RoadWearMaxPercent = 200f;
+        public const float RoadWearMaxPercent = 400f;
         public const float RoadWearStepPercent = 10f;
 
         private const string UrlParadox =
@@ -154,7 +153,7 @@ namespace DispatchBoss
             // Settings changes should re-run the systems once.
             TryEnableOnce<TransitSystem>(world, "TransitSystem");
             TryEnableOnce<MaintenanceSystem>(world, "MaintenanceSystem");
-            TryEnableOnce<ExtractorTransportCompanySystem>(world, "ExtractorTransportCompanySystem");
+            TryEnableOnce<IndustrySystem>(world, "IndustrySystem");
             TryEnableOnce<LaneWearSystem>(world, "LaneWearSystem");
             TryEnableOnce<VehicleCountPolicyTunerSystem>(world, "VehicleCountPolicyTunerSystem");
         }
@@ -174,6 +173,8 @@ namespace DispatchBoss
                 Mod.s_Log.Warn($"{Mod.ModTag} Apply: failed enabling {label}: {ex.GetType().Name}: {ex.Message}");
             }
         }
+
+
 
         // ----------------------------
         // Public-Transit tab
@@ -338,10 +339,40 @@ namespace DispatchBoss
             }
         }
 
-        // ----------------------------
-        // Parks-Roads (ALL percent, consistent)
-        // ----------------------------
+        // ----------------------------------
+        // Parks-Roads (percent)
+        // ---------------------------------
+        // PARKS
+        [SettingsUISlider(min = MaintenanceMinPercent, max = MaintenanceMaxPercent, step = MaintenanceStepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
+        [SettingsUISection(ParksRoadsTab, ParkMaintenanceGroup)]
+        public float ParkMaintenanceDepotScalar { get; set; } = 100f;
 
+        [SettingsUISlider(min = MaintenanceMinPercent, max = MaintenanceMaxPercent, step = MaintenanceStepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
+        [SettingsUISection(ParksRoadsTab, ParkMaintenanceGroup)]
+        public float ParkMaintenanceVehicleCapacityScalar { get; set; } = 100f;
+
+        [SettingsUISlider(min = MaintenanceMinPercent, max = MaintenanceMaxPercent, step = MaintenanceStepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
+        [SettingsUISection(ParksRoadsTab, ParkMaintenanceGroup)]
+        public float ParkMaintenanceVehicleRateScalar { get; set; } = 100f;
+
+        [SettingsUIButtonGroup(ParkMaintenanceGroup)]
+        [SettingsUIButton]
+        [SettingsUISection(ParksRoadsTab, ParkMaintenanceGroup)]
+        public bool ResetParkMaintenanceToVanillaButton
+        {
+            set
+            {
+                if (!value) return;
+
+                ParkMaintenanceDepotScalar = 100f;
+                ParkMaintenanceVehicleCapacityScalar = 100f;
+                ParkMaintenanceVehicleRateScalar = 100f;
+
+                ApplyAndSave();
+            }
+        }
+
+        // ROADS
         [SettingsUISlider(min = MaintenanceMinPercent, max = MaintenanceMaxPercent, step = MaintenanceStepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
         [SettingsUISection(ParksRoadsTab, RoadMaintenanceGroup)]
         public float RoadMaintenanceDepotScalar { get; set; } = 100f;
@@ -371,35 +402,6 @@ namespace DispatchBoss
                 RoadMaintenanceVehicleCapacityScalar = 100f;
                 RoadMaintenanceVehicleRateScalar = 100f;
                 RoadWearScalar = 100f;
-
-                ApplyAndSave();
-            }
-        }
-
-        [SettingsUISlider(min = MaintenanceMinPercent, max = MaintenanceMaxPercent, step = MaintenanceStepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
-        [SettingsUISection(ParksRoadsTab, ParkMaintenanceGroup)]
-        public float ParkMaintenanceDepotScalar { get; set; } = 100f;
-
-        [SettingsUISlider(min = MaintenanceMinPercent, max = MaintenanceMaxPercent, step = MaintenanceStepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
-        [SettingsUISection(ParksRoadsTab, ParkMaintenanceGroup)]
-        public float ParkMaintenanceVehicleCapacityScalar { get; set; } = 100f;
-
-        [SettingsUISlider(min = MaintenanceMinPercent, max = MaintenanceMaxPercent, step = MaintenanceStepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
-        [SettingsUISection(ParksRoadsTab, ParkMaintenanceGroup)]
-        public float ParkMaintenanceVehicleRateScalar { get; set; } = 100f;
-
-        [SettingsUIButtonGroup(ParkMaintenanceGroup)]
-        [SettingsUIButton]
-        [SettingsUISection(ParksRoadsTab, ParkMaintenanceGroup)]
-        public bool ResetParkMaintenanceToVanillaButton
-        {
-            set
-            {
-                if (!value) return;
-
-                ParkMaintenanceDepotScalar = 100f;
-                ParkMaintenanceVehicleCapacityScalar = 100f;
-                ParkMaintenanceVehicleRateScalar = 100f;
 
                 ApplyAndSave();
             }
@@ -455,7 +457,7 @@ namespace DispatchBoss
             }
         }
 
-        // Debug
+        // DEBUG/LOGGING
 
         [SettingsUIButtonGroup(DebugGroup)]
         [SettingsUIButton]
@@ -508,43 +510,23 @@ namespace DispatchBoss
             }
         }
 
-        [SettingsUISection(AboutTab, LogGroup)]
+        [SettingsUISection(AboutTab, DebugGroup)]
         public bool EnableDebugLogging { get; set; }
 
-        [SettingsUIButtonGroup(LogGroup)]
         [SettingsUIButton]
-        [SettingsUISection(AboutTab, LogGroup)]
+        [SettingsUISection(AboutTab, DebugGroup)]
         public bool OpenLogButton
         {
-            set
-            {
-                if (!value) return;
-
-                try
-                {
-                    string logsDir = Path.Combine(Application.persistentDataPath, "Logs");
-                    string logPath = Path.Combine(logsDir, "DispatchBoss.log");
-
-                    if (File.Exists(logPath))
-                    {
-                        OpenWithUnityFileUrl(logPath);
-                        return;
-                    }
-
-                    if (Directory.Exists(logsDir))
-                    {
-                        OpenWithUnityFileUrl(logsDir, isDirectory: true);
-                        return;
-                    }
-
-                    Mod.s_Log.Info($"{Mod.ModTag} OpenLogButton: log folder not found yet.");
-                }
-                catch (Exception ex)
-                {
-                    Mod.s_Log.Warn($"{Mod.ModTag} OpenLogButton failed: {ex.GetType().Name}: {ex.Message}");
-                }
-            }
+            set => ShellOpen.OpenFolderSafe(ShellOpen.GetLogsFolder(), "OpenLog");
         }
+
+        [SettingsUIButton]
+        [SettingsUISection(AboutTab, DebugGroup)]
+        public bool OpenReportButton
+        {
+            set => ShellOpen.OpenFolderSafe(ShellOpen.GetModsDataFolder(), "OpenReport");
+        }
+
 
         // ------------------------------
         // Helpers

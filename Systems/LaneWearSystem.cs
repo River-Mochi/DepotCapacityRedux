@@ -3,7 +3,7 @@
 // Notes:
 // - Run-once system: enabled on city load or when settings Apply() enables it.
 // - Caches original m_TimeFactor per prefab entity so changes don't stack.
-// - This affects how quickly lanes accumulate deterioration (wear).
+// - Affects how quickly lanes accumulate deterioration (wear).
 
 namespace DispatchBoss
 {
@@ -106,6 +106,7 @@ namespace DispatchBoss
 
             if (verbose)
             {
+                // Prefab entities that have PrefabData + LaneDeteriorationData; typically 13 prefabs will change
                 Mod.s_Log.Info($"{Mod.ModTag} Lane wear: RoadWearScalar={percent:0.#}% scalar={scalar:0.###} total={total} changed={changed}");
             }
 

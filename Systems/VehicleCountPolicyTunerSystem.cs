@@ -1,10 +1,10 @@
 // File: Systems/VehicleCountPolicyTunerSystem.cs
 // Purpose: (Optional Toggle) Adjust VehicleCountPolicy VehicleInterval modifier so the vanilla transit line panel
-//          can reach as low as 1 vehicle, while letting maximums go a bit higher (still capped).
+//          can reach as low as 1 vehicle, while keeping maximums from going too high.
 // Notes:
 // - Global policy edit (affects all transit line types using VehicleCountPolicy).
-// - Runs once after city load, and once whenever Settings.Apply enables it.
-// - Toggle OFF restores the original policy values captured at first run (per city load).
+// - One-shot: runs after city load, and whenever Settings.Apply enables it.
+// - Toggle OFF restores the original policy values captured at first run (per session).
 
 namespace DispatchBoss
 {
@@ -13,30 +13,23 @@ namespace DispatchBoss
     using Game;                              // GameMode
     using Game.Prefabs;                      // PrefabSystem, UITransportConfiguration*
     using Game.Routes;                       // RouteModifierData, RouteModifierType
-    using System;
     using Unity.Entities;                    // EntityQuery, ComponentType, DynamicBuffer
 
     public sealed partial class VehicleCountPolicyTunerSystem : GameSystemBase
     {
         private PrefabSystem m_PrefabSystem = null!;
         private EntityQuery m_ConfigQuery;
-        private bool m_Done;
 
         // Store original so disabling the toggle undoes the change.
-        // Static is OK, but MUST reset on each city load to avoid cross-city contamination in one game session.
         private static bool s_HasOriginal;
         private static Bounds1 s_OriginalVehicleIntervalRange;
         private static ModifierValueMode s_OriginalVehicleIntervalMode;
 
         // ---- TUNING (no Harmony) ----
-        // Goals:
-        // - Still able to hit "1 vehicle" minimum on all lines → needs a strong "fewer vehicles" side (longer interval).
-        // - Allow a somewhat higher max count than before → allow a slightly shorter interval (more negative applied).
-        //
-        // If max values still too low: make kMoreVehiclesApplied more negative (e.g. -0.82f or -0.85f).
-        // If it doesn't reach 1 vehicle on some lines: increase kFewerVehiclesApplied (e.g. 26f or 30f).
-        private const float kFewerVehiclesApplied = 24f;   // helps reach 1 vehicle
-        private const float kMoreVehiclesApplied = -0.80f; // was -0.75f; allows slightly higher max vehicles
+        // If it doesn't reach 1 vehicle on some lines, increase kFewerVehiclesApplied (e.g. 22f -> 24f).
+        // If max values are too low, make kMoreVehiclesApplied more negative (e.g. -0.82f -> -0.88f).
+        private const float kFewerVehiclesApplied = 20f;     // pushes interval longer (helps reach 1 vehicle)
+        private const float kMoreVehiclesApplied = -0.84f;   // caps how short interval can get (controls max vehicles)
 
         protected override void OnCreate()
         {
@@ -62,28 +55,25 @@ namespace DispatchBoss
                 return;
             }
 
-            // IMPORTANT: reset original capture per city load.
-            s_HasOriginal = false;
-            s_OriginalVehicleIntervalRange = default;
-            s_OriginalVehicleIntervalMode = default;
-
-            m_Done = false;
             Enabled = true;
         }
 
         protected override void OnUpdate()
         {
-            if (m_Done || m_ConfigQuery.IsEmptyIgnoreFilter)
+            // One-shot behavior: if we're here, we run once and disable ourselves.
+            Enabled = false;
+
+            if (m_ConfigQuery.IsEmptyIgnoreFilter)
             {
-                Enabled = false;
                 return;
             }
 
             if (Mod.Settings == null)
             {
-                Enabled = false;
                 return;
             }
+
+            bool verbose = Mod.Settings.EnableDebugLogging;
 
             UITransportConfigurationPrefab config =
                 m_PrefabSystem.GetSingletonPrefab<UITransportConfigurationPrefab>(m_ConfigQuery);
@@ -93,14 +83,12 @@ namespace DispatchBoss
             if (policyEntity == Entity.Null || !EntityManager.Exists(policyEntity))
             {
                 Mod.s_Log.Warn($"{Mod.ModTag} VehicleCountPolicyTuner: could not resolve VehicleCountPolicy entity.");
-                Enabled = false;
                 return;
             }
 
             if (!EntityManager.HasBuffer<RouteModifierData>(policyEntity))
             {
                 Mod.s_Log.Warn($"{Mod.ModTag} VehicleCountPolicyTuner: VehicleCountPolicy has no RouteModifierData buffer.");
-                Enabled = false;
                 return;
             }
 
@@ -121,7 +109,7 @@ namespace DispatchBoss
 
                 found = true;
 
-                // Capture original once (whatever it was before our mod changes it) per city load.
+                // Capture original once (whatever it was before our mod changes it).
                 if (!s_HasOriginal)
                 {
                     s_HasOriginal = true;
@@ -130,7 +118,7 @@ namespace DispatchBoss
 
                     Mod.s_Log.Info(
                         $"{Mod.ModTag} VehicleCountPolicyTuner: captured original VehicleInterval mode={item.m_Mode} " +
-                        $"range={item.m_Range.min:F3}..{item.m_Range.max:F3}");
+                        $"range={item.m_Range.min:F3}..{item.m_Range.max:F3} (input space)");
                 }
 
                 if (!enable)
@@ -155,7 +143,11 @@ namespace DispatchBoss
                         Mod.s_Log.Info(
                             $"{Mod.ModTag} VehicleCountPolicyTuner: DISABLED -> restore VehicleInterval " +
                             $"mode {oldMode} -> {item.m_Mode}, " +
-                            $"range {oldRange.min:F3}..{oldRange.max:F3} -> {item.m_Range.min:F3}..{item.m_Range.max:F3}");
+                            $"range {oldRange.min:F3}..{oldRange.max:F3} -> {item.m_Range.min:F3}..{item.m_Range.max:F3} (input space)");
+                    }
+                    else if (verbose)
+                    {
+                        Mod.s_Log.Info($"{Mod.ModTag} VehicleCountPolicyTuner: DISABLED -> already vanilla/original (no change).");
                     }
 
                     continue;
@@ -174,9 +166,19 @@ namespace DispatchBoss
                         buf[i] = item;
                         changed = true;
 
+                        // Helpful: show what the stored input range *means* in applied-delta space.
+                        float appliedMin = InverseRelativeAppliedFromInput(desired.min);
+                        float appliedMax = InverseRelativeAppliedFromInput(desired.max);
+
                         Mod.s_Log.Info(
                             $"{Mod.ModTag} VehicleCountPolicyTuner: ENABLED -> set VehicleInterval " +
-                            $"{oldRange.min:F3}..{oldRange.max:F3} -> {desired.min:F3}..{desired.max:F3} (mode={item.m_Mode})");
+                            $"{oldRange.min:F3}..{oldRange.max:F3} -> {desired.min:F3}..{desired.max:F3} (input space) " +
+                            $"=> applied {appliedMin:F3}..{appliedMax:F3} (applied space) " +
+                            $"[targets: fewer={kFewerVehiclesApplied:F1}, more={kMoreVehiclesApplied:F2}]");
+                    }
+                    else if (verbose)
+                    {
+                        Mod.s_Log.Info($"{Mod.ModTag} VehicleCountPolicyTuner: ENABLED -> already in desired state (no change).");
                     }
                 }
                 else if (item.m_Mode == ModifierValueMode.Relative)
@@ -197,18 +199,15 @@ namespace DispatchBoss
             {
                 Mod.s_Log.Warn($"{Mod.ModTag} VehicleCountPolicyTuner: no VehicleInterval RouteModifierData entry found.");
             }
-            else if (!changed)
+            else if (!changed && verbose)
             {
-                Mod.s_Log.Info($"{Mod.ModTag} VehicleCountPolicyTuner: no change needed (already in desired state).");
+                Mod.s_Log.Info($"{Mod.ModTag} VehicleCountPolicyTuner: completed (no change). enable={enable}");
             }
-
-            m_Done = true;
-            Enabled = false;
         }
 
         private static Bounds1 BuildInverseRelativeInputRange(float fewerVehiclesApplied, float moreVehiclesApplied)
         {
-            // InverseRelative uses transform: f(x) = 1/(1+x) - 1, and f is its own inverse.
+            // InverseRelative uses transform: applied = 1/(1+input) - 1  == -input/(1+input)
             // We want slider-min (fewer vehicles) to map to a positive applied delta,
             // and slider-max (more vehicles) to map to a negative applied delta.
             float inputMin = InverseRelativeInputFromApplied(fewerVehiclesApplied);
@@ -229,9 +228,15 @@ namespace DispatchBoss
 
         private static float InverseRelativeInputFromApplied(float applied)
         {
-            // f(x) = -x/(1+x)  (equivalent to 1/(1+x)-1, simplified)
-            // And f is self-inverse, so inputFromApplied = f(applied).
+            // applied = -input/(1+input)
+            // Since this transform is self-inverse, inputFromApplied = (-applied)/(1+applied)
             return (-applied) / (1f + applied);
+        }
+
+        private static float InverseRelativeAppliedFromInput(float input)
+        {
+            // applied = -input/(1+input)
+            return (-input) / (1f + input);
         }
     }
 }
