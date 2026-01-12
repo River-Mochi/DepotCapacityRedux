@@ -8,7 +8,7 @@ namespace DispatchBoss
     using Game.Modding;             // IMod
     using Game.SceneFlow;           // GameManager
     using Game.Settings;            // Settings UI attributes
-    using Game.UI;                  
+    using Game.UI;
     using System;                   // Exception
     using Unity.Entities;
     using UnityEngine;              // Application URL
@@ -87,6 +87,7 @@ namespace DispatchBoss
             "https://discord.gg/HTav7ARPs2";
 
         private bool m_EnableLineVehicleCountTuner;
+
         // Toggle vanilla transit line vehicle count range tuner (global policy).
         [SettingsUISection(PublicTransitTab, LineVehiclesGroup)]
         public bool EnableLineVehicleCountTuner
@@ -95,8 +96,17 @@ namespace DispatchBoss
             set
             {
                 if (m_EnableLineVehicleCountTuner == value) return;
+
                 m_EnableLineVehicleCountTuner = value;
-                ApplyAndSave(); // immediately save to file
+
+                // IMPORTANT:
+                // - Do NOT auto-save on toggle changes (prevents settings file rewrites at awkward times).
+                // - Still apply immediately if a city is loaded.
+                GameManager gm = GameManager.instance;
+                if (gm != null && gm.gameMode.IsGame())
+                {
+                    Apply();
+                }
             }
         }
 
@@ -115,7 +125,7 @@ namespace DispatchBoss
         public override void SetDefaults()
         {
             // Public-Transit defaults (percent).
-            EnableLineVehicleCountTuner = false;
+            m_EnableLineVehicleCountTuner = false;   // <-- Do NOT call the property setter here (triggers early save).
             ResetDepotToVanilla();
             ResetPassengerToVanilla();
 
@@ -550,6 +560,14 @@ namespace DispatchBoss
             AirplanePassengerScalar = 100f;
         }
 
+        private static float ClampPercentOrDefault(float v, float min, float max, float @default)
+        {
+            if (v <= 0f) return @default;
+            if (v < min) return min;
+            if (v > max) return max;
+            return v;
+        }
+
         private void EnsureServiceDefaults()
         {
             // Industry scalars: missing fields can load as 0; clamp to safe defaults.
@@ -558,14 +576,18 @@ namespace DispatchBoss
             if (OilTruckCargoScalar <= 0f) OilTruckCargoScalar = 1f;
             if (MotorbikeDeliveryCargoScalar <= 0f) MotorbikeDeliveryCargoScalar = 1f;
 
+            SemiTruckCargoScalar = ScalarMath.ClampScalar(SemiTruckCargoScalar, ServiceMinScalar, ServiceMaxScalar);
+            DeliveryVanCargoScalar = ScalarMath.ClampScalar(DeliveryVanCargoScalar, ServiceMinScalar, ServiceMaxScalar);
+            OilTruckCargoScalar = ScalarMath.ClampScalar(OilTruckCargoScalar, ServiceMinScalar, ServiceMaxScalar);
+            MotorbikeDeliveryCargoScalar = ScalarMath.ClampScalar(MotorbikeDeliveryCargoScalar, ServiceMinScalar, ServiceMaxScalar);
+
             if (CargoStationMaxTrucksScalar <= 0f) CargoStationMaxTrucksScalar = 1f;
             if (ExtractorMaxTrucksScalar <= 0f) ExtractorMaxTrucksScalar = 1f;
 
-            // Clamp scalars to current UI ranges.
             CargoStationMaxTrucksScalar = ScalarMath.ClampScalar(CargoStationMaxTrucksScalar, CargoStationMinScalar, CargoStationMaxScalar);
             ExtractorMaxTrucksScalar = ScalarMath.ClampScalar(ExtractorMaxTrucksScalar, CargoStationMinScalar, CargoStationMaxScalar);
 
-            // Percent sliders: <= 0 means "missing/invalid" -> default to 100%, then clamp to UI range.
+            // Parks/Roads percents: missing fields can load as 0; default to 100%.
             RoadMaintenanceDepotScalar = ClampPercentOrDefault(RoadMaintenanceDepotScalar, MaintenanceMinPercent, MaintenanceMaxPercent, 100f);
             RoadMaintenanceVehicleCapacityScalar = ClampPercentOrDefault(RoadMaintenanceVehicleCapacityScalar, MaintenanceMinPercent, MaintenanceMaxPercent, 100f);
             RoadMaintenanceVehicleRateScalar = ClampPercentOrDefault(RoadMaintenanceVehicleRateScalar, MaintenanceMinPercent, MaintenanceMaxPercent, 100f);
@@ -576,14 +598,5 @@ namespace DispatchBoss
 
             RoadWearScalar = ClampPercentOrDefault(RoadWearScalar, RoadWearMinPercent, RoadWearMaxPercent, 100f);
         }
-
-        private static float ClampPercentOrDefault(float value, float min, float max, float defaultValue)
-        {
-            if (value <= 0f) value = defaultValue;
-            if (value < min) value = min;
-            if (value > max) value = max;
-            return value;
-        }
-
     }
 }

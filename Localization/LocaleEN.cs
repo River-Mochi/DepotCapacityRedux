@@ -53,7 +53,9 @@ namespace DispatchBoss
                     "The game uses route time (driving time + stop count), so max varies per line.\n" +
                     "<Avoid Conflicts: remove mods that edit the same Transit Line policy>.\n" +
                     "If you want another policy mod, keep this checkbox OFF.\n" +
-                    "Works for: bus, tram, train, subway, ship, ferry, airplane."
+                    "Works for: bus, tram, train, subway, ship, ferry, airplane.\n" +
+                    "Tip: if you want even more vehicles that this default gives, just add a few stops to the route." +
+                         "Game will auto increase the maximum slider."
                 },
 
                 // Depot Capacity sliders
@@ -293,13 +295,13 @@ namespace DispatchBoss
                     "Open the report folder.\n" +
                     "Next: open <ScanReport-Prefabs.txt> with your text editor (Notepad++ recommended)." },
 
-                // ---- Prefab scan status text (templates) ----
+                // ---- Status Text (format string templates) ----
                 { "DB_SCAN_IDLE", "Idle" },
                 { "DB_SCAN_QUEUED_FMT", "Queued ({0})" },
                 { "DB_SCAN_RUNNING_FMT", "Running ({0})" },
                 { "DB_SCAN_DONE_FMT", "Done ({0} | {1})" },
                 { "DB_SCAN_FAILED", "Failed" },
-                { "DB_SCAN_FAIL_NO_CITY", "No city loaded." },
+                { "DB_SCAN_FAIL_NO_CITY", "No city loaded yet." },
                 { "DB_SCAN_UNKNOWN_TIME", "unknown time" },
 
             };

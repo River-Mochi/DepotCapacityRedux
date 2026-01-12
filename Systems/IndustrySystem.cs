@@ -193,7 +193,7 @@ namespace DispatchBoss
             // Industrial extractor transport companies: max fleet (TransportCompanyData.m_MaxTransports)
             // -------------------------
             {
-                // Also clamp extractors to 1x..5x (same slider range).
+                // Also clamp extractors to 1x..5x (extractor uses same slider range as CargoStation).
                 float scalarF = ScalarMath.ClampScalar(
                       settings.ExtractorMaxTrucksScalar,
                       Setting.CargoStationMinScalar,
