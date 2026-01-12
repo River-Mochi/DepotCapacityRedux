@@ -86,9 +86,19 @@ namespace DispatchBoss
         private const string UrlDiscord =
             "https://discord.gg/HTav7ARPs2";
 
+        private bool m_EnableLineVehicleCountTuner;
         // Toggle vanilla transit line vehicle count range tuner (global policy).
         [SettingsUISection(PublicTransitTab, LineVehiclesGroup)]
-        public bool EnableLineVehicleCountTuner { get; set; } = false;
+        public bool EnableLineVehicleCountTuner
+        {
+            get => m_EnableLineVehicleCountTuner;
+            set
+            {
+                if (m_EnableLineVehicleCountTuner == value) return;
+                m_EnableLineVehicleCountTuner = value;
+                ApplyAndSave(); // immediately save to file
+            }
+        }
 
         public Setting(IMod mod)
             : base(mod)

@@ -115,7 +115,7 @@ namespace DispatchBoss
                         continue;
                     }
 
-                    int newMax = ScalarMath.MulIntTruncateAllowZeroMin1(baseMax, scalar);
+                    int newMax = ScalarMath.ScaleIntRoundedAllowZeroMin1(baseMax, scalar);
 
                     if (newMax != company.m_MaxTransports)
                     {
@@ -178,7 +178,7 @@ namespace DispatchBoss
                         bucket == VehicleHelpers.DeliveryBucket.Motorbike ? mbikeScalar :
                         1f;
 
-                    int newCap = ScalarMath.MulIntTruncateAllowZeroMin1(baseCap, scalar);
+                    int newCap = ScalarMath.ScaleIntRoundedAllowZeroMin1(baseCap, scalar);
 
                     if (newCap != data.m_CargoCapacity)
                     {

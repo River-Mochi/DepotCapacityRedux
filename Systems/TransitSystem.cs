@@ -155,7 +155,7 @@ namespace DispatchBoss
                     baseCapacity = depotData.m_VehicleCapacity;
                 }
 
-                int newCapacity = ScalarMath.MulIntTruncateMin1(baseCapacity, scalar);
+                int newCapacity = ScalarMath.ScaleIntRoundedMin1(baseCapacity, scalar);
 
                 if (newCapacity != depotData.m_VehicleCapacity)
                 {
@@ -211,7 +211,7 @@ namespace DispatchBoss
                     basePassengers = vehicleData.m_PassengerCapacity;
                 }
 
-                int newPassengers = ScalarMath.MulIntTruncateMin1(basePassengers, scalar);
+                int newPassengers = ScalarMath.ScaleIntRoundedMin1(basePassengers, scalar);
 
                 if (newPassengers != vehicleData.m_PassengerCapacity)
                 {

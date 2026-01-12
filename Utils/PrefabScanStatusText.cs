@@ -11,7 +11,7 @@ namespace DispatchBoss
     public static class PrefabScanStatusText
     {
         // Status words (English fallback for now).
-        // Later: map these via locale keys if you decide to add runtime localization lookup.
+        // map these via locale keys if you decide to add runtime localization lookup.
         private const string Idle = "Idle";
         private const string Queued = "Queued";
         private const string Running = "Running";

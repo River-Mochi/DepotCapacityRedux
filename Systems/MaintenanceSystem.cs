@@ -156,7 +156,7 @@ namespace DispatchBoss
                     }
 
                     float scalar = isPark ? parkDepotScalar : roadDepotScalar;
-                    int newVehicles = ScalarMath.MulIntTruncateAllowZeroMin1(baseVehicles, scalar);
+                    int newVehicles = ScalarMath.ScaleIntRoundedAllowZeroMin1(baseVehicles, scalar);
 
                     if (newVehicles != data.m_VehicleCapacity)
                     {
@@ -214,8 +214,8 @@ namespace DispatchBoss
 
                     (int Cap, int Rate) baseVals = GetOrCacheMaintenanceVehicleBase(prefabEntity, data.m_MaintenanceCapacity, data.m_MaintenanceRate);
 
-                    int newCap = ScalarMath.MulIntTruncateMin1(baseVals.Cap, capScalar);
-                    int newRate = ScalarMath.MulIntTruncateMin1(baseVals.Rate, rateScalar);
+                    int newCap = ScalarMath.ScaleIntRoundedMin1(baseVals.Cap, capScalar);
+                    int newRate = ScalarMath.ScaleIntRoundedMin1(baseVals.Rate, rateScalar);
 
                     if (newCap != data.m_MaintenanceCapacity)
                     {

@@ -1,7 +1,7 @@
 // File: Utils/ScalarMath.cs
 // Purpose: Centralized clamping + scaling helpers to keep math consistent across systems (numbers).
 // Notes:
-// - Uses truncation to int (matches previous behavior) to minimize behavioral surprises.
+// - Uses rounding to int (player-facing sliders feel better than truncation).
 // - Provides "allowZero" scaling for prefabs that legitimately have 0 base values.
 
 namespace DispatchBoss
@@ -36,10 +36,10 @@ namespace DispatchBoss
         }
 
         /// <summary>
-        /// Scales an integer base value by a scalar, truncates to int, then clamps to a minimum.
+        /// Scales an integer base value by a scalar, rounds to int, then clamps to a minimum.
         /// If allowZero=true and baseValue<=0, returns 0.
         /// </summary>
-        internal static int MulIntTruncate(int baseValue, float scalar, int minIfBasePositive, bool allowZero)
+        internal static int ScaleIntRounded(int baseValue, float scalar, int minIfBasePositive, bool allowZero)
         {
             if (allowZero && baseValue <= 0)
             {
@@ -63,7 +63,8 @@ namespace DispatchBoss
                 return int.MaxValue;
             }
 
-            int v = (int)raw; // truncate (matches previous behavior)
+            int v = (int)Math.Round(raw, MidpointRounding.AwayFromZero);
+
             if (v < minIfBasePositive)
             {
                 v = minIfBasePositive;
@@ -72,14 +73,18 @@ namespace DispatchBoss
             return v;
         }
 
-        internal static int MulIntTruncateMin1(int baseValue, float scalar)
+        /// <summary>Rounded scale, minimum result 1 (for typical “must be at least 1” capacities).</summary>
+        internal static int ScaleIntRoundedMin1(int baseValue, float scalar)
         {
-            return MulIntTruncate(baseValue, scalar, minIfBasePositive: 1, allowZero: false);
+            return ScaleIntRounded(baseValue, scalar, minIfBasePositive: 1, allowZero: false);
         }
 
-        internal static int MulIntTruncateAllowZeroMin1(int baseValue, float scalar)
+        /// <summary>
+        /// Rounded scale, minimum result 1 when base is positive; returns 0 only when baseValue<=0.
+        /// </summary>
+        internal static int ScaleIntRoundedAllowZeroMin1(int baseValue, float scalar)
         {
-            return MulIntTruncate(baseValue, scalar, minIfBasePositive: 1, allowZero: true);
+            return ScaleIntRounded(baseValue, scalar, minIfBasePositive: 1, allowZero: true);
         }
     }
 }
