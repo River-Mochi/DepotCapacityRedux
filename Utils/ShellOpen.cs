@@ -21,7 +21,7 @@ namespace DispatchBoss
             {
                 if (string.IsNullOrEmpty(folderPath))
                 {
-                    Mod.s_Log.Warn($"{Mod.ModTag} {logLabel}: folder path is empty.");
+                    Mod.s_Log.Info($"{Mod.ModTag} {logLabel}: folder path is empty.");
                     return;
                 }
 
@@ -30,7 +30,7 @@ namespace DispatchBoss
 
                 if (!Directory.Exists(fullPath))
                 {
-                    Mod.s_Log.Warn($"{Mod.ModTag} {logLabel}: folder not found: {fullPath}");
+                    Mod.s_Log.Info($"{Mod.ModTag} {logLabel}: folder not found: {fullPath}");
                     return;
                 }
 

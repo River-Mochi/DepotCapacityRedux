@@ -1,4 +1,4 @@
-﻿# Dispatch Boss
+﻿# Diatch Boss
 
 **Dispatch Boss**
 - Lets players scale how many vehicles each transport depot can maintain or spawn in *Cities: Skylines II*
@@ -22,6 +22,13 @@
 - *Passenger capacity* = maximum passengers each vehicle can carry.
 - Capacities reset correctly when loading a different city or save.
 
+- Public Transit Line in-game slider:
+  - Widens the allowed input range.
+  - The game computes line vehicle limits from estimated route time (driving time + number of stops). 
+  - Longer routes and routes with more stops usually allow a higher maximum.
+  - This mod expands the allowed interval range so the slider can go down to 1 vehicle and increases the maximum where the game allows it.
+  - UI slider max might not visually refresh instantly when you flip the toggle, depending on when the line panel/UI re-reads policy + line timing.
+  The simulation will keep updating line targets, but the panel can feel sticky unless it's moved a little after a refresh tick.
 ---
 
 ## 11 Languages

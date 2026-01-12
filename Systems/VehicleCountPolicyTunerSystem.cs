@@ -60,7 +60,7 @@ namespace DispatchBoss
 
         protected override void OnUpdate()
         {
-            // One-shot behavior: if we're here, we run once and disable ourselves.
+            // One-shot behavior: run once and disable.
             Enabled = false;
 
             if (m_ConfigQuery.IsEmptyIgnoreFilter)
@@ -208,8 +208,9 @@ namespace DispatchBoss
         private static Bounds1 BuildInverseRelativeInputRange(float fewerVehiclesApplied, float moreVehiclesApplied)
         {
             // InverseRelative uses transform: applied = 1/(1+input) - 1  == -input/(1+input)
-            // We want slider-min (fewer vehicles) to map to a positive applied delta,
-            // and slider-max (more vehicles) to map to a negative applied delta.
+            // Goal: slider-min (fewer vehicles) to map to a positive applied delta,
+            //       slider-max (more vehicles) to map to a negative applied delta.
+            //       e.g., allows in-game slider for bus lines as low as "1" and greatly expands Maximum allowed while leaving game's variable max formula in place.
             float inputMin = InverseRelativeInputFromApplied(fewerVehiclesApplied);
             float inputMax = InverseRelativeInputFromApplied(moreVehiclesApplied);
 
