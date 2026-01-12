@@ -296,9 +296,14 @@ namespace DispatchBoss
                     "**leave it OFF**, and do not check the box.\n " +
                     "<Log spam affects performance.>" },
 
-                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.OpenLogButton)), "Open Log" },
+                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.OpenLogButton)), "Open Log folder" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.OpenLogButton)),
                     "Open DispatchBoss.log file with your text editor (Notepad++ recommended." },
+
+                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.OpenReportButton)), "Open Scan Report folder " },
+                { m_Setting.GetOptionDescLocaleID(nameof(Setting.OpenReportButton)),
+                    "Open PrefabScanReport.txt file with your text editor (Notepad++ recommended." },
+
             };
         }
 

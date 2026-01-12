@@ -6,21 +6,20 @@ Quick reference for how DB works under the hood.
 
 | Area / Feature | What it does | Implementation (high level) |
 |----------------|--------------|------------------------------|
-| **Depot capacity scaling** | Multiplies how many vehicles each depot can maintain/spawn. | Reads vanilla depot values from `PrefabBase`, writes scaled values into `TransportDepotData.m_VehicleCapacity`. |
-| **Passenger capacity scaling** | Scales passenger seats for buses, trams, trains, subways, ships, ferries, airplanes. | Reads vanilla seat counts from `PublicTransport` prefab, writes scaled values into `m_PassengerCapacity`. |
-| **Tram special handling** | Trams have 3 sections; UI shows combined total. | Debug logs show per-section base → new and a 3× total line. |
-| **Prefab-based vanilla protection** | Prevents stacking or multiplying already-modified values. | Always reads from `PrefabBase` (original prefab) instead of current runtime data. |
-| **One-shot per city** | Applies all changes once when a city loads. | System enables once, runs, then sets `Enabled = false`. |
-| **Settings changes reapply** | Changing sliders in Options UI updates the current city instantly. | `Setting.Apply()` enables the system for one more pass. |
-| **Debug logging** | Optional detailed logs showing base→new values and a city summary. | Controlled by `EnableDebugLogging`; prints via `Mod.s_Log`. |
-| **PrisonVan guard** | Prevents scaling Prison Vans (they’re flagged as Bus type). | Checks prefab name for `"PrisonVan"` and skips. |
-| **City type summary (debug)** | Shows which transport types exist in this save. | Tracks via `m_SeenDepotTypes` / `m_SeenPassengerTypes`. |
-| **Safe locale loading** | Localization issues can’t break mod startup. | `AddLocaleSource()` wraps `LocalizationManager.AddSource` in try/catch. |
-| **Options UI – Actions tab** | All depot sliders, passenger sliders, “Double Up”, and reset buttons. | Defined in `Setting` via `SettingsUISlider`, `SettingsUIButton`, etc. |
-| **Options UI – About tab** | Shows version, mod name, Paradox button, Discord, debug toggle, open log. | Locale-backed display fields in `Setting`. |
-| **Log file opener** | Opens the DB log file or Logs folder. | Uses `file:///` URI + Windows shell fallback. |
-| **Defaults & slider ranges** | Depots: 100–1000%. Passengers: 10–1000%. Steps: 10%. | Constants in `Setting` (`DepotMinPercent`, etc.). |
-| **Settings persistence** | Saves values across sessions. | `AssetDatabase.global.LoadSettings(ModId, setting, new Setting(this));`. |
-| **System scheduling** | Ensures all prefabs exist before scaling. | `updateSystem.UpdateAfter(..., PrefabUpdate)`. |
-| **Localization** | Full localizations: EN, FR, ES, DE, IT, JA, KO, PT-BR, ZH-HANS, ZH-HANT, PL. | Each locale file implements `IDictionarySource`. |
-| **Minimal runtime work** | System does zero work unless explicitly triggered. | Full exit if not gameplay mode
+| **Transit depot capacity** | Multiplies max vehicles per depot building (bus/taxi/tram/train/subway). | Reads vanilla values from `PrefabBase`, writes scaled values into depot runtime data (per relevant prefab/data component). |
+| **Transit passenger capacity** | Scales passenger seats per vehicle (bus/tram/train/subway/ship/ferry/airplane). | Reads vanilla seat counts from transit vehicle prefabs, writes scaled values into runtime capacity fields. |
+| **Transit line slider** | Policy tuner expands vanilla line vehicle-count slider limits (can reach 1 vehicle on more routes; higher max when allowed). | Edits `VehicleCountPolicy` `RouteModifierData` entry for `RouteModifierType.VehicleInterval` when mode is `InverseRelative`. Captures original values once per session; restores when toggle is off. |
+| **Industry delivery** | Scales cargo capacity by vehicle bucket (semi/van/raw materials/motorbike). | Uses `DeliveryTruckData` plus trailer info (`CarTractorData` / `CarTrailerData`) and name/cap heuristics to classify; writes scaled cargo capacity to runtime component. |
+| **Extractor fleet size** | Multiplies max active transports for industrial extractor transport companies. | Targets `TransportCompanyData` entries matching industrial extractor naming rules; scales `m_MaxTransports` with clamp. |
+| **Cargo station fleet size** | Multiplies cargo station max active transports (harbor/train/airport cargo). | Targets `CargoTransportStationData` + `TransportCompanyData`; scales `m_MaxTransports` with clamp. |
+| **Park maintenance tuning** | Scales maintenance vehicle capacity/rate and depot fleet size for parks maintenance. | Targets `MaintenanceVehicleData` + `MaintenanceDepotData` by maintenance type; writes scaled `m_MaintenanceCapacity`, `m_MaintenanceRate`, and `m_VehicleCapacity`. |
+| **Road maintenance tuning** | Scales maintenance vehicle capacity/rate and depot fleet size for road maintenance. | Same pattern as park maintenance, filtered by road maintenance type. |
+| **Road wear speed (alpha)** | Changes how quickly lanes accumulate deterioration over time. | `LaneWearSystem` scales `LaneDeteriorationData.m_TimeFactor` on prefab entities; caches original per entity to prevent stacking; run-once. |
+| **Run-once systems** | Prevents per-frame overhead; applies changes only when needed. | Each system enables on city load or via `Setting.Apply()`, runs once, then sets `Enabled = false`. |
+| **Settings changes reapply** | Options slider changes update current city without reload. | `Setting.Apply()` enables relevant systems once (`TryEnableOnce<T>()`). |
+| **Verbose debug logs** | Extra detail in `DispatchBoss.log` for troubleshooting. | Controlled by `EnableDebugLogging`; systems log base→new summaries and important decisions only. |
+| **Prefab Scan Report** | Button makes a capped, deduped report of relevant prefabs and current values. | `PrefabScanSystem` runs only when requested via UI; writes `ModsData/DispatchBoss/PrefabScanReport.txt`; `PrefabScanState` tracks status for UI display. |
+| **Open Log / Open Report** | Opens folder locations from Options UI buttons. | `ShellOpen` opens folders using Unity `Application.OpenURL(file://...)` first; includes safe process fallback; no crash on failure. |
+| **Standardized paths** | Keeps logs/settings/data in consistent user-data locations. | Uses `EnvPath.kUserDataPath` and community-standard folders (`Logs/`, `ModsSettings/`, `ModsData/`). |
+| **Localization** | 11 languages supported. | Locale files implement `IDictionarySource`. |
+| **Minimal runtime work** | No scanning loops running every tick. | Full exit paths when not in gameplay; all heavy scans are button-triggered only. |
