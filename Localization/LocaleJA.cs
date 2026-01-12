@@ -272,8 +272,9 @@ namespace DispatchBoss
 
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.PrefabScanStatus)), "Prefabスキャン状況" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.PrefabScanStatus)),
-                    "表示: Idle / Queued / Running / Done / Failed.\n" +
-                    "Queued/Running = 経過; Done = 所要 + 完了時刻。" },
+                    "スキャン状態を表示: 待機 / キュー / 実行中 / 完了 / 失敗。\n" +
+                    "キュー/実行中は経過時間、完了は所要時間+終了時刻を表示します。" },
+
 
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.EnableDebugLogging)), "詳細デバッグログ" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.EnableDebugLogging)),
