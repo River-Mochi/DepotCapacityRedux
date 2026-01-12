@@ -438,7 +438,7 @@ namespace DispatchBoss
             }
             catch
             {
-                // ignore (scan should never crash a city)
+                // ignore (prevents scan from ever crashing city)
             }
 
             return $"PrefabEntity={prefabEntity.Index}:{prefabEntity.Version}";

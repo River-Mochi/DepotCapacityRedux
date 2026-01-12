@@ -30,13 +30,15 @@
 - 繁體中文 Traditional Chinese, Português Brazilian, Polski Polish
 
 ### Credits
-- River-Mochi - author and maintainer
+- River-Mochi: author and maintainer
+- yenyang: code review and technical advice
 - Inspired by Wayz's original Depot Capacity Changer.
-- yenyang - code review and technical advice
-- Necko1996, BugsyG - testing
+- Necko1996: testing
+- BugsyG: testing
 - StarQ for technical advice
 
-tags: ATC, city transit, control municipal, public transit system, change size, increase people passengers, increase depot size demand, decrease passengers
+tags: dispatch, city transit, control municipal, public transit system, change size, increase people passengers, increase depot size demand, decrease passengers, 
+delivery trucks vans, industry semi-trucks, cargo station depot capacity, Extractor
 
 	</LongDescription>
 	<!--Thumbnail-->

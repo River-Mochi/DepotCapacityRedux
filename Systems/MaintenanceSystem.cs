@@ -9,7 +9,6 @@ namespace DispatchBoss
 {
     using Colossal.Serialization.Entities;
     using Game;
-    using Game.Companies;
     using Game.Prefabs;
     using Game.SceneFlow;
     using Game.Simulation; // MaintenanceType
