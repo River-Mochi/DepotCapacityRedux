@@ -1,11 +1,10 @@
 // File: Systems/PrefabScanSystem.cs
 // Purpose: One-shot prefab scan triggered by a Settings button.
-// Output: Writes report to {EnvPath.kUserDataPath}/ModsData/DispatchBoss/PrefabScanReport.txt
+// Output: Writes report to {EnvPath.kUserDataPath}/ModsData/DispatchBoss/ScanReport-Prefabs.txt
 // Notes:
 // - Runs only when requested (PrefabScanState.RequestScan()).
-// - Uses SystemAPI.Query (modern ECS pattern).
+// - Uses ECS queries (SystemAPI.Query).
 // - Deduped + capped to prevent giant outputs and logger issues.
-// - Filters out known noise names (Male_/Female_, billboard/sign/poster/etc).
 // - Logs ONLY a summary to the mod log (no spam).
 
 namespace DispatchBoss
@@ -26,7 +25,6 @@ namespace DispatchBoss
     public sealed partial class PrefabScanSystem : GameSystemBase
     {
         private PrefabSystem m_PrefabSystem = null!;
-
         private EntityQuery m_ConfigQuery;
 
         // Hard caps: protect users + protect logger/file size.
@@ -66,12 +64,12 @@ namespace DispatchBoss
                 if (stop > MaxStop) MaxStop = stop;
             }
         }
+
         protected override void OnCreate()
         {
             base.OnCreate();
 
             m_PrefabSystem = World.GetOrCreateSystemManaged<PrefabSystem>();
-
             m_ConfigQuery = GetEntityQuery(ComponentType.ReadOnly<UITransportConfigurationData>());
 
             // Only meaningful when prefabs exist.
@@ -91,7 +89,7 @@ namespace DispatchBoss
             GameManager gm = GameManager.instance;
             if (gm == null || !gm.gameMode.IsGame())
             {
-                PrefabScanState.MarkFailed("No city loaded.");
+                PrefabScanState.MarkFailed(PrefabScanState.FailCode.NoCityLoaded, null);
                 Enabled = false;
                 return;
             }
@@ -109,7 +107,6 @@ namespace DispatchBoss
             int laneTotal = 0;
 
             int extractorCompanies = 0;
-
             int keywordMatches = 0;
 
             try
@@ -143,10 +140,25 @@ namespace DispatchBoss
                 Append($"Mod: {Mod.ModName} {Mod.ModVersion}");
                 Append("");
 
+                // Settings snapshot (helps support)
+                Append("== Settings snapshot ==");
+                if (Mod.Settings == null)
+                {
+                    Append("Settings: (null)");
+                }
+                else
+                {
+                    Append($"EnableLineVehicleCountTuner: {Mod.Settings.EnableLineVehicleCountTuner}");
+                    Append($"RoadWearScalar: {Mod.Settings.RoadWearScalar:0.##}%");
+                    Append($"CargoStationMaxTrucksScalar: {Mod.Settings.CargoStationMaxTrucksScalar:0.##}x");
+                    Append($"ExtractorMaxTrucksScalar: {Mod.Settings.ExtractorMaxTrucksScalar:0.##}x");
+                }
+                Append("");
+
                 // ---- Transit lines (prefab defaults + policy modifier range) ----
                 Append("== Transit lines (vanilla timing inputs) ==");
                 Append("Vehicle targets are based on route time estimate (segment durations + stop count), not distance-only.");
-                Append("Traffic/slow paths can change segment durations over time, so Line slider targets can shift during gameplay.");
+                Append("Traffic/slow paths can change segment durations over time, so line targets can shift during gameplay.");
                 Append("");
 
                 // Prefab defaults: TransportLineData is created by TransportLinePrefab.LateInitialize.
@@ -444,19 +456,21 @@ namespace DispatchBoss
                 // ---- Keyword scan (deduped + capped) ----
                 Append("== Keyword Matches (deduped, capped) ==");
 
+                // Keep this list NARROW or you’ll get spam.
                 string[] keywords = new[]
                 {
-                    // Delivery / industry
-                    "oiltruck", "coaltruck", "deliveryvan", "trucktractor", "motorbike",
+                    // Delivery / industry vehicles
+                    "oiltruck", "coaltruck", "oretruck", "stonetruck",
+                    "deliveryvan", "trucktractor", "motorbike",
 
                     // Maintenance
                     "roadmaintenance", "parkmaintenance",
 
                     // Extractors
-                    "extractor", "coal", "stone", "mine", "quarry",
+                    "industrial_", "extractor", "quarry", "mine",
 
                     // Fishing discovery
-                    "fish", "aquaculture", "industrialaqua", "industrialaquaculturehub"
+                    "aquaculture", "industrialaqua", "industrialaquaculturehub"
                 };
 
                 var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -487,7 +501,6 @@ namespace DispatchBoss
                     }
 
                     if (hitIndex < 0) continue;
-
                     if (!seen.Add(n)) continue;
 
                     keywordMatches++;
@@ -509,7 +522,7 @@ namespace DispatchBoss
 
                 sw.Stop();
 
-                PrefabScanState.MarkDone(sw.Elapsed, $"Wrote report: {reportPath}");
+                PrefabScanState.MarkDone(sw.Elapsed, reportPath);
 
                 // Log ONLY summary (avoid logger spam)
                 Mod.s_Log.Info($"{Mod.ModTag} Prefab scan done in {sw.Elapsed.TotalSeconds:0.0}s. Report: {reportPath}");
@@ -521,7 +534,7 @@ namespace DispatchBoss
             catch (Exception ex)
             {
                 sw.Stop();
-                PrefabScanState.MarkFailed($"{ex.GetType().Name}: {ex.Message}");
+                PrefabScanState.MarkFailed(PrefabScanState.FailCode.Exception, $"{ex.GetType().Name}: {ex.Message}");
                 Mod.s_Log.Warn($"{Mod.ModTag} Prefab scan failed: {ex.GetType().Name}: {ex.Message}");
             }
 
@@ -579,9 +592,9 @@ namespace DispatchBoss
 
         private static string GetReportPath()
         {
-            // {EnvPath.kUserDataPath}/ModsData/DispatchBoss/PrefabScanReport.txt
+            // {EnvPath.kUserDataPath}/ModsData/DispatchBoss/ScanReport-Prefabs.txt
             string root = EnvPath.kUserDataPath;
-            return Path.Combine(root, "ModsData", Mod.ModId, "PrefabScanReport.txt");
+            return Path.Combine(root, "ModsData", Mod.ModId, "ScanReport-Prefabs.txt");
         }
 
         private string GetPrefabNameSafe(Entity prefabEntity)

@@ -75,7 +75,7 @@ namespace DispatchBoss
         public const float MaintenanceMaxPercent = 1000f;
         public const float MaintenanceStepPercent = 10f;
 
-        // Road wear speed: percent (10%..200% = 0.1x..2.0x).
+        // Road wear speed: percent (10%..400% = 0.1x..4.0x).
         public const float RoadWearMinPercent = 10f;
         public const float RoadWearMaxPercent = 400f;
         public const float RoadWearStepPercent = 10f;
@@ -172,8 +172,6 @@ namespace DispatchBoss
                 Mod.s_Log.Warn($"{Mod.ModTag} Apply: failed enabling {label}: {ex.GetType().Name}: {ex.Message}");
             }
         }
-
-
 
         // ----------------------------
         // Public-Transit tab
@@ -341,7 +339,7 @@ namespace DispatchBoss
         // ----------------------------------
         // Parks-Roads (percent)
         // ---------------------------------
-        // PARKS
+
         [SettingsUISlider(min = MaintenanceMinPercent, max = MaintenanceMaxPercent, step = MaintenanceStepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
         [SettingsUISection(ParksRoadsTab, ParkMaintenanceGroup)]
         public float ParkMaintenanceDepotScalar { get; set; } = 100f;
@@ -371,7 +369,6 @@ namespace DispatchBoss
             }
         }
 
-        // ROADS
         [SettingsUISlider(min = MaintenanceMinPercent, max = MaintenanceMaxPercent, step = MaintenanceStepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
         [SettingsUISection(ParksRoadsTab, RoadMaintenanceGroup)]
         public float RoadMaintenanceDepotScalar { get; set; } = 100f;
@@ -470,7 +467,7 @@ namespace DispatchBoss
                 GameManager gm = GameManager.instance;
                 if (gm == null || !gm.gameMode.IsGame())
                 {
-                    PrefabScanState.MarkFailed("No city loaded yet.");
+                    PrefabScanState.MarkFailed(PrefabScanState.FailCode.NoCityLoaded, null);
                     return;
                 }
 
@@ -491,34 +488,15 @@ namespace DispatchBoss
                 }
                 catch (Exception ex)
                 {
-                    PrefabScanState.MarkFailed($"{ex.GetType().Name}: {ex.Message}");
+                    PrefabScanState.MarkFailed(PrefabScanState.FailCode.Exception, $"{ex.GetType().Name}: {ex.Message}");
                     Mod.s_Log.Warn($"{Mod.ModTag} RunPrefabScanButton failed: {ex.GetType().Name}: {ex.Message}");
                 }
             }
         }
 
-        [SettingsUISection(AboutTab, DebugGroup)]
-        public string PrefabScanStatus
-        {
-            get
-            {
-                string s = PrefabScanState.GetStatusText();
-                if (s.StartsWith("Scan Status:", StringComparison.OrdinalIgnoreCase))
-                    return s.Substring("Scan Status:".Length).Trim();
-                return s;
-            }
-        }
-
-        [SettingsUISection(AboutTab, DebugGroup)]
-        public bool EnableDebugLogging { get; set; }
-
         [SettingsUIButtonGroup(DebugGroup)]
-        [SettingsUIButton]
         [SettingsUISection(AboutTab, DebugGroup)]
-        public bool OpenLogButton
-        {
-            set => ShellOpen.OpenFolderSafe(ShellOpen.GetLogsFolder(), "OpenLog");
-        }
+        public string PrefabScanStatus => PrefabScanStatusText.Format(PrefabScanState.GetSnapshot());
 
         [SettingsUIButtonGroup(DebugGroup)]
         [SettingsUIButton]
@@ -528,6 +506,15 @@ namespace DispatchBoss
             set => ShellOpen.OpenFolderSafe(ShellOpen.GetModsDataFolder(), "OpenReport");
         }
 
+        [SettingsUISection(AboutTab, DebugGroup)]
+        public bool EnableDebugLogging { get; set; }
+
+        [SettingsUIButton]
+        [SettingsUISection(AboutTab, DebugGroup)]
+        public bool OpenLogButton
+        {
+            set => ShellOpen.OpenFolderSafe(ShellOpen.GetLogsFolder(), "OpenLog");
+        }
 
         // ------------------------------
         // Helpers

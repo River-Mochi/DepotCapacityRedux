@@ -49,12 +49,12 @@ delivery trucks vans, industry semi-trucks, cargo station depot capacity, Extrac
 
 	</LongDescription>
 	<!--Thumbnail-->
-	<Thumbnail Value="Properties/Thumbnail.jpg" />
+	<Thumbnail Value="Properties/Thumb40DispatchBoss.jpg" />
 	<!--Screenshot, can be set multiple times-->
-	<Screenshot Value="Properties/10-image-Depot.jpg" />
-	<Screenshot Value="Properties/20-image-Passenger.jpg" />
-	<Screenshot Value="Properties/30-image-FR.jpg" />
-	<Screenshot Value="Properties/40-image-CN.jpg" />
+	<Screenshot Value="Properties/image10-Transit.jpg" />
+	<Screenshot Value="Properties/image20-Passengers.jpg" />
+	<Screenshot Value="Properties/image30-Industry.jpg" />
+	<Screenshot Value="Properties/image40-Maintenance.jpg" />
 	<!--Tag, can be set multiple times-->
 	<Tag Value="Code Mod" />
 	<!--Link to the forum post where the mod can be discussed-->

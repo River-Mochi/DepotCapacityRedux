@@ -62,7 +62,7 @@ namespace DispatchBoss
 
         protected override void OnUpdate()
         {
-            // Safety: only operate while the simulation is in an active game state.
+            // Safety: only operate in an active city.
             GameManager gm = GameManager.instance;
             if (gm == null || !gm.gameMode.IsGame())
             {

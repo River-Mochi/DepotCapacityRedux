@@ -2,7 +2,7 @@
 // Purpose: Shared scan state for PrefabScanSystem + Settings UI status text.
 // Notes:
 // - Managed-only state (RAM). Not saved.
-// - Guards against spam clicks, and lightweight running timer for UI refresh.
+// - Guards against spam clicks, and provides running timer + last result metadata.
 
 namespace DispatchBoss
 {
@@ -20,24 +20,86 @@ namespace DispatchBoss
             Failed = 4,
         }
 
+        public enum FailCode
+        {
+            None = 0,
+            NoCityLoaded = 1,
+            Exception = 2,
+            Unknown = 3,
+        }
+
+        public readonly struct Snapshot
+        {
+            public Snapshot(
+                Phase phase,
+                FailCode failCode,
+                string? failDetails,
+                long requestTick,
+                long runStartTick,
+                DateTime lastRunFinishedLocal,
+                TimeSpan lastDuration,
+                string? lastReportPath)
+            {
+                Phase = phase;
+                FailCode = failCode;
+                FailDetails = failDetails;
+
+                RequestTick = requestTick;
+                RunStartTick = runStartTick;
+
+                LastRunFinishedLocal = lastRunFinishedLocal;
+                LastDuration = lastDuration;
+                LastReportPath = lastReportPath;
+            }
+
+            public Phase Phase { get; }
+            public FailCode FailCode { get; }
+            public string? FailDetails { get; }
+
+            public long RequestTick { get; }
+            public long RunStartTick { get; }
+
+            public DateTime LastRunFinishedLocal { get; }
+            public TimeSpan LastDuration { get; }
+            public string? LastReportPath { get; }
+        }
+
         private static readonly object s_Lock = new object();
 
         private static Phase s_Phase = Phase.Idle;
 
+        private static FailCode s_FailCode = FailCode.None;
+        private static string? s_FailDetails;
+
         private static long s_RequestTick;
         private static long s_RunStartTick;
 
-        private static DateTime s_LastRunStartedLocal;
         private static DateTime s_LastRunFinishedLocal;
-
         private static TimeSpan s_LastDuration;
-        private static string s_Message = "Idle";
+
+        private static string? s_LastReportPath;
 
         public static Phase CurrentPhase
         {
             get
             {
                 lock (s_Lock) return s_Phase;
+            }
+        }
+
+        public static Snapshot GetSnapshot()
+        {
+            lock (s_Lock)
+            {
+                return new Snapshot(
+                    s_Phase,
+                    s_FailCode,
+                    s_FailDetails,
+                    s_RequestTick,
+                    s_RunStartTick,
+                    s_LastRunFinishedLocal,
+                    s_LastDuration,
+                    s_LastReportPath);
             }
         }
 
@@ -52,7 +114,10 @@ namespace DispatchBoss
 
                 s_Phase = Phase.Requested;
                 s_RequestTick = Stopwatch.GetTimestamp();
-                s_Message = "Queued";
+
+                s_FailCode = FailCode.None;
+                s_FailDetails = null;
+
                 return true;
             }
         }
@@ -63,63 +128,43 @@ namespace DispatchBoss
             {
                 s_Phase = Phase.Running;
                 s_RunStartTick = Stopwatch.GetTimestamp();
-                s_LastRunStartedLocal = DateTime.Now;
-                s_Message = "Running";
+
+                s_FailCode = FailCode.None;
+                s_FailDetails = null;
             }
         }
 
-        public static void MarkDone(TimeSpan duration, string message)
+        public static void MarkDone(TimeSpan duration, string reportPath)
         {
             lock (s_Lock)
             {
                 s_Phase = Phase.Done;
                 s_LastDuration = duration;
                 s_LastRunFinishedLocal = DateTime.Now;
-                s_Message = message;
+                s_LastReportPath = reportPath;
+
+                s_FailCode = FailCode.None;
+                s_FailDetails = null;
             }
         }
 
-        public static void MarkFailed(string message)
+        public static void MarkFailed(FailCode code, string? details)
         {
             lock (s_Lock)
             {
                 s_Phase = Phase.Failed;
-                s_Message = string.IsNullOrEmpty(message) ? "Failed" : message;
+                s_FailCode = code == FailCode.None ? FailCode.Unknown : code;
+                s_FailDetails = details;
+
+                // Keep last report info intact (sometimes useful even if a later run fails).
             }
         }
 
-        public static string GetStatusText()
-        {
-            lock (s_Lock)
-            {
-                switch (s_Phase)
-                {
-                    case Phase.Idle:
-                        return "Scan Status: idle";
-
-                    case Phase.Requested:
-                        return $"Scan Status: queued ({GetElapsedText(s_RequestTick)})";
-
-                    case Phase.Running:
-                        return $"Scan Status: running ({GetElapsedText(s_RunStartTick)})";
-
-                    case Phase.Done:
-                        return $"Scan Status: done (Time Taken {FormatDuration(s_LastDuration)} | {s_LastRunFinishedLocal:yyyy-MM-dd HH:mm:ss})";
-
-                    case Phase.Failed:
-                        return $"Scan Status: {s_Message}";
-
-                    default:
-                        return "Scan Status: unknown";
-                }
-            }
-        }
-
-        private static string GetElapsedText(long startTick)
+        public static TimeSpan GetElapsedSinceTick(long startTick)
         {
             if (startTick <= 0)
             {
-                return "00:00:00";
+                return TimeSpan.Zero;
             }
 
             long now = Stopwatch.GetTimestamp();
@@ -129,17 +174,7 @@ namespace DispatchBoss
             double seconds = delta / (double)Stopwatch.Frequency;
             if (seconds < 0) seconds = 0;
 
-            return FormatDuration(TimeSpan.FromSeconds(seconds));
-        }
-
-        private static string FormatDuration(TimeSpan ts)
-        {
-            if (ts.TotalHours >= 1)
-            {
-                return ts.ToString(@"hh\:mm\:ss");
-            }
-
-            return ts.ToString(@"mm\:ss");
+            return TimeSpan.FromSeconds(seconds);
         }
     }
 }
