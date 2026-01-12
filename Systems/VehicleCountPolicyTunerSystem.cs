@@ -28,7 +28,7 @@ namespace DispatchBoss
         // ---- TUNING Transit Lines (no Harmony) ----
         // If it doesn't reach 1 vehicle on some lines, increase kFewerVehiclesApplied (e.g. 22f -> 24f).
         // If max values are too low, make kMoreVehiclesApplied more negative (e.g. -0.82f -> -0.88f).
-        private const float kFewerVehiclesApplied = 22f;     // pushes interval longer (helps reach 1 vehicle)
+        private const float kFewerVehiclesApplied = 22f;     // pushes interval longer to help reach 1 vehicle (game default ~15f).
         private const float kMoreVehiclesApplied = -0.84f;   // caps how short interval can get (controls max vehicles)
 
         protected override void OnCreate()

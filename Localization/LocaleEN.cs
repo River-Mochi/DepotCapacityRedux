@@ -50,11 +50,11 @@ namespace DispatchBoss
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.EnableLineVehicleCountTuner)), "Expand transit line slider limits" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.EnableLineVehicleCountTuner)),
                     "1. Allows vanilla transit line slider go as **low as 1 vehicle** even on long routes.\n" +
-                    "2. **Maximums are higher than vanilla but still follows the game's logic**\n" +
-                    "The game bases limits on estimated route time (driving time + stop count), so max varies per line.\n" +
-                    "<Avoidconflicts: remove any mod that edits the same policy> (e.g.: TransportPolicyAdjuster or SmartTransporation).\n" +
+                    "2. **Maximums are higher than vanilla but still allows the game's logic**\n" +
+                    "Game calculates limits on routes (driving time + stop count), so max varies per line (but will be a little higher with this ON [x]).\n" +
+                    "<Avoid conflicts: remove any mod that edits the same policy> (e.g.: TransportPolicyAdjuster or SmartTransporation).\n" +
                     "If you want to use that mod with this mod, then keep this checkbox [ ] off.> Better to not have both.\n" +
-                    "Works for: bus, tram, train, subway, ship, ferry, airplane."
+                    "Works for: bus, tram, train, subway, ship, ferry, airplane.\n"
                 },
 
                 // Depot Capacity sliders

@@ -34,6 +34,7 @@ namespace DispatchBoss
         private const int kMaxChars = 1 * 1024 * 1024; // ~1MB
         private const int kMaxKeywordMatches = 700;
 
+        // Transit Line Stats
         private struct TransitDefaultsStats
         {
             public int Count;
@@ -137,7 +138,7 @@ namespace DispatchBoss
                 string NameOf(Entity e) => GetPrefabNameSafe(e);
 
                 // Header
-                Append("DispatchBoss Prefab Scan Report");
+                Append("Dispatch Boss: Prefab Scan Report");
                 Append($"Timestamp (local): {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
                 Append($"Mod: {Mod.ModName} {Mod.ModVersion}");
                 Append("");
@@ -145,7 +146,7 @@ namespace DispatchBoss
                 // ---- Transit lines (prefab defaults + policy modifier range) ----
                 Append("== Transit lines (vanilla timing inputs) ==");
                 Append("Vehicle targets are based on route time estimate (segment durations + stop count), not distance-only.");
-                Append("Traffic/slow paths can change segment durations over time, so targets can shift during gameplay.");
+                Append("Traffic/slow paths can change segment durations over time, so Line slider targets can shift during gameplay.");
                 Append("");
 
                 // Prefab defaults: TransportLineData is created by TransportLinePrefab.LateInitialize.

@@ -60,9 +60,10 @@ delivery trucks vans, industry semi-trucks, cargo station depot capacity, Extrac
 	<Dependency Id="" />
 	<!-- Change log for new version. Single line or multi line. Supports minimal markdown subset -->
 	<ChangeLog>
-* Change name to Dispatch Boss do to added features not Public Transit.
-* added Industry Tab: includes Semi-Trucks, Raw Materials dump trucks (oil, coal, ore, stone), Delivery Vans, Motorbike Delivery
+* added Industry Tab: includes Semi-Trucks, Delivery Vans, Motorbike Delivery, Raw Materials dump trucks (oil, coal, ore, stone),
 * added Road Maintenance and Park Maintenance controls
+* added feature to expand the Transit Line in-game slider from 1 to higher maximums (many more vehicles than vanilla allows).
+* Rename to 'Dispatch Boss' because many new features are not just Public Transit.
 </ChangeLog>
 	<!--External link. supported types are discord, github, youtube, twitch, x, paypal, patreon-->
 <ExternalLink Type="discord" Url="https://discord.gg/HTav7ARPs2" />

@@ -53,7 +53,7 @@
 ## Links
 
 - [Github repo](https://github.com/River-Mochi/DispatchBoss)
-- [Paradox Mods page](https://mods.paradoxplaza.com/authors/kimosabe1/cities_skylines_2?games=cities_skylines_2&orderBy=desc&sortBy=best&time=alltime)
+- [Paradox Mods page](https://mods.paradoxplaza.com/authors/River-mochi/cities_skylines_2?games=cities_skylines_2&orderBy=desc&sortBy=best&time=alltime)
 - [Support Discord](https://discord.gg/HTav7ARPs2)
 
 ---
