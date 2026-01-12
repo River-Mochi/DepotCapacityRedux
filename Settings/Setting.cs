@@ -470,7 +470,7 @@ namespace DispatchBoss
                 GameManager gm = GameManager.instance;
                 if (gm == null || !gm.gameMode.IsGame())
                 {
-                    PrefabScanState.MarkFailed("No city loaded.");
+                    PrefabScanState.MarkFailed("No city loaded yet.");
                     return;
                 }
 
@@ -512,6 +512,7 @@ namespace DispatchBoss
         [SettingsUISection(AboutTab, DebugGroup)]
         public bool EnableDebugLogging { get; set; }
 
+        [SettingsUIButtonGroup(DebugGroup)]
         [SettingsUIButton]
         [SettingsUISection(AboutTab, DebugGroup)]
         public bool OpenLogButton
@@ -519,6 +520,7 @@ namespace DispatchBoss
             set => ShellOpen.OpenFolderSafe(ShellOpen.GetLogsFolder(), "OpenLog");
         }
 
+        [SettingsUIButtonGroup(DebugGroup)]
         [SettingsUIButton]
         [SettingsUISection(AboutTab, DebugGroup)]
         public bool OpenReportButton

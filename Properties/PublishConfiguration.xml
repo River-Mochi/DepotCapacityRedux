@@ -4,24 +4,31 @@
 	<!--Name of the mod to display to players-->
 	<DisplayName Value="Dispatch Boss" />
 	<!--Short description of the mod-->
-	<ShortDescription Value="Easy change max sizes of all Transit Passengers and Depot vehicles" />
+	<ShortDescription Value="Easy scale Public Transit, Industry Cargo and Delivery, and Road + Parks vehicles, and expand Transit Line slider limits." />
 	<!--Long description of the mod. Single line or multi line. Supports minimal markdown subset-->
 	<!--LongDescription Value="This is a long description" /-->
 	<LongDescription>### Dispatch Boss
 
-### What it does
+Adjust vehicle capacities and building fleet limits across **Transit**, **Industry**, and **Maintenance** — plus an optional toggle to expand the vanilla **transit line vehicle slider**.
 
-- **Depots**: change maximum vehicles per Depot (Bus, Taxi, Tram, Train, Subway)
-- **Passengers**:  increase how many passengers each vehicle can carry (bus, tram, trains, subway, airplane, ship, ferry)
-- **Sliders** adjust any time, no restart needed.
-- Supports switching cities.
+### What it does
+- **Depots**: scale max vehicles per depot (Bus, Taxi, Tram, Train, Subway)
+- **Passengers**: scale seats per vehicle
+- **Industry Deliveries**: scale cargo capacity for delivery vehicles (Semi trucks, Delivery vans, Motorbike delivery, Raw materials trucks)
+- **Extractor + cargo fleet**: scale max fleet for extractor transport companies + cargo stations (harbor/train/airport cargo)
+- **Road + Park maintenance**: scale depot fleet size, work capacity, and work rate
+- **Road wear speed (alpha)**: scale how fast roads accumulate wear over time
+- **Transit line slider limits**: allows game's route line slider to reach **1 vehicle** on most routes and higher maximum vehicles.
+
 
 ### Notes 🚍🚋🚆✈️🚢
+- **Sliders** adjust any time, no restart needed.
+- Supports switching cities.
+- Transit lines: expanded limits still follow the game’s **route cycle time** (travel time + stops); slider gets higher maximums, but still varies per line (due to game's formula).
 - Depot capacity = maximum number of vehicles a single depot can maintain or spawn (scales off base building, not extensions).
-- Passenger capacity = maximum passengers each vehicle can carry.
 - Remove other depot/passenger capacity mods to avoid conflicts (they override each other).
-- Does not use Harmony or Reflection; more compatible - less likely to break with game updates.
-- Safe to remove any time. Use reset all button to run as vanilla game default.
+- No Harmony patching; more compatible - less likely to break with game updates.
+- Safe to remove any time (use Reset buttons to return to vanilla values).
 
 ## 11 Languages
 
@@ -60,10 +67,11 @@ delivery trucks vans, industry semi-trucks, cargo station depot capacity, Extrac
 	<Dependency Id="" />
 	<!-- Change log for new version. Single line or multi line. Supports minimal markdown subset -->
 	<ChangeLog>
-* added Industry Tab: includes Semi-Trucks, Delivery Vans, Motorbike Delivery, Raw Materials dump trucks (oil, coal, ore, stone),
-* added Road Maintenance and Park Maintenance controls
-* added feature to expand the Transit Line in-game slider from 1 to higher maximums (many more vehicles than vanilla allows).
-* Rename to 'Dispatch Boss' because many new features are not just Public Transit.
+* Added Industry tab: delivery cargo scaling (semi trucks, delivery vans, motorbike delivery, raw materials trucks).
+* Added extractor + cargo station fleet scaling.
+* Added Road and Parks Maintenance controls.
+* Added optional toggle to expand the in-game Transit Line slider minimums/maximums (variable maxs per game formula, but higher than vanilla allows)
+* Rename to 'Dispatch Boss' to reflect major expanded scope beyond Transit-only.
 </ChangeLog>
 	<!--External link. supported types are discord, github, youtube, twitch, x, paypal, patreon-->
 <ExternalLink Type="discord" Url="https://discord.gg/HTav7ARPs2" />

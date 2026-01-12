@@ -30,7 +30,7 @@ namespace DispatchBoss
 
         private static bool s_LoggedPrefabNameException;
 
-        // These are TransportCompany prefabs (NOT meshes), so no “tombstone” risk here.
+        // TransportCompany prefabs
         private static readonly HashSet<string> s_KnownIndustrialCompanies = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             "Industrial_FishExtractor", "Industrial_ForestryExtractor", "Industrial_GrainExtractor", "Industrial_OreExtractor", "Industrial_OilExtractor",
