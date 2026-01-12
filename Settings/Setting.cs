@@ -552,19 +552,6 @@ namespace DispatchBoss
             AirplanePassengerScalar = 100f;
         }
 
-        private static void OpenWithUnityFileUrl(string path, bool isDirectory = false)
-        {
-            string normalized = path.Replace('\\', '/');
-
-            if (isDirectory && !normalized.EndsWith("/", StringComparison.Ordinal))
-            {
-                normalized += "/";
-            }
-
-            string uri = "file:///" + normalized;
-            Application.OpenURL(uri);
-        }
-
         private void EnsureServiceDefaults()
         {
             // Industry scalars: older config files can load missing fields as 0; clamp to safe defaults.
