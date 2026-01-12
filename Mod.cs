@@ -89,6 +89,10 @@ namespace DispatchBoss
             }
         }
 
+        //---------------
+        // HELPERS
+        //---------------
+
         private static void AddLocaleSource(string localeId, IDictionarySource source)
         {
             if (string.IsNullOrEmpty(localeId))
@@ -113,5 +117,27 @@ namespace DispatchBoss
                     $"AddLocaleSource: AddSource for '{localeId}' failed: {ex.GetType().Name}: {ex.Message}");
             }
         }
+
+        // Helper to localize Status text.
+        internal static string L(string id, string fallback)
+        {
+            try
+            {
+                LocalizationManager? lm = GameManager.instance?.localizationManager;
+                if (lm != null &&
+                    lm.activeDictionary != null &&
+                    lm.activeDictionary.TryGetValue(id, out string result))
+                {
+                    return result;
+                }
+            }
+            catch
+            {
+                // ignore and fall back
+            }
+
+            return fallback;
+        }
+
     }
 }

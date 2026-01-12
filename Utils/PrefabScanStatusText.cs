@@ -1,8 +1,8 @@
 // File: Utils/PrefabScanStatusText.cs
 // Purpose: Builds the player-facing prefab scan status string from PrefabScanState data.
 // Notes:
-// - Centralizes all status words in ONE place.
-// - Can be wired to localization lookup (Phase/FailCode -> localized strings).
+// - Uses localization keys (MagicMail-style templates) with English fallbacks.
+// - Does NOT attempt to translate FailDetails (usually exception text).
 
 namespace DispatchBoss
 {
@@ -10,68 +10,79 @@ namespace DispatchBoss
 
     public static class PrefabScanStatusText
     {
-        // Status words (English fallback for now).
-        // map these via locale keys if you decide to add runtime localization lookup.
-        private const string Idle = "Idle";
-        private const string Queued = "Queued";
-        private const string Running = "Running";
-        private const string Done = "Done";
-        private const string Failed = "Failed";
-
-        // Failure reasons (English fallback).
-        private const string NoCityLoaded = "No city loaded.";
+        // Locale keys (templates)
+        private const string KeyIdle = "DB_SCAN_IDLE";
+        private const string KeyQueuedFmt = "DB_SCAN_QUEUED_FMT";     // "{0}" = elapsed
+        private const string KeyRunningFmt = "DB_SCAN_RUNNING_FMT";   // "{0}" = elapsed
+        private const string KeyDoneFmt = "DB_SCAN_DONE_FMT";         // "{0}" = duration, "{1}" = timestamp
+        private const string KeyFailed = "DB_SCAN_FAILED";
+        private const string KeyFailNoCity = "DB_SCAN_FAIL_NO_CITY";
+        private const string KeyUnknownTime = "DB_SCAN_UNKNOWN_TIME";
 
         public static string Format(PrefabScanState.Snapshot s)
         {
             switch (s.Phase)
             {
                 case PrefabScanState.Phase.Idle:
-                    return Idle;
+                    return Mod.L(KeyIdle, "Idle");
 
                 case PrefabScanState.Phase.Requested:
                     {
                         TimeSpan elapsed = PrefabScanState.GetElapsedSinceTick(s.RequestTick);
-                        return $"{Queued} ({FormatDuration(elapsed)})";
+                        return string.Format(
+                            Mod.L(KeyQueuedFmt, "Queued ({0})"),
+                            FormatDuration(elapsed));
                     }
 
                 case PrefabScanState.Phase.Running:
                     {
                         TimeSpan elapsed = PrefabScanState.GetElapsedSinceTick(s.RunStartTick);
-                        return $"{Running} ({FormatDuration(elapsed)})";
+                        return string.Format(
+                            Mod.L(KeyRunningFmt, "Running ({0})"),
+                            FormatDuration(elapsed));
                     }
 
                 case PrefabScanState.Phase.Done:
                     {
                         string dur = FormatDuration(s.LastDuration);
+
                         string ts = s.LastRunFinishedLocal == default
-                            ? "unknown time"
+                            ? Mod.L(KeyUnknownTime, "unknown time")
                             : s.LastRunFinishedLocal.ToString("yyyy-MM-dd HH:mm:ss");
 
-                        // Keep it compact; the report path is already shown in button desc + written to log.
-                        return $"{Done} ({dur} | {ts})";
+                        // Keep compact; report path is shown elsewhere.
+                        return string.Format(
+                            Mod.L(KeyDoneFmt, "Done ({0} | {1})"),
+                            dur,
+                            ts);
                     }
 
                 case PrefabScanState.Phase.Failed:
                 default:
                     {
+                        string failed = Mod.L(KeyFailed, "Failed");
+
                         string reason = s.FailCode switch
                         {
-                            PrefabScanState.FailCode.NoCityLoaded => NoCityLoaded,
+                            PrefabScanState.FailCode.NoCityLoaded => Mod.L(KeyFailNoCity, "No city loaded."),
                             _ => string.Empty
                         };
 
                         if (!string.IsNullOrEmpty(s.FailDetails))
                         {
                             // Details are typically exception text (not worth translating).
-                            return $"{Failed} ({reason} {s.FailDetails})".Trim();
+                            if (!string.IsNullOrEmpty(reason))
+                                return $"{failed} ({reason} {s.FailDetails})".Trim();
+
+                            return $"{failed} ({s.FailDetails})".Trim();
                         }
 
                         if (!string.IsNullOrEmpty(reason))
                         {
-                            return $"{Failed} ({reason})";
+                            return $"{failed} ({reason})";
                         }
 
-                        return Failed;
+                        return failed;
                     }
             }
         }

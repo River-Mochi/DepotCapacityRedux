@@ -4,14 +4,14 @@
 namespace DispatchBoss
 {
     using Colossal.IO.AssetDatabase; // FileLocation
-    using Game;
-    using Game.Modding;
-    using Game.SceneFlow;
-    using Game.Settings;
-    using Game.UI;
-    using System;
+    using Game;                     // IsGame
+    using Game.Modding;             // IMod
+    using Game.SceneFlow;           // GameManager
+    using Game.Settings;            // Settings UI attributes
+    using Game.UI;                  
+    using System;                   // Exception
     using Unity.Entities;
-    using UnityEngine;
+    using UnityEngine;              // Application URL
 
     [FileLocation("ModsSettings/DispatchBoss/DispatchBoss")]
     [SettingsUITabOrder(PublicTransitTab, IndustryTab, ParksRoadsTab, AboutTab)]
@@ -552,7 +552,7 @@ namespace DispatchBoss
 
         private void EnsureServiceDefaults()
         {
-            // Industry scalars: older config files can load missing fields as 0; clamp to safe defaults.
+            // Industry scalars: missing fields can load as 0; clamp to safe defaults.
             if (SemiTruckCargoScalar <= 0f) SemiTruckCargoScalar = 1f;
             if (DeliveryVanCargoScalar <= 0f) DeliveryVanCargoScalar = 1f;
             if (OilTruckCargoScalar <= 0f) OilTruckCargoScalar = 1f;
@@ -561,34 +561,29 @@ namespace DispatchBoss
             if (CargoStationMaxTrucksScalar <= 0f) CargoStationMaxTrucksScalar = 1f;
             if (ExtractorMaxTrucksScalar <= 0f) ExtractorMaxTrucksScalar = 1f;
 
-            // Old builds used scalars (1..10) and wear (0.2..2.0). New builds store percent.
-            float NormalizeMaintenancePercent(float v)
-            {
-                if (v <= 0f) return 100f;
-                if (v > 0f && v <= 10.0001f) v *= 100f; // old scalar -> percent
-                if (v < MaintenanceMinPercent) v = MaintenanceMinPercent;
-                if (v > MaintenanceMaxPercent) v = MaintenanceMaxPercent;
-                return v;
-            }
+            // Clamp scalars to current UI ranges.
+            CargoStationMaxTrucksScalar = ScalarMath.ClampScalar(CargoStationMaxTrucksScalar, CargoStationMinScalar, CargoStationMaxScalar);
+            ExtractorMaxTrucksScalar = ScalarMath.ClampScalar(ExtractorMaxTrucksScalar, CargoStationMinScalar, CargoStationMaxScalar);
 
-            float NormalizeWearPercent(float v)
-            {
-                if (v <= 0f) return 100f;
-                if (v > 0f && v <= 2.0001f) v *= 100f; // old wear scalar -> percent
-                if (v < RoadWearMinPercent) v = RoadWearMinPercent;
-                if (v > RoadWearMaxPercent) v = RoadWearMaxPercent;
-                return v;
-            }
+            // Percent sliders: <= 0 means "missing/invalid" -> default to 100%, then clamp to UI range.
+            RoadMaintenanceDepotScalar = ClampPercentOrDefault(RoadMaintenanceDepotScalar, MaintenanceMinPercent, MaintenanceMaxPercent, 100f);
+            RoadMaintenanceVehicleCapacityScalar = ClampPercentOrDefault(RoadMaintenanceVehicleCapacityScalar, MaintenanceMinPercent, MaintenanceMaxPercent, 100f);
+            RoadMaintenanceVehicleRateScalar = ClampPercentOrDefault(RoadMaintenanceVehicleRateScalar, MaintenanceMinPercent, MaintenanceMaxPercent, 100f);
 
-            RoadMaintenanceDepotScalar = NormalizeMaintenancePercent(RoadMaintenanceDepotScalar);
-            RoadMaintenanceVehicleCapacityScalar = NormalizeMaintenancePercent(RoadMaintenanceVehicleCapacityScalar);
-            RoadMaintenanceVehicleRateScalar = NormalizeMaintenancePercent(RoadMaintenanceVehicleRateScalar);
+            ParkMaintenanceDepotScalar = ClampPercentOrDefault(ParkMaintenanceDepotScalar, MaintenanceMinPercent, MaintenanceMaxPercent, 100f);
+            ParkMaintenanceVehicleCapacityScalar = ClampPercentOrDefault(ParkMaintenanceVehicleCapacityScalar, MaintenanceMinPercent, MaintenanceMaxPercent, 100f);
+            ParkMaintenanceVehicleRateScalar = ClampPercentOrDefault(ParkMaintenanceVehicleRateScalar, MaintenanceMinPercent, MaintenanceMaxPercent, 100f);
 
-            ParkMaintenanceDepotScalar = NormalizeMaintenancePercent(ParkMaintenanceDepotScalar);
-            ParkMaintenanceVehicleCapacityScalar = NormalizeMaintenancePercent(ParkMaintenanceVehicleCapacityScalar);
-            ParkMaintenanceVehicleRateScalar = NormalizeMaintenancePercent(ParkMaintenanceVehicleRateScalar);
-
-            RoadWearScalar = NormalizeWearPercent(RoadWearScalar);
+            RoadWearScalar = ClampPercentOrDefault(RoadWearScalar, RoadWearMinPercent, RoadWearMaxPercent, 100f);
         }
+
+        private static float ClampPercentOrDefault(float value, float min, float max, float defaultValue)
+        {
+            if (value <= 0f) value = defaultValue;
+            if (value < min) value = min;
+            if (value > max) value = max;
+            return value;
+        }
+
     }
 }

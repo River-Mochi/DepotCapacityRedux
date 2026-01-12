@@ -292,6 +292,16 @@ namespace DispatchBoss
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.OpenReportButton)),
                     "Open the report folder.\n" +
                     "Next: open <ScanReport-Prefabs.txt> with your text editor (Notepad++ recommended)." },
+
+                // ---- Prefab scan status text (templates) ----
+                { "DB_SCAN_IDLE", "Idle" },
+                { "DB_SCAN_QUEUED_FMT", "Queued ({0})" },
+                { "DB_SCAN_RUNNING_FMT", "Running ({0})" },
+                { "DB_SCAN_DONE_FMT", "Done ({0} | {1})" },
+                { "DB_SCAN_FAILED", "Failed" },
+                { "DB_SCAN_FAIL_NO_CITY", "No city loaded." },
+                { "DB_SCAN_UNKNOWN_TIME", "unknown time" },
+
             };
         }
 

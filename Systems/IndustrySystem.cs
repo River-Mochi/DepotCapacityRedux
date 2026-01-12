@@ -3,10 +3,6 @@
 //          - Extractor fleet max trucks (TransportCompanyData.m_MaxTransports for industrial companies)
 //          - Cargo station max fleet (TransportCompanyData.m_MaxTransports for CargoTransportStationData)
 //          - Delivery truck cargo capacity (DeliveryTruckData.m_CargoCapacity)
-// Notes:
-// - Run-once system: enabled on city load or when settings Apply() enables it.
-// - Uses PrefabSystem + PrefabBase to read vanilla/base values (no stacking).
-// - Extractor targeting tightened to known industrial company prefab names + safe fallback for Industrial_*Extractor*.
 
 namespace DispatchBoss
 {
@@ -99,7 +95,8 @@ namespace DispatchBoss
             // Cargo Stations: max trucks (TransportCompanyData.m_MaxTransports)
             // -------------------------
             {
-                float scalar = ScalarMath.ClampScalar(settings.CargoStationMaxTrucksScalar, Setting.ServiceMinScalar, Setting.ServiceMaxScalar);
+                // Cargo station slider is 1x..5x. Clamp to that range.
+                float scalar = ScalarMath.ClampScalar(settings.CargoStationMaxTrucksScalar, Setting.CargoStationMinScalar, Setting.CargoStationMaxScalar);
 
                 foreach ((RefRW<TransportCompanyData> companyRef, Entity prefabEntity) in SystemAPI
                              .Query<RefRW<TransportCompanyData>>()
@@ -196,11 +193,11 @@ namespace DispatchBoss
             // Industrial extractor transport companies: max fleet (TransportCompanyData.m_MaxTransports)
             // -------------------------
             {
-                float scalarF = settings.ExtractorMaxTrucksScalar;
-                if (scalarF <= 0f)
-                {
-                    scalarF = 1f;
-                }
+                // Also clamp extractors to 1x..5x (same slider range).
+                float scalarF = ScalarMath.ClampScalar(
+                      settings.ExtractorMaxTrucksScalar,
+                      Setting.CargoStationMinScalar,
+                      Setting.CargoStationMaxScalar);
 
                 int scalar = (int)Math.Round(scalarF);
                 scalar = ScalarMath.ClampInt(scalar, 1, (int)Setting.CargoStationMaxScalar);
@@ -247,7 +244,6 @@ namespace DispatchBoss
                     }
                 }
 
-                // IMPORTANT: prevent release log spam when nothing changed.
                 if (verbose || changed > 0)
                 {
                     Mod.s_Log.Info($"{Mod.ModTag} Extractor trucks: scalar={scalar} matched={matched} changed={changed} skippedZero={skippedZero}");
@@ -257,10 +253,6 @@ namespace DispatchBoss
             Enabled = false;
         }
 
-        // -------------------------
-        // Targeting
-        // -------------------------
-
         private static bool IsTargetIndustrialCompany(string name)
         {
             if (string.IsNullOrEmpty(name))
@@ -268,13 +260,11 @@ namespace DispatchBoss
                 return false;
             }
 
-            // Known set (from scan report)
             if (s_KnownIndustrialCompanies.Contains(name))
             {
                 return true;
             }
 
-            // Safe fallback: future additions that follow the obvious naming pattern
             if (name.StartsWith("Industrial_", StringComparison.OrdinalIgnoreCase) &&
                 name.IndexOf("Extractor", StringComparison.OrdinalIgnoreCase) >= 0)
             {
@@ -283,10 +273,6 @@ namespace DispatchBoss
 
             return false;
         }
-
-        // -------------------------
-        // Vanilla/base caching
-        // -------------------------
 
         private int GetOrCacheCargoStationBase(Entity prefabEntity, int currentValue)
         {
@@ -351,7 +337,6 @@ namespace DispatchBoss
                 return baseMax;
             }
 
-            // Capture the first value seen this session (usually vanilla or whatever another mod set).
             baseMax = currentValue;
 
             m_ExtractorCompanyBaseMaxTransports[prefabEntity] = baseMax;
