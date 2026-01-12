@@ -376,7 +376,7 @@ namespace DispatchBoss
                 return baseMax;
             }
 
-            // Capture the first value we see this session (usually vanilla or whatever another mod set).
+            // Capture the first value seen this session (usually vanilla or whatever another mod set).
             baseMax = currentValue;
 
             m_ExtractorCompanyBaseMaxTransports[prefabEntity] = baseMax;
