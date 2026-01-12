@@ -125,7 +125,7 @@ namespace DispatchBoss
             Setting settings = Mod.Settings;
             bool debug = settings.EnableDebugLogging;
 
-            // DEPOTS (Bus / Taxi /  Tram / Train / Subway only) — prefab-only
+            // DEPOTS (Bus / Taxi / Tram / Train / Subway only) — prefab-only
             foreach ((RefRW<TransportDepotData> depotRef, Entity entity) in SystemAPI
                          .Query<RefRW<TransportDepotData>>()
                          .WithAll<PrefabData>()
@@ -155,12 +155,7 @@ namespace DispatchBoss
                     baseCapacity = depotData.m_VehicleCapacity;
                 }
 
-                if (baseCapacity < 1)
-                    baseCapacity = 1;
-
-                int newCapacity = (int)(baseCapacity * scalar);
-                if (newCapacity < 1)
-                    newCapacity = 1;
+                int newCapacity = ScalarMath.MulIntTruncateMin1(baseCapacity, scalar);
 
                 if (newCapacity != depotData.m_VehicleCapacity)
                 {
@@ -195,7 +190,7 @@ namespace DispatchBoss
                 {
                     if (debug)
                     {
-                        Mod.s_Log.Info($"{Mod.ModTag} Vehicle skip: {GetPrefabNameSafe(entity)} PrisonVan detected -> leaving seats vanilla.");
+                        Mod.s_Log.Info($"{Mod.ModTag} Vehicle skip: {PrefabNameUtil.GetNameSafe(m_PrefabSystem, entity)} PrisonVan detected -> leaving seats vanilla.");
                     }
 
                     continue;
@@ -216,12 +211,7 @@ namespace DispatchBoss
                     basePassengers = vehicleData.m_PassengerCapacity;
                 }
 
-                if (basePassengers < 1)
-                    basePassengers = 1;
-
-                int newPassengers = (int)(basePassengers * scalar);
-                if (newPassengers < 1)
-                    newPassengers = 1;
+                int newPassengers = ScalarMath.MulIntTruncateMin1(basePassengers, scalar);
 
                 if (newPassengers != vehicleData.m_PassengerCapacity)
                 {
@@ -330,41 +320,15 @@ namespace DispatchBoss
 
         private bool IsPrisonVan(Entity entity)
         {
-            if (m_PrefabSystem == null)
-                return false;
-
-            if (!m_PrefabSystem.TryGetPrefab(entity, out PrefabBase prefabBase))
-                return false;
-
-            string name = prefabBase.name;
-            if (string.IsNullOrEmpty(name))
-                return false;
-
-            return name.IndexOf("PrisonVan", StringComparison.OrdinalIgnoreCase) >= 0;
-        }
-
-        private string GetPrefabNameSafe(Entity entity)
-        {
-            if (m_PrefabSystem == null)
-                return $"PrefabEntity={entity.Index}:{entity.Version}";
-
-            if (!m_PrefabSystem.TryGetPrefab(entity, out PrefabBase prefabBase))
-                return $"PrefabEntity={entity.Index}:{entity.Version}";
-
-            return prefabBase.name ?? "(unnamed)";
+            string name = PrefabNameUtil.GetNameSafe(m_PrefabSystem, entity);
+            return !string.IsNullOrEmpty(name) && name.IndexOf("PrisonVan", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private bool TryGetDepotBaseCapacity(Entity entity, out int baseCapacity)
         {
             baseCapacity = 0;
 
-            if (m_PrefabSystem == null)
-                return false;
-
-            if (!m_PrefabSystem.TryGetPrefab(entity, out PrefabBase prefabBase))
-                return false;
-
-            if (!prefabBase.TryGet(out TransportDepot depotComponent))
+            if (!PrefabComponentUtil.TryGetComponent(m_PrefabSystem, entity, out TransportDepot depotComponent))
                 return false;
 
             baseCapacity = depotComponent.m_VehicleCapacity;
@@ -375,13 +339,7 @@ namespace DispatchBoss
         {
             basePassengers = 0;
 
-            if (m_PrefabSystem == null)
-                return false;
-
-            if (!m_PrefabSystem.TryGetPrefab(entity, out PrefabBase prefabBase))
-                return false;
-
-            if (!prefabBase.TryGet(out PublicTransport publicTransport))
+            if (!PrefabComponentUtil.TryGetComponent(m_PrefabSystem, entity, out PublicTransport publicTransport))
                 return false;
 
             basePassengers = publicTransport.m_PassengerCapacity;
@@ -401,10 +359,7 @@ namespace DispatchBoss
                 default: return 1f;
             }
 
-            if (percent < Setting.DepotMinPercent) percent = Setting.DepotMinPercent;
-            else if (percent > Setting.MaxPercent) percent = Setting.MaxPercent;
-
-            return percent / 100f;
+            return ScalarMath.PercentToScalarClamped(percent, Setting.DepotMinPercent, Setting.MaxPercent);
         }
 
         private static float GetPassengerScalar(Setting settings, TransportType type)
@@ -422,10 +377,7 @@ namespace DispatchBoss
                 default: return 1f;
             }
 
-            if (percent < Setting.PassengerMinPercent) percent = Setting.PassengerMinPercent;
-            else if (percent > Setting.MaxPercent) percent = Setting.MaxPercent;
-
-            return percent / 100f;
+            return ScalarMath.PercentToScalarClamped(percent, Setting.PassengerMinPercent, Setting.MaxPercent);
         }
     }
 }

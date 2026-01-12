@@ -24,8 +24,6 @@ namespace DispatchBoss
         private Dictionary<Entity, (int Cap, int Rate)> m_MaintenanceVehicleBase = null!;
         private Dictionary<Entity, int> m_MaintenanceDepotBaseVehicleCapacity = null!;
 
-        private static bool s_LoggedPrefabNameException;
-
         protected override void OnCreate()
         {
             base.OnCreate();
@@ -83,12 +81,12 @@ namespace DispatchBoss
             Setting settings = Mod.Settings;
             bool verbose = settings.EnableDebugLogging;
 
-            // -------------------------
+            // ------------------------------------------
             // Maintenance depots: max vehicles (prefabs)
-            // -------------------------
+            // ------------------------------------------
             {
-                float roadDepotScalar = PercentToScalar(settings.RoadMaintenanceDepotScalar, Setting.MaintenanceMinPercent, Setting.MaintenanceMaxPercent);
-                float parkDepotScalar = PercentToScalar(settings.ParkMaintenanceDepotScalar, Setting.MaintenanceMinPercent, Setting.MaintenanceMaxPercent);
+                float roadDepotScalar = ScalarMath.PercentToScalarClamped(settings.RoadMaintenanceDepotScalar, Setting.MaintenanceMinPercent, Setting.MaintenanceMaxPercent);
+                float parkDepotScalar = ScalarMath.PercentToScalarClamped(settings.ParkMaintenanceDepotScalar, Setting.MaintenanceMinPercent, Setting.MaintenanceMaxPercent);
 
                 foreach ((RefRW<MaintenanceDepotData> depotRef, Entity prefabEntity) in SystemAPI
                              .Query<RefRW<MaintenanceDepotData>>()
@@ -99,7 +97,7 @@ namespace DispatchBoss
 
                     MaintenanceType mt = data.m_MaintenanceType;
 
-                    string prefabName = GetPrefabName(prefabEntity);
+                    string prefabName = PrefabNameUtil.GetNameSafe(m_PrefabSystem, prefabEntity);
 
                     bool hasParkFlag = (mt & MaintenanceType.Park) != MaintenanceType.None;
                     bool hasRoadFlags = (mt & (MaintenanceType.Road | MaintenanceType.Snow | MaintenanceType.Vehicle)) != MaintenanceType.None;
@@ -158,11 +156,7 @@ namespace DispatchBoss
                     }
 
                     float scalar = isPark ? parkDepotScalar : roadDepotScalar;
-                    int newVehicles = SafeMulIntAllowZero(baseVehicles, scalar);
-
-                    // If base is >0 and scalar tiny, avoid collapsing to 1 vehicle.
-                    if (baseVehicles > 0 && newVehicles == 1)
-                        newVehicles = 2;
+                    int newVehicles = ScalarMath.MulIntTruncateAllowZeroMin1(baseVehicles, scalar);
 
                     if (newVehicles != data.m_VehicleCapacity)
                     {
@@ -177,15 +171,15 @@ namespace DispatchBoss
                 }
             }
 
-            // -------------------------
+            // -----------------------------------------------
             // Maintenance vehicles: capacity + rate (prefabs)
-            // -------------------------
+            // -----------------------------------------------
             {
-                float roadCapScalar = PercentToScalar(settings.RoadMaintenanceVehicleCapacityScalar, Setting.MaintenanceMinPercent, Setting.MaintenanceMaxPercent);
-                float roadRateScalar = PercentToScalar(settings.RoadMaintenanceVehicleRateScalar, Setting.MaintenanceMinPercent, Setting.MaintenanceMaxPercent);
+                float roadCapScalar = ScalarMath.PercentToScalarClamped(settings.RoadMaintenanceVehicleCapacityScalar, Setting.MaintenanceMinPercent, Setting.MaintenanceMaxPercent);
+                float roadRateScalar = ScalarMath.PercentToScalarClamped(settings.RoadMaintenanceVehicleRateScalar, Setting.MaintenanceMinPercent, Setting.MaintenanceMaxPercent);
 
-                float parkCapScalar = PercentToScalar(settings.ParkMaintenanceVehicleCapacityScalar, Setting.MaintenanceMinPercent, Setting.MaintenanceMaxPercent);
-                float parkRateScalar = PercentToScalar(settings.ParkMaintenanceVehicleRateScalar, Setting.MaintenanceMinPercent, Setting.MaintenanceMaxPercent);
+                float parkCapScalar = ScalarMath.PercentToScalarClamped(settings.ParkMaintenanceVehicleCapacityScalar, Setting.MaintenanceMinPercent, Setting.MaintenanceMaxPercent);
+                float parkRateScalar = ScalarMath.PercentToScalarClamped(settings.ParkMaintenanceVehicleRateScalar, Setting.MaintenanceMinPercent, Setting.MaintenanceMaxPercent);
 
                 foreach ((RefRW<MaintenanceVehicleData> mvRef, Entity prefabEntity) in SystemAPI
                              .Query<RefRW<MaintenanceVehicleData>>()
@@ -200,7 +194,7 @@ namespace DispatchBoss
                         continue;
                     }
 
-                    string prefabName = GetPrefabName(prefabEntity);
+                    string prefabName = PrefabNameUtil.GetNameSafe(m_PrefabSystem, prefabEntity);
 
                     bool hasParkFlag = (mt & MaintenanceType.Park) != MaintenanceType.None;
                     bool hasRoadFlags = (mt & (MaintenanceType.Road | MaintenanceType.Snow | MaintenanceType.Vehicle)) != MaintenanceType.None;
@@ -220,8 +214,8 @@ namespace DispatchBoss
 
                     (int Cap, int Rate) baseVals = GetOrCacheMaintenanceVehicleBase(prefabEntity, data.m_MaintenanceCapacity, data.m_MaintenanceRate);
 
-                    int newCap = SafeMulInt(baseVals.Cap, capScalar);
-                    int newRate = SafeMulInt(baseVals.Rate, rateScalar);
+                    int newCap = ScalarMath.MulIntTruncateMin1(baseVals.Cap, capScalar);
+                    int newRate = ScalarMath.MulIntTruncateMin1(baseVals.Rate, rateScalar);
 
                     if (newCap != data.m_MaintenanceCapacity)
                     {
@@ -251,39 +245,8 @@ namespace DispatchBoss
         }
 
         // -------------------------
-        // Helpers
+        // Vanilla/base caching
         // -------------------------
-
-        private static float ClampPercent(float v, float min, float max)
-        {
-            if (v < min) return min;
-            if (v > max) return max;
-            return v;
-        }
-
-        private static float PercentToScalar(float percent, float minPercent, float maxPercent)
-        {
-            percent = ClampPercent(percent, minPercent, maxPercent);
-            return percent / 100f;
-        }
-
-        private static int SafeMulInt(int baseValue, float scalar)
-        {
-            if (baseValue < 1)
-                baseValue = 1;
-
-            int v = (int)(baseValue * scalar);
-            return v < 1 ? 1 : v;
-        }
-
-        private static int SafeMulIntAllowZero(int baseValue, float scalar)
-        {
-            if (baseValue <= 0)
-                return 0;
-
-            int v = (int)(baseValue * scalar);
-            return v < 1 ? 1 : v;
-        }
 
         private int GetOrCacheMaintenanceDepotBase(Entity prefabEntity, int currentValue)
         {
@@ -306,11 +269,7 @@ namespace DispatchBoss
         {
             baseVehicles = 0;
 
-            if (m_PrefabSystem == null)
-                return false;
-            if (!m_PrefabSystem.TryGetPrefab(prefabEntity, out PrefabBase prefabBase))
-                return false;
-            if (!prefabBase.TryGet(out Game.Prefabs.MaintenanceDepot depot))
+            if (!PrefabComponentUtil.TryGetComponent(m_PrefabSystem, prefabEntity, out Game.Prefabs.MaintenanceDepot depot))
                 return false;
 
             baseVehicles = depot.m_VehicleCapacity;
@@ -346,37 +305,12 @@ namespace DispatchBoss
             baseCap = 0;
             baseRate = 0;
 
-            if (m_PrefabSystem == null)
-                return false;
-            if (!m_PrefabSystem.TryGetPrefab(prefabEntity, out PrefabBase prefabBase))
-                return false;
-            if (!prefabBase.TryGet(out Game.Prefabs.MaintenanceVehicle mv))
+            if (!PrefabComponentUtil.TryGetComponent(m_PrefabSystem, prefabEntity, out Game.Prefabs.MaintenanceVehicle mv))
                 return false;
 
             baseCap = mv.m_MaintenanceCapacity;
             baseRate = mv.m_MaintenanceRate;
             return true;
-        }
-
-        private string GetPrefabName(Entity prefabEntity)
-        {
-            try
-            {
-                if (m_PrefabSystem != null && m_PrefabSystem.TryGetPrefab(prefabEntity, out PrefabBase prefabBase))
-                {
-                    return prefabBase.name ?? "(unnamed)";
-                }
-            }
-            catch (Exception ex)
-            {
-                if (!s_LoggedPrefabNameException)
-                {
-                    s_LoggedPrefabNameException = true;
-                    Mod.s_Log.Warn($"{Mod.ModTag} GetPrefabName failed once: {ex.GetType().Name}: {ex.Message}");
-                }
-            }
-
-            return $"PrefabEntity={prefabEntity.Index}:{prefabEntity.Version}";
         }
     }
 }

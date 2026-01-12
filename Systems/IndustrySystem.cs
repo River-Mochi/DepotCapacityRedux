@@ -28,8 +28,6 @@ namespace DispatchBoss
         private Dictionary<Entity, int> m_DeliveryTruckBaseCargoCapacity = null!;
         private Dictionary<Entity, int> m_ExtractorCompanyBaseMaxTransports = null!;
 
-        private static bool s_LoggedPrefabNameException;
-
         // TransportCompany prefabs
         private static readonly HashSet<string> s_KnownIndustrialCompanies = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
@@ -101,7 +99,7 @@ namespace DispatchBoss
             // Cargo Stations: max trucks (TransportCompanyData.m_MaxTransports)
             // -------------------------
             {
-                float scalar = ClampServiceScalar(settings.CargoStationMaxTrucksScalar);
+                float scalar = ScalarMath.ClampScalar(settings.CargoStationMaxTrucksScalar, Setting.ServiceMinScalar, Setting.ServiceMaxScalar);
 
                 foreach ((RefRW<TransportCompanyData> companyRef, Entity prefabEntity) in SystemAPI
                              .Query<RefRW<TransportCompanyData>>()
@@ -117,13 +115,13 @@ namespace DispatchBoss
                         continue;
                     }
 
-                    int newMax = SafeMulIntAllowZero(baseMax, scalar);
+                    int newMax = ScalarMath.MulIntTruncateAllowZeroMin1(baseMax, scalar);
 
                     if (newMax != company.m_MaxTransports)
                     {
                         if (verbose)
                         {
-                            Mod.s_Log.Info($"{Mod.ModTag} CargoStation max trucks: '{GetPrefabName(prefabEntity)}' Base={baseMax} x{scalar:0.##} -> {newMax}");
+                            Mod.s_Log.Info($"{Mod.ModTag} CargoStation max trucks: '{PrefabNameUtil.GetNameSafe(m_PrefabSystem, prefabEntity)}' Base={baseMax} x{scalar:0.##} -> {newMax}");
                         }
 
                         company.m_MaxTransports = newMax;
@@ -135,10 +133,10 @@ namespace DispatchBoss
             // Delivery trucks: buckets (semi / vans / raw materials / motorbikes)
             // -------------------------
             {
-                float semiScalar = ClampServiceScalar(settings.SemiTruckCargoScalar);
-                float vanScalar = ClampServiceScalar(settings.DeliveryVanCargoScalar);
-                float rawScalar = ClampServiceScalar(settings.OilTruckCargoScalar);
-                float mbikeScalar = ClampServiceScalar(settings.MotorbikeDeliveryCargoScalar);
+                float semiScalar = ScalarMath.ClampScalar(settings.SemiTruckCargoScalar, Setting.ServiceMinScalar, Setting.ServiceMaxScalar);
+                float vanScalar = ScalarMath.ClampScalar(settings.DeliveryVanCargoScalar, Setting.ServiceMinScalar, Setting.ServiceMaxScalar);
+                float rawScalar = ScalarMath.ClampScalar(settings.OilTruckCargoScalar, Setting.ServiceMinScalar, Setting.ServiceMaxScalar);
+                float mbikeScalar = ScalarMath.ClampScalar(settings.MotorbikeDeliveryCargoScalar, Setting.ServiceMinScalar, Setting.ServiceMaxScalar);
 
                 foreach ((RefRW<DeliveryTruckData> truckRef, Entity prefabEntity) in SystemAPI
                              .Query<RefRW<DeliveryTruckData>>()
@@ -154,7 +152,7 @@ namespace DispatchBoss
                         continue;
                     }
 
-                    string prefabName = GetPrefabName(prefabEntity);
+                    string prefabName = PrefabNameUtil.GetNameSafe(m_PrefabSystem, prefabEntity);
 
                     VehicleHelpers.GetTrailerTypeInfo(
                         EntityManager,
@@ -180,7 +178,7 @@ namespace DispatchBoss
                         bucket == VehicleHelpers.DeliveryBucket.Motorbike ? mbikeScalar :
                         1f;
 
-                    int newCap = SafeMulIntAllowZero(baseCap, scalar);
+                    int newCap = ScalarMath.MulIntTruncateAllowZeroMin1(baseCap, scalar);
 
                     if (newCap != data.m_CargoCapacity)
                     {
@@ -205,8 +203,7 @@ namespace DispatchBoss
                 }
 
                 int scalar = (int)Math.Round(scalarF);
-                if (scalar < 1) scalar = 1;
-                if (scalar > (int)Setting.CargoStationMaxScalar) scalar = (int)Setting.CargoStationMaxScalar;
+                scalar = ScalarMath.ClampInt(scalar, 1, (int)Setting.CargoStationMaxScalar);
 
                 int matched = 0;
                 int changed = 0;
@@ -217,7 +214,7 @@ namespace DispatchBoss
                              .WithAll<PrefabData>()
                              .WithEntityAccess())
                 {
-                    string name = GetPrefabName(prefabEntity);
+                    string name = PrefabNameUtil.GetNameSafe(m_PrefabSystem, prefabEntity);
                     if (!IsTargetIndustrialCompany(name))
                     {
                         continue;
@@ -250,7 +247,11 @@ namespace DispatchBoss
                     }
                 }
 
-                Mod.s_Log.Info($"{Mod.ModTag} Extractor trucks: scalar={scalar} matched={matched} changed={changed} skippedZero={skippedZero}");
+                // IMPORTANT: prevent release log spam when nothing changed.
+                if (verbose || changed > 0)
+                {
+                    Mod.s_Log.Info($"{Mod.ModTag} Extractor trucks: scalar={scalar} matched={matched} changed={changed} skippedZero={skippedZero}");
+                }
             }
 
             Enabled = false;
@@ -284,26 +285,8 @@ namespace DispatchBoss
         }
 
         // -------------------------
-        // Helpers
+        // Vanilla/base caching
         // -------------------------
-
-        private static float ClampServiceScalar(float scalar)
-        {
-            if (scalar < Setting.ServiceMinScalar)
-                return Setting.ServiceMinScalar;
-            if (scalar > Setting.ServiceMaxScalar)
-                return Setting.ServiceMaxScalar;
-            return scalar;
-        }
-
-        private static int SafeMulIntAllowZero(int baseValue, float scalar)
-        {
-            if (baseValue <= 0)
-                return 0;
-
-            int v = (int)(baseValue * scalar);
-            return v < 1 ? 1 : v;
-        }
 
         private int GetOrCacheCargoStationBase(Entity prefabEntity, int currentValue)
         {
@@ -326,11 +309,7 @@ namespace DispatchBoss
         {
             baseMax = 0;
 
-            if (m_PrefabSystem == null)
-                return false;
-            if (!m_PrefabSystem.TryGetPrefab(prefabEntity, out PrefabBase prefabBase))
-                return false;
-            if (!prefabBase.TryGet(out CargoTransportStation station))
+            if (!PrefabComponentUtil.TryGetComponent(m_PrefabSystem, prefabEntity, out CargoTransportStation station))
                 return false;
 
             baseMax = station.transports;
@@ -358,11 +337,7 @@ namespace DispatchBoss
         {
             baseCap = 0;
 
-            if (m_PrefabSystem == null)
-                return false;
-            if (!m_PrefabSystem.TryGetPrefab(prefabEntity, out PrefabBase prefabBase))
-                return false;
-            if (!prefabBase.TryGet(out Game.Prefabs.DeliveryTruck truck))
+            if (!PrefabComponentUtil.TryGetComponent(m_PrefabSystem, prefabEntity, out Game.Prefabs.DeliveryTruck truck))
                 return false;
 
             baseCap = truck.m_CargoCapacity;
@@ -381,27 +356,6 @@ namespace DispatchBoss
 
             m_ExtractorCompanyBaseMaxTransports[prefabEntity] = baseMax;
             return baseMax;
-        }
-
-        private string GetPrefabName(Entity prefabEntity)
-        {
-            try
-            {
-                if (m_PrefabSystem != null && m_PrefabSystem.TryGetPrefab(prefabEntity, out PrefabBase prefabBase))
-                {
-                    return prefabBase.name ?? "(unnamed)";
-                }
-            }
-            catch (Exception ex)
-            {
-                if (!s_LoggedPrefabNameException)
-                {
-                    s_LoggedPrefabNameException = true;
-                    Mod.s_Log.Warn($"{Mod.ModTag} GetPrefabName failed once: {ex.GetType().Name}: {ex.Message}");
-                }
-            }
-
-            return $"PrefabEntity={prefabEntity.Index}:{prefabEntity.Version}";
         }
     }
 }

@@ -1,5 +1,5 @@
-// File: Systems/VehicleHelpers.cs
-// Purpose: Shared helpers for classifying service vehicle prefabs (delivery buckets, tractor/trailer info).
+// File: Utils/VehicleHelpers.cs
+// Purpose: shared helpers for prefab classification (delivery buckets, tractor/trailer info).
 // Notes:
 // - Not a system (no OnUpdate).
 // - Reusable (classification and component reads only).

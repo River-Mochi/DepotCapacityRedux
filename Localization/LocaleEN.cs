@@ -51,7 +51,7 @@ namespace DispatchBoss
                     "Allows the Transit Line slider to go as **low as 1 vehicle** on most routes.\n" +
                     "**Max values can also increase** (still follows the game’s route-time logic).\n" +
                     "The game uses route time (driving time + stop count), so max varies per line.\n" +
-                    "<Avoid conflicts: remove mods that edit the same policy> (example: TransportPolicyAdjuster).\n" +
+                    "<Avoid Conflicts: remove mods that edit the same Transit Line policy>.\n" +
                     "If you want another policy mod, keep this checkbox OFF.\n" +
                     "Works for: bus, tram, train, subway, ship, ferry, airplane."
                 },
@@ -137,7 +137,7 @@ namespace DispatchBoss
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.ResetPassengerToVanillaButton)),
                     "Set all passenger sliders back to **100%** (game default / vanilla)." },
 
-                // -----------------
+                // ----------------
                 // INDUSTRY tab
                 // ----------------
 
@@ -262,7 +262,7 @@ namespace DispatchBoss
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.OpenDiscord)), "Discord" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.OpenDiscord)), "Open the community Discord in a browser." },
 
-                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.RunPrefabScanButton)), "Scan Report-prefabs" },
+                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.RunPrefabScanButton)), "Scan Report (prefabs)" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.RunPrefabScanButton)),
                     "One-time report of relevant prefabs + lane wear values.\n" +
                     "Report file: <ModsData/DispatchBoss/ScanReport-Prefabs.txt>\n" +

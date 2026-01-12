@@ -129,7 +129,7 @@ namespace DispatchBoss
                     return;
                 }
 
-                // Unknown platform: try a generic shell execute as a last attempt.
+                // Unknown platform: try generic shell execute as a last attempt.
                 var psiGeneric = new ProcessStartInfo(fullPath)
                 {
                     UseShellExecute = true,

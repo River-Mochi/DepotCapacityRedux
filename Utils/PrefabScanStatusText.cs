@@ -2,7 +2,7 @@
 // Purpose: Builds the player-facing prefab scan status string from PrefabScanState data.
 // Notes:
 // - Centralizes all status words in ONE place.
-// - Later, this can be wired to real localization lookup (Phase/FailCode -> localized strings).
+// - Can be wired to localization lookup (Phase/FailCode -> localized strings).
 
 namespace DispatchBoss
 {
