@@ -14,6 +14,7 @@ namespace DispatchBoss
     using Game;
     using Game.Companies;
     using Game.Prefabs;
+    using Game.Routes;              // RouteModifierData, RouteModifierType, TransportType
     using Game.SceneFlow;
     using System;
     using System.Collections.Generic;
@@ -26,16 +27,51 @@ namespace DispatchBoss
     {
         private PrefabSystem m_PrefabSystem = null!;
 
+        private EntityQuery m_ConfigQuery;
+
         // Hard caps: protect users + protect logger/file size.
         private const int kMaxLines = 20000;
         private const int kMaxChars = 1 * 1024 * 1024; // ~1MB
         private const int kMaxKeywordMatches = 700;
 
+        private struct TransitDefaultsStats
+        {
+            public int Count;
+            public float MinInterval;
+            public float MaxInterval;
+            public float MinStop;
+            public float MaxStop;
+
+            public void InitFrom(TransportLineData d)
+            {
+                Count = 1;
+                MinInterval = d.m_DefaultVehicleInterval;
+                MaxInterval = d.m_DefaultVehicleInterval;
+                MinStop = d.m_StopDuration;
+                MaxStop = d.m_StopDuration;
+            }
+
+            public void Add(TransportLineData d)
+            {
+                Count++;
+
+                float interval = d.m_DefaultVehicleInterval;
+                float stop = d.m_StopDuration;
+
+                if (interval < MinInterval) MinInterval = interval;
+                if (interval > MaxInterval) MaxInterval = interval;
+
+                if (stop < MinStop) MinStop = stop;
+                if (stop > MaxStop) MaxStop = stop;
+            }
+        }
         protected override void OnCreate()
         {
             base.OnCreate();
 
             m_PrefabSystem = World.GetOrCreateSystemManaged<PrefabSystem>();
+
+            m_ConfigQuery = GetEntityQuery(ComponentType.ReadOnly<UITransportConfigurationData>());
 
             // Only meaningful when prefabs exist.
             RequireForUpdate(SystemAPI.QueryBuilder().WithAll<PrefabData>().Build());
@@ -62,6 +98,8 @@ namespace DispatchBoss
             PrefabScanState.MarkRunning();
 
             var sw = Stopwatch.StartNew();
+
+            int transitLinePrefabTotal = 0;
 
             int deliveryTotal = 0;
             int mvTotal = 0;
@@ -102,6 +140,116 @@ namespace DispatchBoss
                 Append("DispatchBoss Prefab Scan Report");
                 Append($"Timestamp (local): {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
                 Append($"Mod: {Mod.ModName} {Mod.ModVersion}");
+                Append("");
+
+                // ---- Transit lines (prefab defaults + policy modifier range) ----
+                Append("== Transit lines (vanilla timing inputs) ==");
+                Append("Vehicle targets are based on route time estimate (segment durations + stop count), not distance-only.");
+                Append("Traffic/slow paths can change segment durations over time, so targets can shift during gameplay.");
+                Append("");
+
+                // Prefab defaults: TransportLineData is created by TransportLinePrefab.LateInitialize.
+                var perType = new Dictionary<TransportType, TransitDefaultsStats>();
+
+                foreach ((RefRO<TransportLineData> lineRef, Entity e) in SystemAPI
+                             .Query<RefRO<TransportLineData>>()
+                             .WithAll<PrefabData>()
+                             .WithEntityAccess())
+                {
+                    if (truncated) break;
+
+                    transitLinePrefabTotal++;
+
+                    TransportLineData d = lineRef.ValueRO;
+                    TransportType type = d.m_TransportType;
+
+                    if (!perType.TryGetValue(type, out TransitDefaultsStats stats))
+                    {
+                        stats = default;
+                        stats.InitFrom(d);
+                        perType[type] = stats;
+                    }
+                    else
+                    {
+                        stats.Add(d);
+                        perType[type] = stats;
+                    }
+                }
+
+                Append("-- TransportLineData prefab defaults (by TransportType) --");
+                if (perType.Count == 0)
+                {
+                    Append("No TransportLineData prefabs found.");
+                }
+                else
+                {
+                    foreach (var kvp in perType)
+                    {
+                        TransportType type = kvp.Key;
+                        TransitDefaultsStats s2 = kvp.Value;
+
+                        Append(
+                            $"- {type}: Count={s2.Count} " +
+                            $"DefaultVehicleInterval(min={s2.MinInterval:0.###}, max={s2.MaxInterval:0.###}) " +
+                            $"StopDuration(min={s2.MinStop:0.###}, max={s2.MaxStop:0.###})");
+                    }
+                }
+
+                Append("");
+
+                Append("-- VehicleCountPolicy (RouteModifierType.VehicleInterval) --");
+                if (m_ConfigQuery.IsEmptyIgnoreFilter)
+                {
+                    Append("UITransportConfigurationData not found; policy entity could not be resolved.");
+                }
+                else
+                {
+                    UITransportConfigurationPrefab config =
+                        m_PrefabSystem.GetSingletonPrefab<UITransportConfigurationPrefab>(m_ConfigQuery);
+
+                    Entity policyEntity = m_PrefabSystem.GetEntity(config.m_VehicleCountPolicy);
+
+                    if (policyEntity == Entity.Null || !EntityManager.Exists(policyEntity))
+                    {
+                        Append("VehicleCountPolicy entity could not be resolved.");
+                    }
+                    else if (!EntityManager.HasBuffer<RouteModifierData>(policyEntity))
+                    {
+                        Append("VehicleCountPolicy has no RouteModifierData buffer.");
+                    }
+                    else
+                    {
+                        DynamicBuffer<RouteModifierData> buf = EntityManager.GetBuffer<RouteModifierData>(policyEntity);
+
+                        bool foundVehicleInterval = false;
+
+                        for (int i = 0; i < buf.Length; i++)
+                        {
+                            RouteModifierData item = buf[i];
+                            if (item.m_Type != RouteModifierType.VehicleInterval)
+                                continue;
+
+                            foundVehicleInterval = true;
+
+                            Append($"Mode={item.m_Mode} Range(input)={item.m_Range.min:0.###}..{item.m_Range.max:0.###}");
+
+                            if (item.m_Mode == ModifierValueMode.InverseRelative)
+                            {
+                                float appliedMin = InverseRelativeAppliedFromInput(item.m_Range.min);
+                                float appliedMax = InverseRelativeAppliedFromInput(item.m_Range.max);
+                                Append($"Range(applied)={appliedMin:0.###}..{appliedMax:0.###}  (applied = -input/(1+input))");
+                            }
+
+                            break;
+                        }
+
+                        if (!foundVehicleInterval)
+                        {
+                            Append("No VehicleInterval modifier found in VehicleCountPolicy.");
+                        }
+                    }
+                }
+
                 Append("");
 
                 // ---- Delivery trucks ----
@@ -364,7 +512,10 @@ namespace DispatchBoss
 
                 // Log ONLY summary (avoid logger spam)
                 Mod.s_Log.Info($"{Mod.ModTag} Prefab scan done in {sw.Elapsed.TotalSeconds:0.0}s. Report: {reportPath}");
-                Mod.s_Log.Info($"{Mod.ModTag} Scan counts: Delivery={deliveryTotal} MaintVeh={mvTotal} MaintDepot={depotTotal} CargoStations={cargoTotal} IndustrialExtractors={extractorCompanies} Lanes={laneTotal} KeywordMatches={keywordMatches}");
+                Mod.s_Log.Info(
+                    $"{Mod.ModTag} Scan counts: TransitLinePrefabs={transitLinePrefabTotal} " +
+                    $"Delivery={deliveryTotal} MaintVeh={mvTotal} MaintDepot={depotTotal} CargoStations={cargoTotal} " +
+                    $"IndustrialExtractors={extractorCompanies} Lanes={laneTotal} KeywordMatches={keywordMatches}");
             }
             catch (Exception ex)
             {
@@ -374,6 +525,12 @@ namespace DispatchBoss
             }
 
             Enabled = false;
+        }
+
+        private static float InverseRelativeAppliedFromInput(float input)
+        {
+            // applied = -input/(1+input)
+            return (-input) / (1f + input);
         }
 
         private static bool IsTargetIndustrialExtractorCompany(string name)
@@ -438,7 +595,7 @@ namespace DispatchBoss
             }
             catch
             {
-                // ignore (prevents scan from ever crashing city)
+                // ignore (scan should never crash a city)
             }
 
             return $"PrefabEntity={prefabEntity.Index}:{prefabEntity.Version}";

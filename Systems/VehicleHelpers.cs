@@ -1,13 +1,14 @@
 // File: Systems/VehicleHelpers.cs
-// Purpose: Shared helpers for classifying service vehicle prefabs (delivery buckets, trailer info).
+// Purpose: Shared helpers for classifying service vehicle prefabs (delivery buckets, tractor/trailer info).
 // Notes:
-// - NOT a system.
-// - No heavy scanning here (scan moved to PrefabScanSystem via UI button for research/debug).
+// - Not a system (no OnUpdate).
+// - Reusable (classification and component reads only).
+// - Scanning/reporting belongs in PrefabScanSystem (triggered by UI button).
 
 namespace DispatchBoss
 {
     using Game.Economy;   // Resource
-    using Game.Prefabs;   // CarTrailerType, CarTractorData, CarTrailerData, DeliveryTruckData
+    using Game.Prefabs;   // CarTrailerType, CarTractorData, CarTrailerData
     using System;
     using Unity.Entities;
 
@@ -22,15 +23,21 @@ namespace DispatchBoss
             Motorbike = 4,
         }
 
-        /// <summary>
-        /// Legacy entry point that used to run a big scan when verbose was enabled.
-        /// Kept as a no-op (with a single info line) to avoid accidental heavy logging via the verbose toggle.
-        /// Use the Settings button "Run Prefab Scan" instead.
-        /// </summary>
+        // Legacy stub: older builds triggered a scan when verbose logs were enabled.
+        // Current behavior: scanning is button-triggered only (PrefabScanSystem).
+        private static bool s_LoggedLegacyVerboseScan;
+
         public static void RunServiceVerboseScan(ref SystemState state, PrefabSystem? prefabSystem)
         {
-            // Intentionally lightweight now.
-            Mod.s_Log.Info($"{Mod.ModTag} Verbose: Prefab scan is now triggered by the Settings button (no auto-scan on verbose toggle).");
+            // Avoid accidental repeated logging if a legacy call-site fires frequently.
+            if (s_LoggedLegacyVerboseScan)
+                return;
+
+            if (Mod.Settings != null && Mod.Settings.EnableDebugLogging)
+            {
+                s_LoggedLegacyVerboseScan = true;
+                Mod.s_Log.Info($"{Mod.ModTag} Verbose: prefab scan is button-triggered (no auto-scan on verbose toggle).");
+            }
         }
 
         public static void GetTrailerTypeInfo(
@@ -50,7 +57,7 @@ namespace DispatchBoss
             if (!entityManager.Exists(prefabEntity))
                 return;
 
-            // Tractor component (front unit) can declare what trailer type it expects.
+            // Tractor component (front unit) declares what trailer type it expects.
             if (entityManager.HasComponent<CarTractorData>(prefabEntity))
             {
                 hasTractor = true;
@@ -58,7 +65,7 @@ namespace DispatchBoss
                 tractorTrailerType = tractor.m_TrailerType;
             }
 
-            // Trailer component (rear unit) declares its own type.
+            // Trailer component (rear unit) declares its own trailer type.
             if (entityManager.HasComponent<CarTrailerData>(prefabEntity))
             {
                 hasTrailer = true;
@@ -69,17 +76,19 @@ namespace DispatchBoss
 
         public static DeliveryBucket ClassifyDeliveryTruckPrefab(
             string prefabName,
-            int baseCap,
+            int vanillaCargoCapacity,
             Resource transportedResources,
             bool hasTractor,
             CarTrailerType tractorTrailerType,
             bool hasTrailer,
             CarTrailerType trailerTrailerType)
         {
-            // baseCap==0 is valid for tractor-only/helper prefabs (no cargo). Do not bucket these.
-            if (baseCap <= 0)
+            // Capacity <= 0 is valid for tractor-only/helper prefabs (no cargo payload).
+            // These should not be bucketed into cargo scaling groups.
+            if (vanillaCargoCapacity <= 0)
                 return DeliveryBucket.Other;
 
+            // Semis are identified by trailer type (tractor expecting Semi, or trailer being Semi).
             bool isSemi =
                 (hasTractor && tractorTrailerType == CarTrailerType.Semi) ||
                 (hasTrailer && trailerTrailerType == CarTrailerType.Semi);
@@ -87,24 +96,28 @@ namespace DispatchBoss
             if (isSemi)
                 return DeliveryBucket.Semi;
 
-            // Small-capacity motorbike delivery
-            if ((baseCap > 0 && baseCap <= 200) &&
+            // Motorbike delivery
+            if (vanillaCargoCapacity > 0 &&
+                vanillaCargoCapacity <= 200 &&
                 prefabName.IndexOf("Motorbike", StringComparison.OrdinalIgnoreCase) >= 0)
             {
                 return DeliveryBucket.Motorbike;
             }
 
-            // Vans (vanilla commonly 4000)
-            if (baseCap == 4000 ||
+            // Vans (vanilla commonly 4000).
+            if (vanillaCargoCapacity == 4000 ||
                 prefabName.IndexOf("DeliveryVan", StringComparison.OrdinalIgnoreCase) >= 0)
             {
                 return DeliveryBucket.Van;
             }
 
-            // Raw materials dump trucks (vanilla often 20000)
-            if (baseCap == 20000 ||
+            // Raw materials dump trucks (vanilla commonly 20000).
+            // Name checks help when capacity differs due to other mods or prefab variants.
+            if (vanillaCargoCapacity == 20000 ||
                 prefabName.IndexOf("OilTruck", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                prefabName.IndexOf("CoalTruck", StringComparison.OrdinalIgnoreCase) >= 0)
+                prefabName.IndexOf("CoalTruck", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                prefabName.IndexOf("OreTruck", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                prefabName.IndexOf("StoneTruck", StringComparison.OrdinalIgnoreCase) >= 0)
             {
                 return DeliveryBucket.RawMaterials;
             }
