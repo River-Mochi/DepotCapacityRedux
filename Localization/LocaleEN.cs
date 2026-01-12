@@ -58,29 +58,30 @@ namespace DispatchBoss
 
                 // Depot Capacity sliders
                 { m_Setting.GetOptionGroupLocaleID(Setting.DepotGroup), "Depot capacity (max vehicles per depot)" },
-                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.BusDepotScalar)), "Bus" },
+
+                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.BusDepotScalar)), "Bus depot" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.BusDepotScalar)),
                     "Change how many buses each **Bus Depot** can maintain/spawn.\n" +
                     "**100%** = vanilla (game default).\n" +
                     "**1000%** = 10× more.\n" +
                     "Applies to the base building capacity." },
 
-                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TaxiDepotScalar)), "Taxi depots" },
+                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TaxiDepotScalar)), "Taxi depot" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.TaxiDepotScalar)),
                     "How many taxis each **Taxi Depot** can maintain.\n" +
                     "Increase applies to the base depot building only." },
 
-                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TramDepotScalar)), "Tram" },
+                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TramDepotScalar)), "Tram depot" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.TramDepotScalar)),
                     "Change how many trams each **Tram Depot** can maintain.\n" +
                     "Applies to the base building capacity." },
 
-                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TrainDepotScalar)), "Train" },
+                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TrainDepotScalar)), "Train depot" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.TrainDepotScalar)),
                     "Change how many trains each **Train Depot** can maintain.\n" +
                     "Applies to the base building capacity." },
 
-                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.SubwayDepotScalar)), "Subway" },
+                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.SubwayDepotScalar)), "Subway depot" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.SubwayDepotScalar)),
                     "Change how many subway vehicles each **Subway Depot** can maintain.\n" +
                     "Applies to the base building capacity." },
@@ -145,7 +146,7 @@ namespace DispatchBoss
 
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.SemiTruckCargoScalar)), "Semi trucks" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.SemiTruckCargoScalar)),
-                    "**Semi trucks** Capacity.\n" +
+                    "**Semi trucks** capactiy.\n" +
                     "Includes specialized industry Semi (farms, forestry, fishing, etc.).\n" +
                     "Multiplier: **1×** = vanilla (**25t**), **10×** = 10× more." },
 
