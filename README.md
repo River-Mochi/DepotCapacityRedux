@@ -1,79 +1,48 @@
 ﻿# Dispatch Boss
 
-**Dispatch Boss** adds Options sliders for *Cities: Skylines II*
-to scale:
-- Public transit depots (max vehicles)
-- Public transit vehicles (passenger capacity)
-- Industry delivery vehicle cargo capacity
-- Industry + cargo station fleet limits
-- Park + road maintenance effectiveness and fleet limits
-- Road wear speed (alpha)
-- Transit line panel vehicle min/max expansion (alpha)
-
-Everything is applied with **run-once** systems (no per-frame scanning to affect performance).
-
----
+Dispatch Boss lets you scale **fleet sizes** and **vehicle capacities** in *Cities: Skylines II*.
 
 ## Features
 
 ### Public Transit
-- **Depot capacity**: Bus, Taxi, Tram, Train, Subway  
-  Scales max vehicles each depot can maintain/spawn.
-- **Passenger capacity**: Bus, Tram, Train, Subway, Ship, Ferry, Airplane  
-  Scales seats per vehicle.
-- **Transit line panel limits (optional) ✅**  
-  Expands the vanilla line vehicle-count slider so it can be as low as **1 vehicle** on more routes and allows higher maximums.  
-  The game computes limits from an estimated **route cycle time** (travel time + stops), so maximums still vary by route but will be higher.
+- **Depot capacity** (max vehicles per depot): Bus, Taxi, Tram, Train, Subway
+- **Passenger capacity** (seats per vehicle): Bus, Tram, Train, Subway, Ship, Ferry, Airplane
+- Optional: **Expand Transit Line in-game slider limits** (can allow down to 1 vehicle on most routes; max is also higher than vanilla)
 
-### Industry
-- **Delivery vehicle cargo capacity** multipliers:
-  - Semi trucks, Delivery vans, Motorbike delivery, Raw-material trucks (oil/coal/ore/stone)
-- **Extractor fleet size** multiplier (industrial extractor transport companies)
-- **Cargo station max fleet** multiplier for trucks (harbor/train/airport cargo stations)
+### Industry & Cargo
+- **Delivery vehicle cargo capacity**: Semi Trucks, Delivery Vans, Raw Materials trucks, Motorbike delivery
+- **Cargo station fleet** (harbor/train/airport): max active transporters
+- **Extractor fleet**: max trucks for industrial extractors
 
 ### Parks & Roads
-- **Park maintenance**: work capacity, work rate, depot fleet size
-- **Road maintenance**: work capacity, repair rate (alpha), depot fleet size
-- **Road wear speed (alpha)**: scales how fast lanes accumulate deterioration over time
+- **Park maintenance**: depot fleet size, work shift capacity, vehicle rate
+- **Road maintenance**: depot fleet size, work shift capacity, repair rate (alpha)
+- **Road wear speed** (alpha)
 
----
+### Debug Tools (About tab)
+- **Prefab Scan Report** (writes `ModsData/DispatchBoss/ScanReport-Prefabs.txt`)
+- **Open log folder** / **open report folder**
+- Optional verbose logging (disable for normal gameplay)
 
-## Debug / Tools (About tab)
-- **Prefab Scan Report** button writes: `ModsData/DispatchBoss/PrefabScanReport.txt`
-- **Verbose debug logs** toggle (extra details in log)
-- **Open Log** / **Open Report** buttons open the folders:
-  - `Logs/`
-  - `ModsData/DispatchBoss/`
+## Notes
+- Avoid running multiple mods that change the same capacities/policies (they can override each other).
+- Changes apply live; no restart needed.
+- Safe to remove any time (use reset buttons if you want to return to vanilla first).
 
----
-
-## Notes / Compatibility
-- Sliders re-apply to the loaded city after changes in Options menu.
-- Caution: avoid running other mods that edit the same Transit line policy / vehicle-interval modifier (e.g., Transit Policy Adjuster, Smart Transportation).
-
----
-
-## 11 Languages
-English (en-US), Français, Deutsch, Español, Italiano, 한국어, 日本語, 简体中文, 繁體中文, Português (Brasil), Polski
-
----
+## Languages (11)
+English, Français, Deutsch, Español, Italiano, 한국어, 日本語, 简体中文, 繁體中文, Português (Brazil), Polski
 
 ## Credits
-- **River-Mochi** — author/maintainer, localization
-- yenyang — code review and technical advice  
-- Thanks to **Wayz** for the original *Depot Capacity Changer* (retired from modding)  
-- Necko1996 — testing  
-- BugsyG — testing  
-- StarQ — technical support  
-
----
+- River-Mochi — author/maintainer, localization  
+- Inspired by Wayz’s original **Depot Capacity Changer**
+- yenyang — code review & technical advice
+- Necko1996, BugsyG — testing
+- StarQ — technical support
 
 ## Links
-- [GitHub repo](https://github.com/River-Mochi/DispatchBoss)  
-- [Paradox Mods page](https://mods.paradoxplaza.com/authors/River-mochi/cities_skylines_2?games=cities_skylines_2&orderBy=desc&sortBy=best&time=alltime)  
-- [Support Discord](https://discord.gg/HTav7ARPs2)
-
----
+- GitHub: https://github.com/River-Mochi/DispatchBoss
+- Paradox Mods: https://mods.paradoxplaza.com/authors/River-mochi/cities_skylines_2?games=cities_skylines_2&orderBy=desc&sortBy=best&time=alltime
+- Support Discord: https://discord.gg/HTav7ARPs2
 
 ## License
 MIT

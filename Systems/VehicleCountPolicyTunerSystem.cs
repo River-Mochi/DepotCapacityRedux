@@ -1,5 +1,5 @@
 // File: Systems/VehicleCountPolicyTunerSystem.cs
-// Purpose: (Optional Toggle) Adjust VehicleCountPolicy VehicleInterval modifier so the vanilla transit line panel
+// Purpose: Optional Toggle to adjust VehicleCountPolicy VehicleInterval modifier so the vanilla transit line panel
 //          can reach as low as 1 vehicle, while keeping maximums from going too high.
 // Notes:
 // - Global policy edit (affects all transit line types using VehicleCountPolicy).
@@ -27,9 +27,9 @@ namespace DispatchBoss
 
         // ---- TUNING Transit Lines (no Harmony) ----
         // If it doesn't reach 1 vehicle on some lines, increase kFewerVehiclesApplied (e.g. 22f -> 24f).
-        // If max values are too low, make kMoreVehiclesApplied more negative (e.g. -0.82f -> -0.88f).
-        private const float kFewerVehiclesApplied = 22f;     // pushes interval longer to help reach 1 vehicle (game default ~15f).
-        private const float kMoreVehiclesApplied = -0.84f;   // caps how short interval can get (controls max vehicles)
+        // If max values are too high, make kMoreVehiclesApplied less negative (e.g. -0.84f -> -0.78f).
+        private const float kFewerVehiclesApplied = 22f;     // fewer vehicles target (positive applied delta)
+        private const float kMoreVehiclesApplied = -0.84f;   // more vehicles cap (negative applied delta)
 
         protected override void OnCreate()
         {
@@ -39,7 +39,7 @@ namespace DispatchBoss
             m_ConfigQuery = GetEntityQuery(ComponentType.ReadOnly<UITransportConfigurationData>());
 
             RequireForUpdate(m_ConfigQuery);
-            Enabled = false; // run-once after load, and when Settings.Apply enables us
+            Enabled = false;
         }
 
         protected override void OnGameLoadingComplete(Purpose purpose, GameMode mode)
@@ -60,7 +60,6 @@ namespace DispatchBoss
 
         protected override void OnUpdate()
         {
-            // One-shot behavior: run once and disable.
             Enabled = false;
 
             if (m_ConfigQuery.IsEmptyIgnoreFilter)
@@ -109,7 +108,6 @@ namespace DispatchBoss
 
                 found = true;
 
-                // Capture original once (whatever it was before our mod changes it).
                 if (!s_HasOriginal)
                 {
                     s_HasOriginal = true;
@@ -117,13 +115,12 @@ namespace DispatchBoss
                     s_OriginalVehicleIntervalMode = item.m_Mode;
 
                     Mod.s_Log.Info(
-                        $"{Mod.ModTag} VehicleCountPolicyTuner: captured original VehicleInterval mode={item.m_Mode} " +
-                        $"range={item.m_Range.min:F3}..{item.m_Range.max:F3} (input space)");
+                        $"{Mod.ModTag} VehicleCountPolicyTuner: captured original VehicleInterval " +
+                        $"mode={item.m_Mode} range={item.m_Range.min:F3}..{item.m_Range.max:F3} (input space)");
                 }
 
                 if (!enable)
                 {
-                    // Restore original (range + mode)
                     bool needRestore =
                         item.m_Range.min != s_OriginalVehicleIntervalRange.min ||
                         item.m_Range.max != s_OriginalVehicleIntervalRange.max ||
@@ -147,13 +144,12 @@ namespace DispatchBoss
                     }
                     else if (verbose)
                     {
-                        Mod.s_Log.Info($"{Mod.ModTag} VehicleCountPolicyTuner: DISABLED -> already vanilla/original (no change).");
+                        Mod.s_Log.Info($"{Mod.ModTag} VehicleCountPolicyTuner: DISABLED -> already original (no change).");
                     }
 
                     continue;
                 }
 
-                // Enabled: apply a sane widening (best supported is InverseRelative).
                 if (item.m_Mode == ModifierValueMode.InverseRelative)
                 {
                     Bounds1 desired = BuildInverseRelativeInputRange(kFewerVehiclesApplied, kMoreVehiclesApplied);
@@ -166,15 +162,14 @@ namespace DispatchBoss
                         buf[i] = item;
                         changed = true;
 
-                        // Helpful: show what the stored input range *means* in applied-delta space.
-                        float appliedMin = InverseRelativeAppliedFromInput(desired.min);
-                        float appliedMax = InverseRelativeAppliedFromInput(desired.max);
+                        float appliedAtMinInput = InverseRelativeAppliedFromInput(desired.min);
+                        float appliedAtMaxInput = InverseRelativeAppliedFromInput(desired.max);
 
                         Mod.s_Log.Info(
-                            $"{Mod.ModTag} VehicleCountPolicyTuner: ENABLED -> set VehicleInterval " +
-                            $"{oldRange.min:F3}..{oldRange.max:F3} -> {desired.min:F3}..{desired.max:F3} (input space) " +
-                            $"=> applied {appliedMin:F3}..{appliedMax:F3} (applied space) " +
-                            $"[targets: fewer={kFewerVehiclesApplied:F1}, more={kMoreVehiclesApplied:F2}]");
+                            $"{Mod.ModTag} VehicleCountPolicyTuner: ENABLED -> VehicleInterval input range " +
+                            $"{oldRange.min:F3}..{oldRange.max:F3} -> {desired.min:F3}..{desired.max:F3} (InverseRelative). " +
+                            $"This maps to appliedΔ at endpoints: inputMin→{appliedAtMinInput:F3}, inputMax→{appliedAtMaxInput:F3}. " +
+                            $"Targets: fewer={kFewerVehiclesApplied:F1}, more={kMoreVehiclesApplied:F2}");
                     }
                     else if (verbose)
                     {
@@ -184,7 +179,7 @@ namespace DispatchBoss
                 else if (item.m_Mode == ModifierValueMode.Relative)
                 {
                     Mod.s_Log.Warn(
-                        $"{Mod.ModTag} VehicleCountPolicyTuner: VehicleInterval mode is Relative; leaving unchanged to avoid runaway max counts. " +
+                        $"{Mod.ModTag} VehicleCountPolicyTuner: VehicleInterval mode is Relative; leaving unchanged. " +
                         $"Range={item.m_Range.min:F3}..{item.m_Range.max:F3}");
                 }
                 else
@@ -207,12 +202,13 @@ namespace DispatchBoss
 
         private static Bounds1 BuildInverseRelativeInputRange(float fewerVehiclesApplied, float moreVehiclesApplied)
         {
-            // InverseRelative uses transform: applied = 1/(1+input) - 1  == -input/(1+input)
-            // Goal: slider-min (fewer vehicles) to map to a positive applied delta,
-            //       slider-max (more vehicles) to map to a negative applied delta.
-            //       e.g., allows in-game slider for bus lines as low as "1" and greatly expands Maximum allowed while leaving game's variable max formula in place.
-            float inputMin = InverseRelativeInputFromApplied(fewerVehiclesApplied);
-            float inputMax = InverseRelativeInputFromApplied(moreVehiclesApplied);
+            // InverseRelative: applied = -input/(1+input)
+            // Choose input endpoints that correspond to our desired applied deltas.
+            float inputForFewer = InverseRelativeInputFromApplied(fewerVehiclesApplied);
+            float inputForMore = InverseRelativeInputFromApplied(moreVehiclesApplied);
+
+            float inputMin = inputForFewer;
+            float inputMax = inputForMore;
 
             if (inputMin > inputMax)
             {
@@ -230,13 +226,12 @@ namespace DispatchBoss
         private static float InverseRelativeInputFromApplied(float applied)
         {
             // applied = -input/(1+input)
-            // Since this transform is self-inverse, inputFromApplied = (-applied)/(1+applied)
+            // Solve for input: input = (-applied)/(1+applied)
             return (-applied) / (1f + applied);
         }
 
         private static float InverseRelativeAppliedFromInput(float input)
         {
-            // applied = -input/(1+input)
             return (-input) / (1f + input);
         }
     }

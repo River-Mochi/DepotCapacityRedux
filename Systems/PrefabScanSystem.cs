@@ -1,9 +1,9 @@
 // File: Systems/PrefabScanSystem.cs
-// Purpose: One-shot prefab scan triggered by a Settings button.
+// Purpose: One-shot prefab scan triggered by OptionsUI button.
 // Output: Writes report to {EnvPath.kUserDataPath}/ModsData/DispatchBoss/ScanReport-Prefabs.txt
 // Notes:
 // - Runs only when requested (PrefabScanState.RequestScan()).
-// - Uses ECS queries (SystemAPI.Query).
+// - Uses SystemAPI.Query (modern ECS pattern).
 // - Deduped + capped to prevent giant outputs and logger issues.
 // - Logs ONLY a summary to the mod log (no spam).
 
@@ -11,28 +11,26 @@ namespace DispatchBoss
 {
     using Colossal.PSI.Environment; // EnvPath
     using Game;
-    using Game.Companies;
-    using Game.Prefabs;
+    using Game.Companies;           // TransportCompanyData
+    using Game.Prefabs;             // TransportLineData
     using Game.Routes;              // RouteModifierData, RouteModifierType, TransportType
-    using Game.SceneFlow;
-    using System;
+    using Game.SceneFlow;           // GameManager
+    using System;                   // DateTime, StringComparison
     using System.Collections.Generic;
-    using System.Diagnostics;
-    using System.IO;
-    using System.Text;
-    using Unity.Entities;
+    using System.Diagnostics;       // Stopwatch
+    using System.IO;                // Path, Directory, File
+    using System.Text;              // Encoding
+    using Unity.Entities;       // EntityQuery, SystemAPI
 
     public sealed partial class PrefabScanSystem : GameSystemBase
     {
         private PrefabSystem m_PrefabSystem = null!;
         private EntityQuery m_ConfigQuery;
 
-        // Hard caps: protect users + protect logger/file size.
-        private const int kMaxLines = 20000;
+        private const int kMaxLines = 10000;
         private const int kMaxChars = 1 * 1024 * 1024; // ~1MB
-        private const int kMaxKeywordMatches = 700;
+        private const int kMaxKeywordMatches = 600;     // keep smaller; keywords are just a hint
 
-        // Transit Line Stats
         private struct TransitDefaultsStats
         {
             public int Count;
@@ -72,9 +70,7 @@ namespace DispatchBoss
             m_PrefabSystem = World.GetOrCreateSystemManaged<PrefabSystem>();
             m_ConfigQuery = GetEntityQuery(ComponentType.ReadOnly<UITransportConfigurationData>());
 
-            // Only meaningful when prefabs exist.
             RequireForUpdate(SystemAPI.QueryBuilder().WithAll<PrefabData>().Build());
-
             Enabled = false;
         }
 
@@ -99,13 +95,11 @@ namespace DispatchBoss
             var sw = Stopwatch.StartNew();
 
             int transitLinePrefabTotal = 0;
-
             int deliveryTotal = 0;
             int mvTotal = 0;
             int depotTotal = 0;
             int cargoTotal = 0;
             int laneTotal = 0;
-
             int extractorCompanies = 0;
             int keywordMatches = 0;
 
@@ -134,34 +128,17 @@ namespace DispatchBoss
 
                 string NameOf(Entity e) => GetPrefabNameSafe(e);
 
-                // Header
                 Append("Dispatch Boss: Prefab Scan Report");
                 Append($"Timestamp (local): {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
                 Append($"Mod: {Mod.ModName} {Mod.ModVersion}");
                 Append("");
 
-                // Settings snapshot (helps support)
-                Append("== Settings snapshot ==");
-                if (Mod.Settings == null)
-                {
-                    Append("Settings: (null)");
-                }
-                else
-                {
-                    Append($"EnableLineVehicleCountTuner: {Mod.Settings.EnableLineVehicleCountTuner}");
-                    Append($"RoadWearScalar: {Mod.Settings.RoadWearScalar:0.##}%");
-                    Append($"CargoStationMaxTrucksScalar: {Mod.Settings.CargoStationMaxTrucksScalar:0.##}x");
-                    Append($"ExtractorMaxTrucksScalar: {Mod.Settings.ExtractorMaxTrucksScalar:0.##}x");
-                }
-                Append("");
-
-                // ---- Transit lines (prefab defaults + policy modifier range) ----
+                // ---- Transit lines ----
                 Append("== Transit lines (vanilla timing inputs) ==");
                 Append("Vehicle targets are based on route time estimate (segment durations + stop count), not distance-only.");
                 Append("Traffic/slow paths can change segment durations over time, so line targets can shift during gameplay.");
                 Append("");
 
-                // Prefab defaults: TransportLineData is created by TransportLinePrefab.LateInitialize.
                 var perType = new Dictionary<TransportType, TransitDefaultsStats>();
 
                 foreach ((RefRO<TransportLineData> lineRef, Entity e) in SystemAPI
@@ -233,7 +210,6 @@ namespace DispatchBoss
                     else
                     {
                         DynamicBuffer<RouteModifierData> buf = EntityManager.GetBuffer<RouteModifierData>(policyEntity);
-
                         bool foundVehicleInterval = false;
 
                         for (int i = 0; i < buf.Length; i++)
@@ -243,14 +219,13 @@ namespace DispatchBoss
                                 continue;
 
                             foundVehicleInterval = true;
-
                             Append($"Mode={item.m_Mode} Range(input)={item.m_Range.min:0.###}..{item.m_Range.max:0.###}");
 
                             if (item.m_Mode == ModifierValueMode.InverseRelative)
                             {
                                 float appliedMin = InverseRelativeAppliedFromInput(item.m_Range.min);
                                 float appliedMax = InverseRelativeAppliedFromInput(item.m_Range.max);
-                                Append($"Range(applied)={appliedMin:0.###}..{appliedMax:0.###}  (applied = -input/(1+input))");
+                                Append($"Range(appliedΔ @ endpoints) inputMin→{appliedMin:0.###}, inputMax→{appliedMax:0.###}");
                             }
 
                             break;
@@ -428,7 +403,7 @@ namespace DispatchBoss
                 Append($"Industrial extractor summary: Unique={extractorCompanies}");
                 Append("");
 
-                // ---- Lane wear (count + range) ----
+                // ---- Lane wear ----
                 float minTf = float.MaxValue;
                 float maxTf = float.MinValue;
 
@@ -455,22 +430,18 @@ namespace DispatchBoss
 
                 // ---- Keyword scan (deduped + capped) ----
                 Append("== Keyword Matches (deduped, capped) ==");
+                Append("These are just hints to help discover relevant prefabs. Keep keywords narrow.");
 
-                // Keep this list NARROW or you’ll get spam.
+                // Keep this list SPECIFIC to avoid noise.
                 string[] keywords = new[]
                 {
-                    // Delivery / industry vehicles
-                    "oiltruck", "coaltruck", "oretruck", "stonetruck",
-                    "deliveryvan", "trucktractor", "motorbike",
-
-                    // Maintenance
-                    "roadmaintenance", "parkmaintenance",
-
-                    // Extractors
-                    "industrial_", "extractor", "quarry", "mine",
-
-                    // Fishing discovery
-                    "aquaculture", "industrialaqua", "industrialaquaculturehub"
+                    "deliveryvan",
+                    "trucktractor",
+                    "motorbike",
+                    "roadmaintenance",
+                    "parkmaintenance",
+                    "industrialaquaculturehub",
+                    "aquaculture",
                 };
 
                 var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -510,7 +481,7 @@ namespace DispatchBoss
                 Append($"Keyword match summary: UniqueMatches={keywordMatches} Cap={kMaxKeywordMatches}");
                 Append("");
 
-                // Write report (overwrite each run: prevents file explosion)
+                // Write report (overwrite each run)
                 string reportPath = GetReportPath();
                 string dir = Path.GetDirectoryName(reportPath) ?? string.Empty;
                 if (dir.Length > 0)
@@ -524,12 +495,13 @@ namespace DispatchBoss
 
                 PrefabScanState.MarkDone(sw.Elapsed, reportPath);
 
-                // Log ONLY summary (avoid logger spam)
+                // Clearer summary line (these are prefab-entity counts)
                 Mod.s_Log.Info($"{Mod.ModTag} Prefab scan done in {sw.Elapsed.TotalSeconds:0.0}s. Report: {reportPath}");
                 Mod.s_Log.Info(
-                    $"{Mod.ModTag} Scan counts: TransitLinePrefabs={transitLinePrefabTotal} " +
-                    $"Delivery={deliveryTotal} MaintVeh={mvTotal} MaintDepot={depotTotal} CargoStations={cargoTotal} " +
-                    $"IndustrialExtractors={extractorCompanies} Lanes={laneTotal} KeywordMatches={keywordMatches}");
+                    $"{Mod.ModTag} PrefabScan counts (prefab entities): " +
+                    $"TransitLines={transitLinePrefabTotal}, DeliveryTrucks={deliveryTotal}, " +
+                    $"MaintVehicles={mvTotal}, MaintDepots={depotTotal}, CargoStations={cargoTotal}, " +
+                    $"ExtractorCompanies={extractorCompanies}, LaneWearPrefabs={laneTotal}, KeywordHits={keywordMatches}");
             }
             catch (Exception ex)
             {
@@ -543,7 +515,6 @@ namespace DispatchBoss
 
         private static float InverseRelativeAppliedFromInput(float input)
         {
-            // applied = -input/(1+input)
             return (-input) / (1f + input);
         }
 
@@ -569,12 +540,10 @@ namespace DispatchBoss
             if (string.IsNullOrEmpty(name))
                 return false;
 
-            // Prefix exclusions
             if (name.StartsWith("Male_", StringComparison.OrdinalIgnoreCase)) return true;
             if (name.StartsWith("Female_", StringComparison.OrdinalIgnoreCase)) return true;
             if (name.IndexOf("_LOD", StringComparison.OrdinalIgnoreCase) >= 0) return true;
 
-            // Contains exclusions
             string[] tokens =
             {
                 "Tomestone", "StandingStone", "Crapfish", "PileStone", "Pilecoal", "Billboard", "Sign", "Poster", "NetBasket", "NetBox",
@@ -609,7 +578,6 @@ namespace DispatchBoss
             }
             catch
             {
-                // ignore (scan should never crash a city)
             }
 
             return $"PrefabEntity={prefabEntity.Index}:{prefabEntity.Version}";

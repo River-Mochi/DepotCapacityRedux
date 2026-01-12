@@ -71,6 +71,8 @@ namespace DispatchBoss
             if (vanillaCargoCapacity <= 0)
                 return DeliveryBucket.Other;
 
+            string name = prefabName ?? string.Empty;
+
             // Semis are identified by trailer type (tractor expecting Semi, or trailer being Semi).
             bool isSemi =
                 (hasTractor && tractorTrailerType == CarTrailerType.Semi) ||
@@ -79,28 +81,40 @@ namespace DispatchBoss
             if (isSemi)
                 return DeliveryBucket.Semi;
 
-            // Motorbike delivery
-            if (vanillaCargoCapacity > 0 &&
-                vanillaCargoCapacity <= 200 &&
-                prefabName.IndexOf("Motorbike", StringComparison.OrdinalIgnoreCase) >= 0)
+            // Motorbike delivery (small payload).
+            if (name.IndexOf("Motorbike", StringComparison.OrdinalIgnoreCase) >= 0 &&
+                vanillaCargoCapacity > 0 &&
+                vanillaCargoCapacity <= 200)
             {
                 return DeliveryBucket.Motorbike;
             }
 
             // Vans (vanilla commonly 4000).
             if (vanillaCargoCapacity == 4000 ||
-                prefabName.IndexOf("DeliveryVan", StringComparison.OrdinalIgnoreCase) >= 0)
+                name.IndexOf("DeliveryVan", StringComparison.OrdinalIgnoreCase) >= 0)
             {
                 return DeliveryBucket.Van;
             }
 
-            // Raw materials dump trucks (vanilla commonly 20000).
-            // Name checks help when capacity differs due to other mods or prefab variants.
+            // Raw materials dump trucks: prefer resource flags when available.
+            // (Resource is a flags enum in CS2; bitwise works without boxing.)
+            const Resource rawMask =
+                Resource.Oil |
+                Resource.Coal |
+                Resource.Ore |
+                Resource.Stone;
+
+            bool looksLikeRawByResource = (transportedResources & rawMask) != 0;
+
+            if (looksLikeRawByResource)
+                return DeliveryBucket.RawMaterials;
+
+            // Fallback (name + vanilla capacity).
             if (vanillaCargoCapacity == 20000 ||
-                prefabName.IndexOf("OilTruck", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                prefabName.IndexOf("CoalTruck", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                prefabName.IndexOf("OreTruck", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                prefabName.IndexOf("StoneTruck", StringComparison.OrdinalIgnoreCase) >= 0)
+                name.IndexOf("OilTruck", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                name.IndexOf("CoalTruck", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                name.IndexOf("OreTruck", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                name.IndexOf("StoneTruck", StringComparison.OrdinalIgnoreCase) >= 0)
             {
                 return DeliveryBucket.RawMaterials;
             }

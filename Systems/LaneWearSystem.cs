@@ -79,10 +79,9 @@ namespace DispatchBoss
 
             bool verbose = Mod.Settings.EnableDebugLogging;
 
-            float percent = Mod.Settings.RoadWearScalar; // Percent based, 100 = vanilla, 200 = 2x faster wear).
+            float percent = Mod.Settings.RoadWearScalar; // Percent based, 100 = vanilla, 200 = 2x faster wear.
 
             // Hard clamp so UI changes (or corrupted values) cannot push beyond supported range.
-            // Setting.RoadWearMaxPercent is the authoritative cap for this system.
             if (percent < Setting.RoadWearMinPercent) percent = Setting.RoadWearMinPercent;
             if (percent > Setting.RoadWearMaxPercent) percent = Setting.RoadWearMaxPercent;
 
@@ -92,8 +91,6 @@ namespace DispatchBoss
             int total = 0;
             int changed = 0;
 
-            // Iterate all prefab entities that define lane deterioration behavior.
-            // Each prefab here represents a lane deterioration configuration shared by many lane instances.
             foreach ((RefRW<LaneDeteriorationData> laneRef, Entity e) in SystemAPI
                          .Query<RefRW<LaneDeteriorationData>>()
                          .WithAll<PrefabData>()
@@ -103,25 +100,19 @@ namespace DispatchBoss
 
                 ref LaneDeteriorationData lane = ref laneRef.ValueRW;
 
-                // Capture original time factor once per prefab entity per session.
-                // Prevents repeated Apply() calls from multiplying an already-modified value.
                 if (!m_BaseTimeFactor.TryGetValue(e, out float baseTf))
                 {
                     baseTf = lane.m_TimeFactor;
                     m_BaseTimeFactor[e] = baseTf;
                 }
 
-                // Apply scaling relative to the captured base value.
                 float desired = baseTf * scalar;
 
-                // Guard against collapsing to 0 (or denormals) which can cause broken wear behavior.
-                // The exact lower bound is arbitrary; it only needs to be safely > 0.
                 if (desired < 0.0001f)
                 {
                     desired = 0.0001f;
                 }
 
-                // Only write back if the value has meaningful change (reduce churn).
                 if (Math.Abs(lane.m_TimeFactor - desired) > 0.00001f)
                 {
                     lane.m_TimeFactor = desired;
@@ -129,15 +120,11 @@ namespace DispatchBoss
                 }
             }
 
-            // "Total" is the number of LaneDeteriorationData prefab entities found.
-            // This is expected to be a small number (lane deterioration types), not road segments.
             if (verbose)
             {
-                Mod.s_Log.Info($"{Mod.ModTag} Lane wear: RoadWearScalar={percent:0.#}% Scalar={scalar:0.###}\n" +
-                    $"Total Lane Wear Prefabs= {total}, Changed= {changed}");
+                Mod.s_Log.Info($"{Mod.ModTag} Lane wear: RoadWearScalar={percent:0.#}% Scalar={scalar:0.###} TotalPrefabs={total} Changed={changed}");
             }
 
-            // One-shot: disable after applying.
             Enabled = false;
         }
     }
