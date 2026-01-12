@@ -54,7 +54,7 @@ namespace DispatchBoss
                     "Game calculates limits on routes (driving time + stop count), so max varies per line (but will be a little higher with this ON [x]).\n" +
                     "<Avoid conflicts: remove any mod that edits the same policy> (e.g.: TransportPolicyAdjuster or SmartTransporation).\n" +
                     "If you want to use that mod with this mod, then keep this checkbox [ ] off.> Better to not have both.\n" +
-                    "Works for: bus, tram, train, subway, ship, ferry, airplane.\n"
+                    "Works for: bus, tram, train, subway, ship, ferry, airplane.\n" 
                 },
 
                 // Depot Capacity sliders
