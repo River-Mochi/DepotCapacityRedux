@@ -23,23 +23,6 @@ namespace DispatchBoss
             Motorbike = 4,
         }
 
-        // Legacy stub: older builds triggered a scan when verbose logs were enabled.
-        // Current behavior: scanning is button-triggered only (PrefabScanSystem).
-        private static bool s_LoggedLegacyVerboseScan;
-
-        public static void RunServiceVerboseScan(ref SystemState state, PrefabSystem? prefabSystem)
-        {
-            // Avoid accidental repeated logging if a legacy call-site fires frequently.
-            if (s_LoggedLegacyVerboseScan)
-                return;
-
-            if (Mod.Settings != null && Mod.Settings.EnableDebugLogging)
-            {
-                s_LoggedLegacyVerboseScan = true;
-                Mod.s_Log.Info($"{Mod.ModTag} Verbose: prefab scan is button-triggered (no auto-scan on verbose toggle).");
-            }
-        }
-
         public static void GetTrailerTypeInfo(
             EntityManager entityManager,
             Entity prefabEntity,
