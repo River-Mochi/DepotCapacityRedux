@@ -301,7 +301,7 @@ namespace DispatchBoss
                 { "DB_SCAN_RUNNING_FMT", "Running ({0})" },
                 { "DB_SCAN_DONE_FMT", "Done ({0} | {1})" },
                 { "DB_SCAN_FAILED", "Failed" },
-                { "DB_SCAN_FAIL_NO_CITY", "No city loaded yet." },
+                { "DB_SCAN_FAIL_NO_CITY", "LOAD CITY FIRST." },
                 { "DB_SCAN_UNKNOWN_TIME", "unknown time" },
 
             };
