@@ -142,10 +142,10 @@ namespace DispatchBoss
                     Append("");
                     Append("== Live lane usage (LaneCondition + PrefabRef) ==");
                     Append("Counts live lane entities grouped by PrefabRef.m_Prefab (lane prefab).");
-                    Append("This is the proof that a small set of lane prefabs can power many road types.");
+                    Append("Proof that a small set of lane prefabs can power many road types.");
                     Append("");
 
-                    // Set of lane prefabs that actually have LaneDeteriorationData (the ones we tweak).
+                    // Set of lane prefabs that actually have LaneDeteriorationData (ones we tweak).
                     var wearPrefabs = new HashSet<Entity>();
 
                     foreach ((RefRO<LaneDeteriorationData> detRO, Entity prefabEntity) in SystemAPI
@@ -190,7 +190,7 @@ namespace DispatchBoss
                     float pct = (float)covered * 100f / (float)liveLaneTotal;
 
                     Append($"Live lanes summary: LiveLanes={liveLaneTotal:n0} UniqueLanePrefabs={counts.Count:n0}");
-                    Append($"Coverage by LaneDeteriorationData prefabs: {covered:n0}/{liveLaneTotal:n0} ({pct:0.0}%)");
+                    Append($"Mod Coverage of LaneDeteriorationData prefabs: {covered:n0}/{liveLaneTotal:n0} ({pct:0.0}%)");
                     Append("");
 
                     // Print top N most-used lane prefabs (by live lane count)
@@ -269,8 +269,8 @@ namespace DispatchBoss
 
                         Append(
                             $"- {NameOf(e)} ({e.Index}:{e.Version}) " +
-                            $"Vanilla(Time={Fmt(vanTf)}, Traffic={Fmt(vanTraf)}) " +
-                            $"Current(Time={tf:0.###}, Traffic={traf:0.###}) " +
+                            $"Vanilla (Time={Fmt(vanTf)}, Traffic={Fmt(vanTraf)}) " +
+                            $"Current (Time={tf:0.###}, Traffic={traf:0.###}) " +
                             $"xTime={Fmt(xTime)} xTraffic={Fmt(xTraf)} ExpΔ(Time)/Tick={expPerTick:0.###}");
 
                         laneListed++;
@@ -284,14 +284,15 @@ namespace DispatchBoss
 
                 Append("");
                 Append(laneTotal > 0
-                    ? $"Lane wear summary: Total={laneTotal} TimeFactor(min={minTf:0.###}, max={maxTf:0.###}) TrafficFactor(min={minTraf:0.###}, max={maxTraf:0.###})"
+                    ? $"== Lane wear summary: Total={laneTotal} TimeFactor(min={minTf:0.###}, max={maxTf:0.###}) TrafficFactor(min={minTraf:0.###}, max={maxTraf:0.###})"
                     : "Lane wear summary: Total=0");
                 Append("");
 
                 // NEW: Prove Coverage section
                 AppendLiveLaneUsage();
 
-                // ---- Transit lines ----
+
+                // ---- Transit Lines ----
                 Append("== Transit lines (vanilla timing inputs) ==");
                 Append("Vehicle targets are based on route time estimate (segment durations + stop count).");
                 Append("");
@@ -345,7 +346,7 @@ namespace DispatchBoss
                 Append("");
 
                 // ---- VehicleCountPolicy ----
-                Append("-- VehicleCountPolicy (RouteModifierType.VehicleInterval) --");
+                Append("-- Transit Line Slider Limits Policy (RouteModifierType.VehicleInterval) --");
                 if (m_ConfigQuery.IsEmptyIgnoreFilter)
                 {
                     Append("UITransportConfigurationData not found; policy entity could not be resolved.");
@@ -398,13 +399,17 @@ namespace DispatchBoss
 
                 Append("");
 
+
                 // ---- Delivery trucks ----
                 int semi = 0, van = 0, raw = 0, bike = 0, other = 0;
+                int unclassifiedPrinted = 0;
+                const int kMaxUnclassifiedDetails = 100; // keeps report readable
 
                 var tractorLookup = SystemAPI.GetComponentLookup<CarTractorData>(isReadOnly: true);
                 var trailerLookup = SystemAPI.GetComponentLookup<CarTrailerData>(isReadOnly: true);
 
                 Append("== DeliveryTruckData Prefabs ==");
+
                 foreach ((RefRO<DeliveryTruckData> truckRef, Entity e) in SystemAPI
                              .Query<RefRO<DeliveryTruckData>>()
                              .WithAll<PrefabData>()
@@ -431,8 +436,10 @@ namespace DispatchBoss
                         out bool hasTrailer,
                         out CarTrailerType trailerType);
 
+                    string name = NameOf(e);
+
                     VehicleHelpers.DeliveryBucket bucket = VehicleHelpers.ClassifyDeliveryTruckPrefab(
-                        NameOf(e),
+                        name,
                         vanillaCap,
                         dt.m_TransportedResources,
                         hasTractor,
@@ -449,7 +456,29 @@ namespace DispatchBoss
                         default: other++; break;
                     }
 
-                    Append($"- {NameOf(e)} ({e.Index}:{e.Version}) Bucket={bucket} VanillaCap={vanillaCap} CurCap={dt.m_CargoCapacity} Resources={dt.m_TransportedResources} Tractor={hasTractor}:{tractorType} Trailer={hasTrailer}:{trailerType}");
+                    string detail =
+                        $"- {name} ({e.Index}:{e.Version}) Bucket={bucket} " +
+                        $"VanillaCap={vanillaCap} CurCap={dt.m_CargoCapacity} " +
+                        $"Resources={dt.m_TransportedResources} " +
+                        $"Tractor={hasTractor}:{tractorType} Trailer={hasTrailer}:{trailerType}";
+
+                    Append(detail);
+
+                    if (bucket == VehicleHelpers.DeliveryBucket.Other && unclassifiedPrinted < kMaxUnclassifiedDetails)
+                    {
+                        Append(
+                            $"!! UNCLASSIFIED DeliveryTruckData: name='{name}' " +
+                            $"VanillaCap={vanillaCap} CurCap={dt.m_CargoCapacity} " +
+                            $"Resources={dt.m_TransportedResources} " +
+                            $"Tractor={hasTractor}:{tractorType} Trailer={hasTrailer}:{trailerType}");
+
+                        unclassifiedPrinted++;
+                    }
+                }
+
+                if (other > 0)
+                {
+                    Append($"(Unclassified details printed: {unclassifiedPrinted} / {other} cap={kMaxUnclassifiedDetails})");
                 }
 
                 Append($"Delivery summary: Total={deliveryTotal} Semi={semi} Van={van} Raw={raw} Motorbike={bike} Other={other}");
@@ -567,7 +596,7 @@ namespace DispatchBoss
 
                 // ---- Keyword scan (deduped + capped) ----
                 Append("== Keyword Matches (deduped, capped) ==");
-                Append("These are hints for discovering relevant prefabs. Keep keywords narrow.");
+                Append("Hints for discovering relevant prefabs. Keep narrow ('truck' returns too much)");
 
                 string[] keywords = new[]
                 {
@@ -677,10 +706,11 @@ namespace DispatchBoss
             if (name.StartsWith("Male_", StringComparison.OrdinalIgnoreCase)) return true;
             if (name.StartsWith("Female_", StringComparison.OrdinalIgnoreCase)) return true;
             if (name.IndexOf("_LOD", StringComparison.OrdinalIgnoreCase) >= 0) return true;
+            if (name.IndexOf("Mesh", StringComparison.OrdinalIgnoreCase) >= 0) return true;
 
             string[] tokens =
             {
-                "Tomestone", "StandingStone", "Crapfish", "PileStone", "Pilecoal", "Billboard", "Sign", "Poster", "NetBasket", "NetBox",
+                "Crane", "Tomestone", "StandingStone", "Crapfish", "PileStone", "Pilecoal", "Billboard", "Sign", "Poster", "NetBasket", "NetBox",
                 "GasStation", "FarmCage", "FarmPontoon", "FishTub", "FlyFish", "FarmFilterSystem"
             };
 

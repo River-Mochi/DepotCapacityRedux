@@ -4,6 +4,7 @@
 namespace DispatchBoss
 {
     using Colossal;
+    using Colossal.IO.AssetDatabase.Internal;
     using System.Collections.Generic;
 
     public sealed class LocaleEN : IDictionarySource
@@ -46,16 +47,17 @@ namespace DispatchBoss
 
                 { m_Setting.GetOptionGroupLocaleID(Setting.LineVehiclesGroup), "Transit Lines (in-game slider limits)" },
 
-                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.EnableLineVehicleCountTuner)), "Expand transit line limits" },
+                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.EnableLineVehicleCountTuner)), "Expand transit line range" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.EnableLineVehicleCountTuner)),
                     "Allows the in-game Transit Line slider to go as **low as 1 vehicle** on most routes.\n" +
-                    "**Max possible route line limits are all increased**.\n" +
+                    "**Maximum route line ranges are all increased** (this is variable but a lot more than what vanilla gives you).\n" +
                     "The game uses route time (driving time + stop count), so max varies per line.\n" +
                     "<Avoid Conflicts: remove mods that edit the same Transit Line policy>.\n" +
                     "If you want to use another Transit Line mod, then keep this checkbox OFF.\n" +
-                    "Works for: bus, tram, train, subway, ship, ferry, airplane.\n" +
-                    "Tip: if you want even more vehicles on the line than this mod gives, just add a few stops to the route." +
-                         "Game will auto increase the maximum slider based on added stops."
+                    "Works for: bus, tram, train, subway, ship, ferry, airplane.\n\n" +
+
+                    "Tip: add a few stops to the route if you want to increase maximum end of the slider.\n" +
+                    "Game auto-increases the maximum allowed based on added stops + other factors, but adding stops is a simple player control."
                 },
 
                 // Depot Capacity sliders
@@ -225,29 +227,31 @@ namespace DispatchBoss
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.RoadMaintenanceVehicleCapacityScalar)),
                     "Multiplier for **work shift capacity**.\n" +
                     "Total work a truck can do before it returns to the depot.\n" +
-                    "Higher = fewer returns." },
+                    "**Higher = fewer returns.**" },
 
-                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.RoadMaintenanceVehicleRateScalar)), "Repair rate (alpha)" },
+                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.RoadMaintenanceVehicleRateScalar)), "Repair rate" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.RoadMaintenanceVehicleRateScalar)),
                     "Rate = how much work it does per simulation tick while stopped.\n" +
-                    "In vanilla, repairs can take multiple stops depending on damage.\n" +
-                    "<Alpha: still testing how this feels in real cities.>" },
+                    "Trucks still do a quick stop+go even with highest rate (they do more work per stop).\n"
+                },
 
-                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.RoadWearScalar)), "Road wear speed (alpha)" },
+                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.RoadWearScalar)), "Road wear" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.RoadWearScalar)),
-                    "<Alpha feature: still testing>\n" +
-                    "How fast roads accumulate wear over time.\n" +
-                    "**100%** = vanilla\n" +
+                    "<Alpha feature>\n" +
+                    "Controls how fast roads deteriorate from time/weather and traffic.\n" +
+                    "This scales both **Time and Traffic wear** factors.\n" +
                     "**10%** = 10× slower wear (fewer repairs needed)\n" +
-                    "**1000%** = 10× faster wear (more repairs needed)" },
+                    "**1000%** = 10× faster wear (more repairs needed)\n" +
+                    "**100%** = vanilla"
+                },
 
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.ResetRoadMaintenanceToVanillaButton)), "Reset road maintenance" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.ResetRoadMaintenanceToVanillaButton)),
                     "Set all values back to **100%** (game default / vanilla)." },
 
-                // --------------------
+                // -------------------
                 // About tab
-                // --------------------
+                // -------------------
 
                 { m_Setting.GetOptionGroupLocaleID(Setting.AboutInfoGroup), "Info" },
                 { m_Setting.GetOptionGroupLocaleID(Setting.AboutLinksGroup), "Support links" },

@@ -63,17 +63,16 @@ namespace DispatchBoss
             // Systems
             updateSystem.UpdateAfter<TransitSystem>(SystemUpdatePhase.PrefabUpdate);
             updateSystem.UpdateAfter<MaintenanceSystem>(SystemUpdatePhase.PrefabUpdate);
-
-
-            // New: extractors (TransportCompanyData.m_MaxTransports)
-            updateSystem.UpdateAfter<IndustrySystem>(SystemUpdatePhase.PrefabUpdate);
             updateSystem.UpdateAfter<LaneWearSystem>(SystemUpdatePhase.PrefabUpdate);
+
+            // Extractors (TransportCompanyData.m_MaxTransports)
+            updateSystem.UpdateAfter<IndustrySystem>(SystemUpdatePhase.PrefabUpdate);
 
             // Allow transit lines range to be 1-and higher than vanilla
             // Policy tuner: also better in PrefabUpdate so it applies immediately while paused/Options UI
             updateSystem.UpdateAfter<VehicleCountPolicyTunerSystem>(SystemUpdatePhase.PrefabUpdate);
 
-            // Prefab scan: must run even while Options UI is open
+            // Prefab scan: must work even while Options UI is open
             updateSystem.UpdateAt<PrefabScanSystem>(SystemUpdatePhase.PrefabUpdate);
 
             // Debug probe: logs LaneCondition.m_Wear deltas (runtime)

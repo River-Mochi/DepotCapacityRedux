@@ -1,8 +1,8 @@
 // File: Utils/PrefabScanStatusText.cs
 // Purpose: Builds the player-facing prefab scan status string from PrefabScanState data.
 // Notes:
-// - Uses localization keys (MagicMail-style templates) with English fallbacks.
-// - Does NOT attempt to translate FailDetails (usually exception text).
+// - Uses localization keys with English fallbacks.
+// - Does not translate FailDetails (usually exception text).
 
 namespace DispatchBoss
 {
@@ -50,7 +50,7 @@ namespace DispatchBoss
                             ? Mod.L(KeyUnknownTime, "unknown time")
                             : s.LastRunFinishedLocal.ToString("yyyy-MM-dd HH:mm:ss");
 
-                        // Compact; report path is shown elsewhere.
+                        // Compact here; report path shown elsewhere.
                         return string.Format(
                             Mod.L(KeyDoneFmt, "Done ({0} | {1})"),
                             dur,
@@ -70,7 +70,7 @@ namespace DispatchBoss
 
                         if (!string.IsNullOrEmpty(s.FailDetails))
                         {
-                            // Details are typically exception text (not worth translating).
+                            // Fails are typically Exception text (not worth translating).
                             if (!string.IsNullOrEmpty(reason))
                                 return $"{failed} ({reason} {s.FailDetails})".Trim();
 

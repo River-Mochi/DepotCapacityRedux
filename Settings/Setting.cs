@@ -70,7 +70,7 @@ namespace DispatchBoss
         public const float CargoStationMaxScalar = 5f;
         public const float CargoStationStepScalar = 1f;
 
-        // Parks-Roads: store/display as percent (100%..1000% = 1x..10x).
+        // Parks-Roads: display as percent (100%..1000% = 1x..10x).
         public const float MaintenanceMinPercent = 100f;
         public const float MaintenanceMaxPercent = 1000f;
         public const float MaintenanceStepPercent = 10f;
@@ -88,7 +88,7 @@ namespace DispatchBoss
 
         private bool m_EnableLineVehicleCountTuner;
 
-        // Toggle vanilla transit line vehicle count range tuner (global policy).
+        // Toggle vanilla transit line range tuner (global policy).
         [SettingsUISection(PublicTransitTab, LineVehiclesGroup)]
         public bool EnableLineVehicleCountTuner
         {
@@ -173,7 +173,7 @@ namespace DispatchBoss
             TryEnableOnce<MaintenanceSystem>(world, "MaintenanceSystem");
             TryEnableOnce<IndustrySystem>(world, "IndustrySystem");
             TryEnableOnce<LaneWearSystem>(world, "LaneWearSystem");
-            TryEnableOnce<VehicleCountPolicyTunerSystem>(world, "VehicleCountPolicyTunerSystem");
+            TryEnableOnce<VehicleCountPolicyTunerSystem>(world, "TransitLinePolicyTunerSystem");
         }
 
         private static void TryEnableOnce<T>(World world, string label) where T : GameSystemBase
@@ -196,6 +196,7 @@ namespace DispatchBoss
         // Public-Transit tab
         // ------------------------
 
+        // DEPOT Buildings
         [SettingsUISlider(min = DepotMinPercent, max = MaxPercent, step = StepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
         [SettingsUISection(PublicTransitTab, DepotGroup)]
         public float BusDepotScalar { get; set; }
@@ -224,12 +225,13 @@ namespace DispatchBoss
             set
             {
                 if (!value) return;
-
-                ResetDepotToVanilla();
-                ApplyAndSave();
+                
+                ResetDepotToVanilla();  // Reset all Depots to 100%
+                ApplyAndSave();         // persist in settings file
             }
         }
 
+        // PASSENGERS
         [SettingsUISlider(min = PassengerMinPercent, max = MaxPercent, step = StepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
         [SettingsUISection(PublicTransitTab, PassengerGroup)]
         public float BusPassengerScalar { get; set; }
@@ -261,7 +263,7 @@ namespace DispatchBoss
         [SettingsUIButtonGroup(PassengerGroup)]
         [SettingsUIButton]
         [SettingsUISection(PublicTransitTab, PassengerGroup)]
-        public bool DoublePassengersButton
+        public bool DoublePassengersButton  // Passenger limts all go to 200% (double)
         {
             set
             {
@@ -297,6 +299,7 @@ namespace DispatchBoss
         // Industry
         // ------------------
 
+        // Delivery vehicles (scalar)
         [SettingsUISlider(min = ServiceMinScalar, max = ServiceMaxScalar, step = ServiceStepScalar)]
         [SettingsUISection(IndustryTab, DeliveryGroup)]
         public float SemiTruckCargoScalar { get; set; } = 1f;
@@ -331,13 +334,14 @@ namespace DispatchBoss
             }
         }
 
-        [SettingsUISlider(min = CargoStationMinScalar, max = CargoStationMaxScalar, step = CargoStationStepScalar)]
-        [SettingsUISection(IndustryTab, CargoStationsGroup)]
-        public float CargoStationMaxTrucksScalar { get; set; } = 1f;
-
+        // Extractor and Cargo Station Buildings (scalar)
         [SettingsUISlider(min = CargoStationMinScalar, max = CargoStationMaxScalar, step = CargoStationStepScalar)]
         [SettingsUISection(IndustryTab, CargoStationsGroup)]
         public float ExtractorMaxTrucksScalar { get; set; } = 1f;
+
+        [SettingsUISlider(min = CargoStationMinScalar, max = CargoStationMaxScalar, step = CargoStationStepScalar)]
+        [SettingsUISection(IndustryTab, CargoStationsGroup)]
+        public float CargoStationMaxTrucksScalar { get; set; } = 1f;
 
         [SettingsUIButtonGroup(CargoStationsGroup)]
         [SettingsUIButton]
@@ -347,17 +351,17 @@ namespace DispatchBoss
             set
             {
                 if (!value) return;
-
-                CargoStationMaxTrucksScalar = 1f;
-                ExtractorMaxTrucksScalar = 1f;
+                // Reset all to vanilla.
+                CargoStationMaxTrucksScalar = 1f;       
+                ExtractorMaxTrucksScalar = 1f;    
 
                 ApplyAndSave();
             }
         }
 
-        // --------------------------
+        // ------------------------
         // Parks-Roads (percent)
-        // --------------------------
+        // ------------------------
 
         [SettingsUISlider(min = MaintenanceMinPercent, max = MaintenanceMaxPercent, step = MaintenanceStepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
         [SettingsUISection(ParksRoadsTab, ParkMaintenanceGroup)]
@@ -379,7 +383,7 @@ namespace DispatchBoss
             set
             {
                 if (!value) return;
-
+                // Reset all Parks stuff to vanilla.
                 ParkMaintenanceDepotScalar = 100f;
                 ParkMaintenanceVehicleCapacityScalar = 100f;
                 ParkMaintenanceVehicleRateScalar = 100f;
@@ -412,7 +416,7 @@ namespace DispatchBoss
             set
             {
                 if (!value) return;
-
+                // Reset all Roads stuff to vanilla.
                 RoadMaintenanceDepotScalar = 100f;
                 RoadMaintenanceVehicleCapacityScalar = 100f;
                 RoadMaintenanceVehicleRateScalar = 100f;

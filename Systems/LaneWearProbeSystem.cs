@@ -3,7 +3,7 @@
 // Notes:
 // - Uses SystemAPI (queries + lookups).
 // - Samples a small set of lanes and logs deltas (avoids log spam).
-// - Expected time-wear per tick: (1/16) * TimeFactor.
+// - Expected time-wear per tick: (1/16) * TimeFactor (based on dnSpy info).
 
 namespace DispatchBoss
 {
@@ -39,7 +39,7 @@ namespace DispatchBoss
                 .Build();
 
             RequireForUpdate(q);
-            Enabled = true; // probe can stay enabled; it self-throttles
+            Enabled = true;     // probe can stay enabled; it self-throttles
         }
 
         protected override void OnUpdate()
@@ -104,7 +104,7 @@ namespace DispatchBoss
                 maxDelta = math.max(maxDelta, delta);
 
                 Mod.s_Log.Info(
-                    $"{Mod.ModTag} LaneWearProbe lane={laneEntity.Index}:{laneEntity.Version} " +
+                    $"{Mod.ModTag} [Lane Wear Probe] lane={laneEntity.Index}:{laneEntity.Version} " +
                     $"wear={cond.m_Wear:0.###} Δ={delta:0.###} " +
                     $"TimeFactor={Fmt(tf)} TrafficFactor={Fmt(traf)} ExpΔ(Time)/Tick={Fmt(expectedPerTick)}");
 
@@ -118,14 +118,14 @@ namespace DispatchBoss
 
             if (sampled == 0)
             {
-                Mod.s_Log.Info($"{Mod.ModTag} LaneWearProbe: no lanes sampled (query empty?)");
+                Mod.s_Log.Info($"{Mod.ModTag} [LaneWearProbe] no lanes sampled (query empty?)");
                 return;
             }
 
             float avgDelta = sumDelta / sampled;
 
             Mod.s_Log.Info(
-                $"{Mod.ModTag} LaneWearProbe summary: Sampled={sampled} AvgΔ={avgDelta:0.###} MaxΔ={maxDelta:0.###} " +
+                $"{Mod.ModTag} [LaneWearProbe] summary: Sampled={sampled} AvgΔ={avgDelta:0.###} MaxΔ={maxDelta:0.###} " +
                 $"Frame={frame} NextSkipStart={newSkip}");
 
             m_RoundRobinSkip = newSkip;

@@ -106,12 +106,9 @@ namespace DispatchBoss
             if (isSemi)
                 return DeliveryBucket.Semi;
 
-            if (name.IndexOf("Motorbike", StringComparison.OrdinalIgnoreCase) >= 0 &&
-                vanillaCargoCapacity > 0 &&
-                vanillaCargoCapacity <= 200)
-            {
+            bool isMotorbike = name.IndexOf("Motorbike", StringComparison.OrdinalIgnoreCase) >= 0;
+            if (isMotorbike)
                 return DeliveryBucket.Motorbike;
-            }
 
             if (vanillaCargoCapacity == 4000 ||
                 name.IndexOf("DeliveryVan", StringComparison.OrdinalIgnoreCase) >= 0)
@@ -119,6 +116,7 @@ namespace DispatchBoss
                 return DeliveryBucket.Van;
             }
 
+            // Filters for Raw Materials Dump trucks and Tankers
             const Resource rawMask =
                 Resource.Oil |
                 Resource.Coal |
