@@ -295,7 +295,7 @@ namespace DispatchBoss
                     "Open the report folder.\n" +
                     "Next: open <ScanReport-Prefabs.txt> with your text editor (e.g., Notepad++)." },
 
-                // ---- Status Text (format string templates) ----
+                // ---- Scan Report Status Text (format string templates) ----
                 { "DB_SCAN_IDLE", "Idle" },
                 { "DB_SCAN_QUEUED_FMT", "Queued ({0})" },
                 { "DB_SCAN_RUNNING_FMT", "Running ({0})" },
