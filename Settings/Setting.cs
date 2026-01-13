@@ -50,9 +50,9 @@ namespace DispatchBoss
         public const string AboutLinksGroup = "AboutLinks";
         public const string DebugGroup = "Debug";
 
-        // ----------------------------
+        // -----------------------
         // Slider ranges
-        // ----------------------------
+        // -----------------------
 
         // Public-Transit sliders (percent).
         public const float DepotMinPercent = 100f;
@@ -99,9 +99,8 @@ namespace DispatchBoss
 
                 m_EnableLineVehicleCountTuner = value;
 
-                // IMPORTANT:
-                // - Do NOT auto-save on toggle changes (prevents settings file rewrites at awkward times).
-                // - Still apply immediately if a city is loaded.
+                // IMPORTANT: do not auto-persist save on toggle changes (prevents settings file rewrites).
+                // - Apply immediately if a city is loaded.
                 GameManager gm = GameManager.instance;
                 if (gm != null && gm.gameMode.IsGame())
                 {
@@ -125,7 +124,7 @@ namespace DispatchBoss
         public override void SetDefaults()
         {
             // Public-Transit defaults (percent).
-            m_EnableLineVehicleCountTuner = false;   // <-- Do NOT call setter here (triggers early save).
+            m_EnableLineVehicleCountTuner = false;   // <-- Do not call setter here (triggers early save).
             ResetDepotToVanilla();
             ResetPassengerToVanilla();
 
@@ -193,9 +192,9 @@ namespace DispatchBoss
             }
         }
 
-        // ----------------------------
+        // ------------------------
         // Public-Transit tab
-        // ----------------------------
+        // ------------------------
 
         [SettingsUISlider(min = DepotMinPercent, max = MaxPercent, step = StepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
         [SettingsUISection(PublicTransitTab, DepotGroup)]
@@ -294,9 +293,9 @@ namespace DispatchBoss
             }
         }
 
-        // ----------------------------
+        // ------------------
         // Industry
-        // ----------------------------
+        // ------------------
 
         [SettingsUISlider(min = ServiceMinScalar, max = ServiceMaxScalar, step = ServiceStepScalar)]
         [SettingsUISection(IndustryTab, DeliveryGroup)]
@@ -356,9 +355,9 @@ namespace DispatchBoss
             }
         }
 
-        // ----------------------------------
+        // --------------------------
         // Parks-Roads (percent)
-        // ---------------------------------
+        // --------------------------
 
         [SettingsUISlider(min = MaintenanceMinPercent, max = MaintenanceMaxPercent, step = MaintenanceStepPercent, scalarMultiplier = 1, unit = Unit.kPercentage)]
         [SettingsUISection(ParksRoadsTab, ParkMaintenanceGroup)]
@@ -423,9 +422,9 @@ namespace DispatchBoss
             }
         }
 
-        // -------------------------
-        // About
-        // -------------------------
+        // ----------------
+        // About tab
+        // ----------------
 
         [SettingsUISection(AboutTab, AboutInfoGroup)]
         public string ModNameDisplay => $"{Mod.ModName} {Mod.ModTag}";
@@ -536,9 +535,9 @@ namespace DispatchBoss
             set => ShellOpen.OpenFolderSafe(ShellOpen.GetLogsFolder(), "OpenLog");
         }
 
-        // ------------------------------
+        // ------------------------
         // Helpers
-        // ------------------------------
+        // ------------------------
 
         public void ResetDepotToVanilla()
         {

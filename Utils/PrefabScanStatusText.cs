@@ -64,7 +64,7 @@ namespace DispatchBoss
 
                         string reason = s.FailCode switch
                         {
-                            PrefabScanState.FailCode.NoCityLoaded => Mod.L(KeyFailNoCity, "LOAD CITY FIRST."),
+                            PrefabScanState.FailCode.NoCityLoaded => Mod.L(KeyFailNoCity, "LOAD CITY FIRST"),
                             _ => string.Empty
                         };
 
@@ -79,7 +79,7 @@ namespace DispatchBoss
 
                         if (!string.IsNullOrEmpty(reason))
                         {
-                            return $"{failed} ({reason})";
+                            return $"{failed} - {reason}";
                         }
 
                         return failed;

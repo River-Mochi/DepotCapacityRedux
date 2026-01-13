@@ -44,7 +44,7 @@ namespace DispatchBoss
                 // Public-Transit tab
                 // --------------------
 
-                { m_Setting.GetOptionGroupLocaleID(Setting.LineVehiclesGroup), "Transit Lines (in-game slider route limits)" },
+                { m_Setting.GetOptionGroupLocaleID(Setting.LineVehiclesGroup), "Transit Lines (in-game slider limits)" },
 
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.EnableLineVehicleCountTuner)), "Expand transit line limits" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.EnableLineVehicleCountTuner)),
@@ -157,9 +157,9 @@ namespace DispatchBoss
                     "**Delivery vans**\n" +
                     "Multiplier: **1×** = vanilla (**4t**), **10×** = 10× more." },
 
-                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.OilTruckCargoScalar)), "Raw material truck (oil, coal, ore, stone)" },
+                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.OilTruckCargoScalar)), "Raw material trucks" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.OilTruckCargoScalar)),
-                    "**Raw materials trucks** (oil/coal/ore/stone)\n" +
+                    "**Raw materials trucks** (oil, coal, ore, stone)\n" +
                     "Multiplier: **1×** = vanilla (**20t**), **10×** = 10× more." },
 
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.MotorbikeDeliveryCargoScalar)), "Delivery Motorbike" },
@@ -181,7 +181,7 @@ namespace DispatchBoss
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.ExtractorMaxTrucksScalar)), "Extractor fleet" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.ExtractorMaxTrucksScalar)),
                     "Multiplier for industrial **extractors max trucks**\n" +
-                    "(farms, forestry, fishing, ore, oil, plus coal/stone when available).\n" +
+                    "(farms, forestry, fishing, ore, oil, coal, stone).\n" +
                     "**1×** = vanilla, **5×** = 5× more." },
 
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.ResetCargoStationsToVanillaButton)), "Reset cargo + extractors fleet" },
@@ -239,7 +239,7 @@ namespace DispatchBoss
                     "How fast roads accumulate wear over time.\n" +
                     "**100%** = vanilla\n" +
                     "**10%** = 10× slower wear (fewer repairs needed)\n" +
-                    "**400%** = 4× faster wear (more repairs needed)" },
+                    "**1000%** = 10× faster wear (more repairs needed)" },
 
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.ResetRoadMaintenanceToVanillaButton)), "Reset road maintenance" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.ResetRoadMaintenanceToVanillaButton)),
@@ -278,7 +278,7 @@ namespace DispatchBoss
 
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.EnableDebugLogging)), "Verbose debug logs" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.EnableDebugLogging)),
-                    "Enabled = sends extra details to DispatchBoss.log.\n" +
+                    "Sends many extra details to log.\n" +
                     "Useful for troubleshooting.\n" +
                     "**Disable** for normal gameplay.\n" +
                     "<If you do not know what this is,>\n" +
@@ -300,7 +300,7 @@ namespace DispatchBoss
                 { "DB_SCAN_QUEUED_FMT", "Queued ({0})" },
                 { "DB_SCAN_RUNNING_FMT", "Running ({0})" },
                 { "DB_SCAN_DONE_FMT", "Done ({0} | {1})" },
-                { "DB_SCAN_FAILED", "No data - " },
+                { "DB_SCAN_FAILED", "No data " },
                 { "DB_SCAN_FAIL_NO_CITY", "Load city first" },
                 { "DB_SCAN_UNKNOWN_TIME", "unknown time" },
 
