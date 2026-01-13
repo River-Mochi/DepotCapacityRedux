@@ -177,7 +177,7 @@ namespace DispatchBoss
                         $"Range={item.m_Range.min:F3}..{item.m_Range.max:F3}");
                 }
 
-                // Only one entry expected; bail early once it is handled.
+                // Only one entry expected; bail early once handled.
                 break;
             }
 

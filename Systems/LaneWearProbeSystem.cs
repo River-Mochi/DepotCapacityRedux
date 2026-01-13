@@ -3,7 +3,7 @@
 // Notes:
 // - Uses SystemAPI (queries + lookups).
 // - Samples a small set of lanes and logs deltas (avoids log spam).
-// - Expected time-wear per tick (from dnSpy): (1/16) * TimeFactor.
+// - Expected time-wear per tick: (1/16) * TimeFactor.
 
 namespace DispatchBoss
 {
@@ -98,7 +98,7 @@ namespace DispatchBoss
                 m_LastWear[laneEntity] = cond.m_Wear;
 
                 // From dnSpy: expected time contribution per time-tick is TimeFactor / 16.
-                // Don't know how many time-ticks occurr between logs, so this is more a scale reference.
+                // Don't know how many time-ticks happen between logs, so this is more a scale reference.
                 float expectedPerTick = float.IsNaN(tf) ? float.NaN : (tf / 16f);
 
                 sumDelta += delta;

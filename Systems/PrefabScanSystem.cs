@@ -3,24 +3,24 @@
 // Output: Writes report to {EnvPath.kUserDataPath}/ModsData/DispatchBoss/ScanReport-Prefabs.txt
 // Notes:
 // - Runs only when requested (PrefabScanState.RequestScan()).
-// - Uses SystemAPI.Query (modern ECS pattern).
+// - Uses SystemAPI.Query + SystemAPI.QueryBuilder.
 // - Deduped + capped to prevent giant outputs and logger issues.
-// - Logs ONLY a summary to the mod log (no spam).
+// - Logs only a summary line to the mod log (no spam).
 
 namespace DispatchBoss
 {
     using Colossal.PSI.Environment; // EnvPath
     using Game;
     using Game.Companies;           // TransportCompanyData
-    using Game.Prefabs;             // TransportLineData
+    using Game.Prefabs;             // PrefabSystem, PrefabBase, *Data, CarTrailerType
     using Game.Routes;              // RouteModifierData, RouteModifierType, TransportType
     using Game.SceneFlow;           // GameManager
-    using System;                   // DateTime, StringComparison
+    using System;
     using System.Collections.Generic;
     using System.Diagnostics;       // Stopwatch
-    using System.IO;                // Path, Directory, File
-    using System.Text;              // Encoding
-    using Unity.Entities;       // EntityQuery, SystemAPI
+    using System.IO;
+    using System.Text;
+    using Unity.Entities;
 
     public sealed partial class PrefabScanSystem : GameSystemBase
     {
@@ -29,7 +29,7 @@ namespace DispatchBoss
 
         private const int kMaxLines = 10000;
         private const int kMaxChars = 1 * 1024 * 1024; // ~1MB
-        private const int kMaxKeywordMatches = 600;     // keep smaller; keywords are just a hint
+        private const int kMaxKeywordMatches = 600;     // keywords are hints only
 
         private struct TransitDefaultsStats
         {
@@ -68,7 +68,11 @@ namespace DispatchBoss
             base.OnCreate();
 
             m_PrefabSystem = World.GetOrCreateSystemManaged<PrefabSystem>();
-            m_ConfigQuery = GetEntityQuery(ComponentType.ReadOnly<UITransportConfigurationData>());
+
+            // Cached query via SystemAPI.QueryBuilder (no EntityManager.CreateEntityQuery).
+            m_ConfigQuery = SystemAPI.QueryBuilder()
+                .WithAll<UITransportConfigurationData>()
+                .Build();
 
             RequireForUpdate(SystemAPI.QueryBuilder().WithAll<PrefabData>().Build());
             Enabled = false;
@@ -117,7 +121,7 @@ namespace DispatchBoss
                     if (lines >= kMaxLines || sb.Length >= kMaxChars)
                     {
                         truncated = true;
-                        sb.AppendLine("!! TRUNCATED: Output hit cap (lines or size). Narrow keywords / reduce detail if needed.");
+                        sb.AppendLine("!! TRUNCATED: Output hit cap (lines or size). Reduce scope (keywords/detail).");
                         lines++;
                         return;
                     }
@@ -133,14 +137,13 @@ namespace DispatchBoss
                 Append($"Mod: {Mod.ModName} {Mod.ModVersion}");
                 Append("");
 
-
                 // ---- Lane wear ----
                 const float kUpdatesPerDay = 16f;
-                const int kMaxLaneDetails = 250; // cap printed per-prefab lines (still computes min/max over all)
+                const int kMaxLaneDetails = 250; // cap printed per-prefab lines
 
                 Append("== Lane wear (LaneDeteriorationData prefabs) ==");
                 Append("Wear sources (dnSpy):");
-                Append("- Time wear: LaneCondition.m_Wear += (1/16) * TimeFactor per deterioration tick (frame-sliced).");
+                Append("- Time wear: LaneCondition.m_Wear += (1/16) * TimeFactor per deterioration tick.");
                 Append("- Traffic wear: Car/Train Navigation adds SideEffects.x * TrafficFactor when vehicles traverse lanes.");
                 Append("");
 
@@ -168,7 +171,6 @@ namespace DispatchBoss
                     if (traf < minTraf) minTraf = traf;
                     if (traf > maxTraf) maxTraf = traf;
 
-                    // Only print first N, but still compute summary over all.
                     if (laneListed < kMaxLaneDetails)
                     {
                         float vanTf = float.NaN;
@@ -207,13 +209,9 @@ namespace DispatchBoss
                     : "Lane wear summary: Total=0");
                 Append("");
 
-                static string Fmt(float v) => float.IsNaN(v) ? "n/a" : v.ToString("0.###");
-
-
                 // ---- Transit lines ----
                 Append("== Transit lines (vanilla timing inputs) ==");
-                Append("Vehicle targets are based on route time estimate (segment durations + stop count), not distance-only.");
-                Append("Traffic/slow paths can change segment durations over time, so line targets can shift during gameplay.");
+                Append("Vehicle targets are based on route time estimate (segment durations + stop count).");
                 Append("");
 
                 var perType = new Dictionary<TransportType, TransitDefaultsStats>();
@@ -264,6 +262,7 @@ namespace DispatchBoss
 
                 Append("");
 
+                // ---- VehicleCountPolicy ----
                 Append("-- VehicleCountPolicy (RouteModifierType.VehicleInterval) --");
                 if (m_ConfigQuery.IsEmptyIgnoreFilter)
                 {
@@ -276,17 +275,17 @@ namespace DispatchBoss
 
                     Entity policyEntity = m_PrefabSystem.GetEntity(config.m_VehicleCountPolicy);
 
-                    if (policyEntity == Entity.Null || !EntityManager.Exists(policyEntity))
+                    if (policyEntity == Entity.Null || !SystemAPI.Exists(policyEntity))
                     {
                         Append("VehicleCountPolicy entity could not be resolved.");
                     }
-                    else if (!EntityManager.HasBuffer<RouteModifierData>(policyEntity))
+                    else if (!SystemAPI.HasBuffer<RouteModifierData>(policyEntity))
                     {
                         Append("VehicleCountPolicy has no RouteModifierData buffer.");
                     }
                     else
                     {
-                        DynamicBuffer<RouteModifierData> buf = EntityManager.GetBuffer<RouteModifierData>(policyEntity);
+                        DynamicBuffer<RouteModifierData> buf = SystemAPI.GetBuffer<RouteModifierData>(policyEntity);
                         bool foundVehicleInterval = false;
 
                         for (int i = 0; i < buf.Length; i++)
@@ -320,6 +319,9 @@ namespace DispatchBoss
                 // ---- Delivery trucks ----
                 int semi = 0, van = 0, raw = 0, bike = 0, other = 0;
 
+                var tractorLookup = SystemAPI.GetComponentLookup<CarTractorData>(isReadOnly: true);
+                var trailerLookup = SystemAPI.GetComponentLookup<CarTrailerData>(isReadOnly: true);
+
                 Append("== DeliveryTruckData Prefabs ==");
                 foreach ((RefRO<DeliveryTruckData> truckRef, Entity e) in SystemAPI
                              .Query<RefRO<DeliveryTruckData>>()
@@ -339,7 +341,8 @@ namespace DispatchBoss
                     }
 
                     VehicleHelpers.GetTrailerTypeInfo(
-                        EntityManager,
+                        tractorLookup,
+                        trailerLookup,
                         e,
                         out bool hasTractor,
                         out CarTrailerType tractorType,
@@ -480,13 +483,10 @@ namespace DispatchBoss
                 Append($"Industrial extractor summary: Unique={extractorCompanies}");
                 Append("");
 
-
-
                 // ---- Keyword scan (deduped + capped) ----
                 Append("== Keyword Matches (deduped, capped) ==");
-                Append("These are just hints to help discover relevant prefabs. Keep keywords narrow.");
+                Append("These are hints for discovering relevant prefabs. Keep keywords narrow.");
 
-                // Keep this list SPECIFIC to avoid noise.
                 string[] keywords = new[]
                 {
                     "deliveryvan",
@@ -549,7 +549,6 @@ namespace DispatchBoss
 
                 PrefabScanState.MarkDone(sw.Elapsed, reportPath);
 
-                // Clearer summary line (these are prefab-entity counts)
                 Mod.s_Log.Info($"{Mod.ModTag} Prefab scan done in {sw.Elapsed.TotalSeconds:0.0}s. Report: {reportPath}");
                 Mod.s_Log.Info(
                     $"{Mod.ModTag} PrefabScan counts (prefab entities): " +
@@ -567,10 +566,9 @@ namespace DispatchBoss
             Enabled = false;
         }
 
-        private static float InverseRelativeAppliedFromInput(float input)
-        {
-            return (-input) / (1f + input);
-        }
+        private static float InverseRelativeAppliedFromInput(float input) => (-input) / (1f + input);
+
+        private static string Fmt(float v) => float.IsNaN(v) ? "n/a" : v.ToString("0.###");
 
         private static bool IsTargetIndustrialExtractorCompany(string name)
         {
@@ -615,7 +613,6 @@ namespace DispatchBoss
 
         private static string GetReportPath()
         {
-            // {EnvPath.kUserDataPath}/ModsData/DispatchBoss/ScanReport-Prefabs.txt
             string root = EnvPath.kUserDataPath;
             return Path.Combine(root, "ModsData", Mod.ModId, "ScanReport-Prefabs.txt");
         }
