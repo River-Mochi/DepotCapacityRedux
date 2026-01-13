@@ -3,6 +3,9 @@
 //          - Extractor fleet max trucks (TransportCompanyData.m_MaxTransports for industrial companies)
 //          - Cargo station max fleet (TransportCompanyData.m_MaxTransports for CargoTransportStationData)
 //          - Delivery truck cargo capacity (DeliveryTruckData.m_CargoCapacity)
+// Notes:
+// - Uses SystemAPI queries.
+// - Uses SystemAPI ComponentLookups for tractor/trailer info (more accurate Semi detection).
 
 namespace DispatchBoss
 {
@@ -24,7 +27,6 @@ namespace DispatchBoss
         private Dictionary<Entity, int> m_DeliveryTruckBaseCargoCapacity = null!;
         private Dictionary<Entity, int> m_ExtractorCompanyBaseMaxTransports = null!;
 
-        // TransportCompany prefabs
         private static readonly HashSet<string> s_KnownIndustrialCompanies = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             "Industrial_FishExtractor", "Industrial_ForestryExtractor", "Industrial_GrainExtractor", "Industrial_OreExtractor", "Industrial_OilExtractor",
@@ -91,13 +93,13 @@ namespace DispatchBoss
             Setting settings = Mod.Settings;
             bool verbose = settings.EnableDebugLogging;
 
-            // Lookups for modern SystemAPI reading (no EntityManager).
+            // Semi detection: read tractor/trailer data via lookups.
             ComponentLookup<CarTractorData> tractorLookup = SystemAPI.GetComponentLookup<CarTractorData>(isReadOnly: true);
             ComponentLookup<CarTrailerData> trailerLookup = SystemAPI.GetComponentLookup<CarTrailerData>(isReadOnly: true);
 
-            // -------------------------
+            // -----------------------------------------------------------------
             // Cargo Stations: max trucks (TransportCompanyData.m_MaxTransports)
-            // -------------------------
+            // -----------------------------------------------------------------
             {
                 float scalar = ScalarMath.ClampScalar(
                     settings.CargoStationMaxTrucksScalar,
@@ -132,9 +134,9 @@ namespace DispatchBoss
                 }
             }
 
-            // -------------------------
+            // -------------------------------------------------------------------
             // Delivery trucks: buckets (semi / vans / raw materials / motorbikes)
-            // -------------------------
+            // ---------------------------------------------------------------------
             {
                 float semiScalar = ScalarMath.ClampScalar(settings.SemiTruckCargoScalar, Setting.ServiceMinScalar, Setting.ServiceMaxScalar);
                 float vanScalar = ScalarMath.ClampScalar(settings.DeliveryVanCargoScalar, Setting.ServiceMinScalar, Setting.ServiceMaxScalar);
@@ -196,17 +198,14 @@ namespace DispatchBoss
                 }
             }
 
-            // -------------------------
-            // Industrial extractor transport companies: max fleet (TransportCompanyData.m_MaxTransports)
-            // -------------------------
+            // -------------------------------------------------------------------------------
+            // Extractor transport company: max fleet (TransportCompanyData.m_MaxTransports)
+            // -------------------------------------------------------------------------------
             {
-                float scalarF = ScalarMath.ClampScalar(
-                      settings.ExtractorMaxTrucksScalar,
-                      Setting.CargoStationMinScalar,
-                      Setting.CargoStationMaxScalar);
-
-                int scalar = (int)Math.Round(scalarF);
-                scalar = ScalarMath.ClampInt(scalar, 1, (int)Setting.CargoStationMaxScalar);
+                float scalar = ScalarMath.ClampScalar(
+                    settings.ExtractorMaxTrucksScalar,
+                    Setting.CargoStationMinScalar,
+                    Setting.CargoStationMaxScalar);
 
                 int matched = 0;
                 int changed = 0;
@@ -225,7 +224,8 @@ namespace DispatchBoss
 
                     int baseMax = GetOrCacheExtractorCompanyBase(prefabEntity, tc.m_MaxTransports);
 
-                    if (baseMax == 0)
+                    // Keep 0 as 0 (some prefabs show legit 0/unused).
+                    if (baseMax == 0 && tc.m_MaxTransports == 0)
                     {
                         skippedZero++;
                         continue;
@@ -233,8 +233,7 @@ namespace DispatchBoss
 
                     matched++;
 
-                    int desired = baseMax * scalar;
-                    if (desired < 0) desired = 0;
+                    int desired = ScalarMath.ScaleIntRoundedAllowZeroMin1(baseMax, scalar);
 
                     if (tc.m_MaxTransports != desired)
                     {
@@ -243,14 +242,14 @@ namespace DispatchBoss
 
                         if (verbose)
                         {
-                            Mod.s_Log.Info($"{Mod.ModTag} Extractor trucks: '{name}' Base={baseMax} x{scalar} -> {desired}");
+                            Mod.s_Log.Info($"{Mod.ModTag} Extractor trucks: '{name}' Base={baseMax} x{scalar:0.##} -> {desired}");
                         }
                     }
                 }
 
                 if (verbose || changed > 0)
                 {
-                    Mod.s_Log.Info($"{Mod.ModTag} Extractor trucks: scalar={scalar} matched={matched} changed={changed} skippedZero={skippedZero}");
+                    Mod.s_Log.Info($"{Mod.ModTag} Extractor trucks: scalar={scalar:0.##} matched={matched} changed={changed} skippedZero={skippedZero}");
                 }
             }
 

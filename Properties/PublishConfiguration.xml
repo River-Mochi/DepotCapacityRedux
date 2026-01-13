@@ -14,20 +14,21 @@ New: includes Transit Line Slider vehicle increases.
 
 ### What it does
 
+NEW **expand Transit Line in-game slider limits** (min can reduce to just (1) vehicle on most routes; maximums are all increased)
 - **Transit depots**: change max vehicles per depot (Bus, Tram, Train, Subway)
 - **Passengers**: change seats per vehicle (Bus, Tram, Train, Subway, Ship, Ferry, Airplane)
-- **Industry Deliveries**: scale cargo capacity for delivery vehicles (Semi trucks, Delivery vans, Motorbike delivery, Raw materials trucks)
-- **Extractor + cargo fleet**: scale max fleet for extractor transport companies + cargo stations (harbor/train/airport cargo)
-- **Parks + Roads**: maintenance fleet size / work shift / rate + road wear speed (alpha)
-- **Road wear speed (alpha)**: scale how fast roads accumulate wear over time
-- Optional: **expand Transit Line in-game vehicle slider limits** (min can reduce to only (1) vehicle on most routes; maximums are also increased)
+-NEW **Industry Deliveries**: scale cargo capacity for delivery vehicles (Semi trucks, Delivery vans, Motorbike delivery, Raw materials trucks - coal, oil, etc.)
+-NEW **Extractor companies**: Fish, Grain, etc.; scale max fleet size (usually semi trucks)
+-NEW **Cargo Stations**: scale max fleet of cargo stations (harbor/train/airport)
+-NEW **Parks + Roads maintenance**: fleet size, work shift, rate (alpha)
+-NEW **Road wear speed** (alpha): scale how fast or slow roads accumulate wear over time
+
 
 ### Notes 🚍🚋🚆✈️🚢
-- **Sliders** adjust any time, no restart needed.
-- Supports switching cities.
-- Transit lines: expanded limits still follow the game’s **route cycle time** (travel time + stops); slider gets higher maximums, but still varies per line (due to game's formula).
+- **Adjust Sliders** at any time, no restart needed; Supports switching cities.
+- New Transit lines: expanded limits still follow the game’s **route cycle time** (travel time + stops); slider gets higher maximums. It varies per line (due to game's formula).
 - Depot capacity = maximum number of vehicles a single depot can maintain/spawn (does not scale extension buildings).
-- Avoid other depot/passenger capacity mods to avoid conflicts (they override each other).
+- **Avoid** other depot/passenger capacity mods to avoid conflicts (they override each other).
 - No Harmony or Reflection; more compatible - less likely to break with game updates.
 - Safe to remove any time (use Reset buttons to return to vanilla game default values).
 
@@ -44,8 +45,8 @@ New: includes Transit Line Slider vehicle increases.
 - BugsyG: testing
 - StarQ: technical advice
 
-tags: dispatch, city transit, control municipal, public transit system, change size, increase people passengers, increase depot size demand, decrease passengers, 
-delivery trucks vans, industry semi-trucks, cargo station depot capacity, Extractor
+tags: city dispatch, transit line increase, control municipal, public transit system, change size, increase people passengers, depot size demand, decrease passengers, 
+delivery trucks vans, industry semi-trucks, cargo station depot capacity, Extractor, fish
 
 	</LongDescription>
 	<!--Thumbnail-->

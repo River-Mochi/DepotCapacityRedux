@@ -44,12 +44,12 @@ namespace DispatchBoss
                 // Public-Transit tab
                 // --------------------
 
-                { m_Setting.GetOptionGroupLocaleID(Setting.LineVehiclesGroup), "Transit Lines (in-game slider vehicle limits)" },
+                { m_Setting.GetOptionGroupLocaleID(Setting.LineVehiclesGroup), "Transit Lines (in-game slider route limits)" },
 
-                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.EnableLineVehicleCountTuner)), "Expand transit line slider limits" },
+                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.EnableLineVehicleCountTuner)), "Expand transit line limits" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.EnableLineVehicleCountTuner)),
-                    "Allows the Transit Line slider to go as **low as 1 vehicle** on most routes.\n" +
-                    "**Max values can also increase** (still follows the game’s route-time logic).\n" +
+                    "Allows the in-game Transit Line slider to go as **low as 1 vehicle** on most routes.\n" +
+                    "**Max possible route line limits are all increased**.\n" +
                     "The game uses route time (driving time + stop count), so max varies per line.\n" +
                     "<Avoid Conflicts: remove mods that edit the same Transit Line policy>.\n" +
                     "If you want to use another Transit Line mod, then keep this checkbox OFF.\n" +
@@ -149,7 +149,7 @@ namespace DispatchBoss
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.SemiTruckCargoScalar)), "Semi trucks" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.SemiTruckCargoScalar)),
                     "**Semi trucks** capactiy.\n" +
-                    "Includes specialized industry Semi (farms, forestry, fishing, etc.).\n" +
+                    "Includes specialized industry Semi (farms, fish, forestry, etc.).\n" +
                     "Multiplier: **1×** = vanilla (**25t**), **10×** = 10× more." },
 
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.DeliveryVanCargoScalar)), "Delivery vans" },
@@ -157,12 +157,12 @@ namespace DispatchBoss
                     "**Delivery vans**\n" +
                     "Multiplier: **1×** = vanilla (**4t**), **10×** = 10× more." },
 
-                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.OilTruckCargoScalar)), "Raw materials trucks (oil, coal, ore, stone)" },
+                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.OilTruckCargoScalar)), "Raw material truck (oil, coal, ore, stone)" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.OilTruckCargoScalar)),
                     "**Raw materials trucks** (oil/coal/ore/stone)\n" +
                     "Multiplier: **1×** = vanilla (**20t**), **10×** = 10× more." },
 
-                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.MotorbikeDeliveryCargoScalar)), "Motorbike" },
+                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.MotorbikeDeliveryCargoScalar)), "Delivery Motorbike" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.MotorbikeDeliveryCargoScalar)),
                     "**Motorbike delivery**\n" +
                     "Multiplier: **1×** = vanilla, **10×** = 10× more." },

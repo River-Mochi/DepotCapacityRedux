@@ -50,7 +50,7 @@ namespace DispatchBoss
                             ? Mod.L(KeyUnknownTime, "unknown time")
                             : s.LastRunFinishedLocal.ToString("yyyy-MM-dd HH:mm:ss");
 
-                        // Keep compact; report path is shown elsewhere.
+                        // Compact; report path is shown elsewhere.
                         return string.Format(
                             Mod.L(KeyDoneFmt, "Done ({0} | {1})"),
                             dur,

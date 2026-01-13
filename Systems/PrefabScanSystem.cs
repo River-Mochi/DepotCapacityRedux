@@ -12,7 +12,8 @@ namespace DispatchBoss
     using Colossal.PSI.Environment; // EnvPath
     using Game;
     using Game.Companies;           // TransportCompanyData
-    using Game.Prefabs;             // PrefabSystem, PrefabBase, *Data, CarTrailerType
+    using Game.Net;                 // LaneCondition (LIVE lanes)
+    using Game.Prefabs;             // PrefabSystem, PrefabBase, *Data, CarTrailerType, PrefabRef
     using Game.Routes;              // RouteModifierData, RouteModifierType, TransportType
     using Game.SceneFlow;           // GameManager
     using System;
@@ -132,6 +133,84 @@ namespace DispatchBoss
 
                 string NameOf(Entity e) => GetPrefabNameSafe(e);
 
+                // NEW: “prove coverage” diagnostic — counts LIVE lanes per lane-prefab.
+                void AppendLiveLaneUsage()
+                {
+                    if (truncated)
+                        return;
+
+                    Append("");
+                    Append("== Live lane usage (LaneCondition + PrefabRef) ==");
+                    Append("Counts live lane entities grouped by PrefabRef.m_Prefab (lane prefab).");
+                    Append("This is the proof that a small set of lane prefabs can power many road types.");
+                    Append("");
+
+                    // Set of lane prefabs that actually have LaneDeteriorationData (the ones we tweak).
+                    var wearPrefabs = new HashSet<Entity>();
+
+                    foreach ((RefRO<LaneDeteriorationData> detRO, Entity prefabEntity) in SystemAPI
+                                 .Query<RefRO<LaneDeteriorationData>>()
+                                 .WithAll<PrefabData>()
+                                 .WithEntityAccess())
+                    {
+                        wearPrefabs.Add(prefabEntity);
+                    }
+
+                    var counts = new Dictionary<Entity, int>(64);
+                    long liveLaneTotal = 0;
+
+                    // LIVE lanes: LaneCondition + PrefabRef, but NOT PrefabData.
+                    foreach (RefRO<PrefabRef> prefabRefRO in SystemAPI
+                                 .Query<RefRO<PrefabRef>>()
+                                 .WithAll<LaneCondition>()
+                                 .WithNone<PrefabData>())
+                    {
+                        Entity prefab = prefabRefRO.ValueRO.m_Prefab;
+                        liveLaneTotal++;
+
+                        if (counts.TryGetValue(prefab, out int c))
+                            counts[prefab] = c + 1;
+                        else
+                            counts[prefab] = 1;
+                    }
+
+                    if (liveLaneTotal == 0 || counts.Count == 0)
+                    {
+                        Append("No live lanes found (unexpected).");
+                        return;
+                    }
+
+                    long covered = 0;
+                    foreach (var kvp in counts)
+                    {
+                        if (wearPrefabs.Contains(kvp.Key))
+                            covered += kvp.Value;
+                    }
+
+                    float pct = (float)covered * 100f / (float)liveLaneTotal;
+
+                    Append($"Live lanes summary: LiveLanes={liveLaneTotal:n0} UniqueLanePrefabs={counts.Count:n0}");
+                    Append($"Coverage by LaneDeteriorationData prefabs: {covered:n0}/{liveLaneTotal:n0} ({pct:0.0}%)");
+                    Append("");
+
+                    // Print top N most-used lane prefabs (by live lane count)
+                    const int kTop = 30;
+
+                    var top = new List<KeyValuePair<Entity, int>>(counts);
+                    top.Sort((a, b) => b.Value.CompareTo(a.Value));
+
+                    int printed = 0;
+                    for (int i = 0; i < top.Count && printed < kTop; i++)
+                    {
+                        var kvp = top[i];
+                        string name = NameOf(kvp.Key);
+                        bool isWear = wearPrefabs.Contains(kvp.Key);
+
+                        Append($"- {name} ({kvp.Key.Index}:{kvp.Key.Version}) UsedByLanes={kvp.Value:n0} WearPrefab={isWear}");
+                        printed++;
+                    }
+                }
+
                 Append("Dispatch Boss: Prefab Scan Report");
                 Append($"Timestamp (local): {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
                 Append($"Mod: {Mod.ModName} {Mod.ModVersion}");
@@ -208,6 +287,9 @@ namespace DispatchBoss
                     ? $"Lane wear summary: Total={laneTotal} TimeFactor(min={minTf:0.###}, max={maxTf:0.###}) TrafficFactor(min={minTraf:0.###}, max={maxTraf:0.###})"
                     : "Lane wear summary: Total=0");
                 Append("");
+
+                // NEW: Prove Coverage section
+                AppendLiveLaneUsage();
 
                 // ---- Transit lines ----
                 Append("== Transit lines (vanilla timing inputs) ==");

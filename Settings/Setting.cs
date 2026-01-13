@@ -125,7 +125,7 @@ namespace DispatchBoss
         public override void SetDefaults()
         {
             // Public-Transit defaults (percent).
-            m_EnableLineVehicleCountTuner = false;   // <-- Do NOT call the property setter here (triggers early save).
+            m_EnableLineVehicleCountTuner = false;   // <-- Do NOT call setter here (triggers early save).
             ResetDepotToVanilla();
             ResetPassengerToVanilla();
 
