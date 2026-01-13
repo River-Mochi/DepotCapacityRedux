@@ -52,10 +52,10 @@ namespace DispatchBoss
                     "**Max values can also increase** (still follows the game’s route-time logic).\n" +
                     "The game uses route time (driving time + stop count), so max varies per line.\n" +
                     "<Avoid Conflicts: remove mods that edit the same Transit Line policy>.\n" +
-                    "If you want another policy mod, keep this checkbox OFF.\n" +
+                    "If you want to use another Transit Line mod, then keep this checkbox OFF.\n" +
                     "Works for: bus, tram, train, subway, ship, ferry, airplane.\n" +
-                    "Tip: if you want even more vehicles that this default gives, just add a few stops to the route." +
-                         "Game will auto increase the maximum slider."
+                    "Tip: if you want even more vehicles on the line than this mod gives, just add a few stops to the route." +
+                         "Game will auto increase the maximum slider based on added stops."
                 },
 
                 // Depot Capacity sliders
@@ -293,7 +293,7 @@ namespace DispatchBoss
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.OpenReportButton)), "Open report folder" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.OpenReportButton)),
                     "Open the report folder.\n" +
-                    "Next: open <ScanReport-Prefabs.txt> with your text editor (Notepad++ recommended)." },
+                    "Next: open <ScanReport-Prefabs.txt> with your text editor (e.g., Notepad++)." },
 
                 // ---- Status Text (format string templates) ----
                 { "DB_SCAN_IDLE", "Idle" },
