@@ -273,7 +273,7 @@ namespace DispatchBoss
 
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.PrefabScanStatus)), "Prefab scan status" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.PrefabScanStatus)),
-                    "Shows scan state: Idle / Queued / Running / Done / Failed.\n" +
+                    "Shows scan state: Idle / Queued / Running / Done / No Data.\n" +
                     "Queued/Running shows elapsed time; Done shows duration + finish time." },
 
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.EnableDebugLogging)), "Verbose debug logs" },
@@ -300,8 +300,8 @@ namespace DispatchBoss
                 { "DB_SCAN_QUEUED_FMT", "Queued ({0})" },
                 { "DB_SCAN_RUNNING_FMT", "Running ({0})" },
                 { "DB_SCAN_DONE_FMT", "Done ({0} | {1})" },
-                { "DB_SCAN_FAILED", "Failed" },
-                { "DB_SCAN_FAIL_NO_CITY", "LOAD CITY FIRST." },
+                { "DB_SCAN_FAILED", "No data - " },
+                { "DB_SCAN_FAIL_NO_CITY", "Load city first" },
                 { "DB_SCAN_UNKNOWN_TIME", "unknown time" },
 
             };

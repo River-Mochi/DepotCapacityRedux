@@ -2,8 +2,8 @@
 // Purpose: shared helpers for prefab classification (delivery buckets, tractor/trailer info).
 // Notes:
 // - Not a system (no OnUpdate).
-// - Provides BOTH EntityManager-based and ComponentLookup-based readers.
-// - Prefer the lookup overload when calling from a system that already uses SystemAPI.
+// - Prefer the ComponentLookup overload when calling from a system (SystemAPI.GetComponentLookup).
+// - Keep EntityManager overload only as a fallback for non-SystemAPI callers.
 
 namespace DispatchBoss
 {
@@ -23,7 +23,7 @@ namespace DispatchBoss
             Motorbike = 4,
         }
 
-
+        // Preferred overload for systems: pass lookups created via SystemAPI.GetComponentLookup<T>(isReadOnly).
         public static void GetTrailerTypeInfo(
             in ComponentLookup<CarTractorData> tractorLookup,
             in ComponentLookup<CarTrailerData> trailerLookup,
@@ -52,7 +52,7 @@ namespace DispatchBoss
             }
         }
 
-        // Fallback for non-system callers:
+        // Fallback for non-system callers.
         public static void GetTrailerTypeInfo(
             EntityManager entityManager,
             Entity prefabEntity,

@@ -3,10 +3,6 @@
 //          - Extractor fleet max trucks (TransportCompanyData.m_MaxTransports for industrial companies)
 //          - Cargo station max fleet (TransportCompanyData.m_MaxTransports for CargoTransportStationData)
 //          - Delivery truck cargo capacity (DeliveryTruckData.m_CargoCapacity)
-// Notes:
-// - Uses SystemAPI queries
-// - Delivery bucket classification here does NOT inspect tractor/trailer components;
-//   relies on name/resources/capacity, which is usually sufficient for buckets.
 
 namespace DispatchBoss
 {
@@ -95,6 +91,10 @@ namespace DispatchBoss
             Setting settings = Mod.Settings;
             bool verbose = settings.EnableDebugLogging;
 
+            // Lookups for modern SystemAPI reading (no EntityManager).
+            ComponentLookup<CarTractorData> tractorLookup = SystemAPI.GetComponentLookup<CarTractorData>(isReadOnly: true);
+            ComponentLookup<CarTrailerData> trailerLookup = SystemAPI.GetComponentLookup<CarTrailerData>(isReadOnly: true);
+
             // -------------------------
             // Cargo Stations: max trucks (TransportCompanyData.m_MaxTransports)
             // -------------------------
@@ -114,9 +114,7 @@ namespace DispatchBoss
                     int baseMax = GetOrCacheCargoStationBase(prefabEntity, company.m_MaxTransports);
 
                     if (baseMax <= 0 && company.m_MaxTransports <= 0)
-                    {
                         continue;
-                    }
 
                     int newMax = ScalarMath.ScaleIntRoundedAllowZeroMin1(baseMax, scalar);
 
@@ -153,18 +151,18 @@ namespace DispatchBoss
                     int baseCap = GetOrCacheDeliveryTruckBase(prefabEntity, data.m_CargoCapacity);
 
                     if (baseCap <= 0 && data.m_CargoCapacity <= 0)
-                    {
                         continue;
-                    }
 
                     string prefabName = PrefabNameUtil.GetNameSafe(m_PrefabSystem, prefabEntity);
 
-                    // don't inspect tractor/trailer component graphs here.
-                    // Classification still uses name/baseCap/resources; typically sufficient.
-                    bool hasTractor = false;
-                    CarTrailerType tractorType = default;
-                    bool hasTrailer = false;
-                    CarTrailerType trailerType = default;
+                    VehicleHelpers.GetTrailerTypeInfo(
+                        in tractorLookup,
+                        in trailerLookup,
+                        prefabEntity,
+                        out bool hasTractor,
+                        out CarTrailerType tractorType,
+                        out bool hasTrailer,
+                        out CarTrailerType trailerType);
 
                     VehicleHelpers.DeliveryBucket bucket = VehicleHelpers.ClassifyDeliveryTruckPrefab(
                         prefabName,
@@ -202,10 +200,13 @@ namespace DispatchBoss
             // Industrial extractor transport companies: max fleet (TransportCompanyData.m_MaxTransports)
             // -------------------------
             {
-                float scalar = ScalarMath.ClampScalar(
-                    settings.ExtractorMaxTrucksScalar,
-                    Setting.CargoStationMinScalar,
-                    Setting.CargoStationMaxScalar);
+                float scalarF = ScalarMath.ClampScalar(
+                      settings.ExtractorMaxTrucksScalar,
+                      Setting.CargoStationMinScalar,
+                      Setting.CargoStationMaxScalar);
+
+                int scalar = (int)Math.Round(scalarF);
+                scalar = ScalarMath.ClampInt(scalar, 1, (int)Setting.CargoStationMaxScalar);
 
                 int matched = 0;
                 int changed = 0;
@@ -218,16 +219,13 @@ namespace DispatchBoss
                 {
                     string name = PrefabNameUtil.GetNameSafe(m_PrefabSystem, prefabEntity);
                     if (!IsTargetIndustrialCompany(name))
-                    {
                         continue;
-                    }
 
                     ref TransportCompanyData tc = ref tcRef.ValueRW;
 
                     int baseMax = GetOrCacheExtractorCompanyBase(prefabEntity, tc.m_MaxTransports);
 
-                    // Keep 0 as 0 (some prefabs legitimately have 0/unused).
-                    if (baseMax == 0 && tc.m_MaxTransports == 0)
+                    if (baseMax == 0)
                     {
                         skippedZero++;
                         continue;
@@ -235,7 +233,8 @@ namespace DispatchBoss
 
                     matched++;
 
-                    int desired = ScalarMath.ScaleIntRoundedAllowZeroMin1(baseMax, scalar);
+                    int desired = baseMax * scalar;
+                    if (desired < 0) desired = 0;
 
                     if (tc.m_MaxTransports != desired)
                     {
@@ -244,14 +243,14 @@ namespace DispatchBoss
 
                         if (verbose)
                         {
-                            Mod.s_Log.Info($"{Mod.ModTag} Extractor trucks: '{name}' Base={baseMax} x{scalar:0.##} -> {desired}");
+                            Mod.s_Log.Info($"{Mod.ModTag} Extractor trucks: '{name}' Base={baseMax} x{scalar} -> {desired}");
                         }
                     }
                 }
 
                 if (verbose || changed > 0)
                 {
-                    Mod.s_Log.Info($"{Mod.ModTag} Extractor trucks: scalar={scalar:0.##} matched={matched} changed={changed} skippedZero={skippedZero}");
+                    Mod.s_Log.Info($"{Mod.ModTag} Extractor trucks: scalar={scalar} matched={matched} changed={changed} skippedZero={skippedZero}");
                 }
             }
 
@@ -261,20 +260,14 @@ namespace DispatchBoss
         private static bool IsTargetIndustrialCompany(string name)
         {
             if (string.IsNullOrEmpty(name))
-            {
                 return false;
-            }
 
             if (s_KnownIndustrialCompanies.Contains(name))
-            {
                 return true;
-            }
 
             if (name.StartsWith("Industrial_", StringComparison.OrdinalIgnoreCase) &&
                 name.IndexOf("Extractor", StringComparison.OrdinalIgnoreCase) >= 0)
-            {
                 return true;
-            }
 
             return false;
         }
@@ -282,9 +275,7 @@ namespace DispatchBoss
         private int GetOrCacheCargoStationBase(Entity prefabEntity, int currentValue)
         {
             if (m_CargoStationBaseMaxTransports.TryGetValue(prefabEntity, out int baseMax))
-            {
                 return baseMax;
-            }
 
             int vanilla;
             if (TryGetCargoStationVanillaMax(prefabEntity, out vanilla) && vanilla > 0)
@@ -310,9 +301,7 @@ namespace DispatchBoss
         private int GetOrCacheDeliveryTruckBase(Entity prefabEntity, int currentValue)
         {
             if (m_DeliveryTruckBaseCargoCapacity.TryGetValue(prefabEntity, out int baseCap))
-            {
                 return baseCap;
-            }
 
             int vanilla;
             if (TryGetDeliveryTruckVanillaCargo(prefabEntity, out vanilla) && vanilla >= 0)
@@ -338,12 +327,9 @@ namespace DispatchBoss
         private int GetOrCacheExtractorCompanyBase(Entity prefabEntity, int currentValue)
         {
             if (m_ExtractorCompanyBaseMaxTransports.TryGetValue(prefabEntity, out int baseMax))
-            {
                 return baseMax;
-            }
 
             baseMax = currentValue;
-
             m_ExtractorCompanyBaseMaxTransports[prefabEntity] = baseMax;
             return baseMax;
         }
