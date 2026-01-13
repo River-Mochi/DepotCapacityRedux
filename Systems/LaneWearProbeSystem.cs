@@ -19,7 +19,7 @@ namespace DispatchBoss
     public sealed partial class LaneWearProbeSystem : GameSystemBase
     {
         private const int kSamplePerLog = 25;
-        private const uint kFramesBetweenLogs = 1024; // throttle hard; adjust if you want
+        private const uint kFramesBetweenLogs = 1024; // throttle hard; adjustable
 
         private SimulationSystem m_Sim = null!;
 
@@ -64,7 +64,7 @@ namespace DispatchBoss
             float maxDelta = 0f;
 
             // Round-robin sampling without storing entities:
-            // skip some lanes each log so we don't always inspect the same first chunk.
+            // skip some lanes each log so it's not inspecting the same first chunk.
             int skip = m_RoundRobinSkip;
             int newSkip = skip;
 
@@ -98,7 +98,7 @@ namespace DispatchBoss
                 m_LastWear[laneEntity] = cond.m_Wear;
 
                 // From dnSpy: expected time contribution per time-tick is TimeFactor / 16.
-                // We DON'T know how many time-ticks occurred between logs, so treat this as a scale reference.
+                // Don't know how many time-ticks occurr between logs, so this is more a scale reference.
                 float expectedPerTick = float.IsNaN(tf) ? float.NaN : (tf / 16f);
 
                 sumDelta += delta;

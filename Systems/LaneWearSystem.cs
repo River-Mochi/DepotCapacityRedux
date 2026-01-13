@@ -102,7 +102,7 @@ namespace DispatchBoss
                 float desiredTime = baseF.Time * scalar;
                 float desiredTraffic = baseF.Traffic * scalar;
 
-                // Keep tiny positives so “0” doesn’t effectively freeze wear forever unless you explicitly want that behavior.
+                // Keep tiny positives so “0” doesn’t effectively freeze wear forever.
                 if (desiredTime < 0.0001f) desiredTime = 0.0001f;
                 if (desiredTraffic < 0.0001f) desiredTraffic = 0.0001f;
 
