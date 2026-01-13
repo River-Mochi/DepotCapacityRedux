@@ -2,8 +2,8 @@
 // Purpose: shared helpers for prefab classification (delivery buckets, tractor/trailer info).
 // Notes:
 // - Not a system (no OnUpdate).
-// - Reusable (classification and component reads only).
-// - Scanning/reporting belongs in PrefabScanSystem (triggered by UI button).
+// - Provides BOTH EntityManager-based and ComponentLookup-based readers.
+// - Prefer the lookup overload when calling from a system that already uses SystemAPI.
 
 namespace DispatchBoss
 {
@@ -23,6 +23,36 @@ namespace DispatchBoss
             Motorbike = 4,
         }
 
+        // Preferred for systems: pass lookups from SystemAPI.GetComponentLookup<T>(true)
+        public static void GetTrailerTypeInfo(
+            in ComponentLookup<CarTractorData> tractorLookup,
+            in ComponentLookup<CarTrailerData> trailerLookup,
+            Entity prefabEntity,
+            out bool hasTractor,
+            out CarTrailerType tractorTrailerType,
+            out bool hasTrailer,
+            out CarTrailerType trailerTrailerType)
+        {
+            hasTractor = false;
+            hasTrailer = false;
+
+            tractorTrailerType = CarTrailerType.None;
+            trailerTrailerType = CarTrailerType.None;
+
+            if (tractorLookup.TryGetComponent(prefabEntity, out CarTractorData tractor))
+            {
+                hasTractor = true;
+                tractorTrailerType = tractor.m_TrailerType;
+            }
+
+            if (trailerLookup.TryGetComponent(prefabEntity, out CarTrailerData trailer))
+            {
+                hasTrailer = true;
+                trailerTrailerType = trailer.m_TrailerType;
+            }
+        }
+
+        // Fallback for non-system callers:
         public static void GetTrailerTypeInfo(
             EntityManager entityManager,
             Entity prefabEntity,
@@ -40,7 +70,6 @@ namespace DispatchBoss
             if (!entityManager.Exists(prefabEntity))
                 return;
 
-            // Tractor component (front unit) declares what trailer type it expects.
             if (entityManager.HasComponent<CarTractorData>(prefabEntity))
             {
                 hasTractor = true;
@@ -48,7 +77,6 @@ namespace DispatchBoss
                 tractorTrailerType = tractor.m_TrailerType;
             }
 
-            // Trailer component (rear unit) declares its own trailer type.
             if (entityManager.HasComponent<CarTrailerData>(prefabEntity))
             {
                 hasTrailer = true;
@@ -66,14 +94,11 @@ namespace DispatchBoss
             bool hasTrailer,
             CarTrailerType trailerTrailerType)
         {
-            // Capacity <= 0 is valid for tractor-only/helper prefabs (no cargo payload).
-            // These should not be bucketed into cargo scaling groups.
             if (vanillaCargoCapacity <= 0)
                 return DeliveryBucket.Other;
 
             string name = prefabName ?? string.Empty;
 
-            // Semis are identified by trailer type (tractor expecting Semi, or trailer being Semi).
             bool isSemi =
                 (hasTractor && tractorTrailerType == CarTrailerType.Semi) ||
                 (hasTrailer && trailerTrailerType == CarTrailerType.Semi);
@@ -81,7 +106,6 @@ namespace DispatchBoss
             if (isSemi)
                 return DeliveryBucket.Semi;
 
-            // Motorbike delivery (small payload).
             if (name.IndexOf("Motorbike", StringComparison.OrdinalIgnoreCase) >= 0 &&
                 vanillaCargoCapacity > 0 &&
                 vanillaCargoCapacity <= 200)
@@ -89,27 +113,21 @@ namespace DispatchBoss
                 return DeliveryBucket.Motorbike;
             }
 
-            // Vans (vanilla commonly 4000).
             if (vanillaCargoCapacity == 4000 ||
                 name.IndexOf("DeliveryVan", StringComparison.OrdinalIgnoreCase) >= 0)
             {
                 return DeliveryBucket.Van;
             }
 
-            // Raw materials dump trucks: prefer resource flags when available.
-            // (Resource is a flags enum in CS2; bitwise works without boxing.)
             const Resource rawMask =
                 Resource.Oil |
                 Resource.Coal |
                 Resource.Ore |
                 Resource.Stone;
 
-            bool looksLikeRawByResource = (transportedResources & rawMask) != 0;
-
-            if (looksLikeRawByResource)
+            if ((transportedResources & rawMask) != 0)
                 return DeliveryBucket.RawMaterials;
 
-            // Fallback (name + vanilla capacity).
             if (vanillaCargoCapacity == 20000 ||
                 name.IndexOf("OilTruck", StringComparison.OrdinalIgnoreCase) >= 0 ||
                 name.IndexOf("CoalTruck", StringComparison.OrdinalIgnoreCase) >= 0 ||
@@ -123,3 +141,4 @@ namespace DispatchBoss
         }
     }
 }
+

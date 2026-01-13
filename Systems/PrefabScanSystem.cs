@@ -133,6 +133,83 @@ namespace DispatchBoss
                 Append($"Mod: {Mod.ModName} {Mod.ModVersion}");
                 Append("");
 
+
+                // ---- Lane wear ----
+                const float kUpdatesPerDay = 16f;
+                const int kMaxLaneDetails = 250; // cap printed per-prefab lines (still computes min/max over all)
+
+                Append("== Lane wear (LaneDeteriorationData prefabs) ==");
+                Append("Wear sources (dnSpy):");
+                Append("- Time wear: LaneCondition.m_Wear += (1/16) * TimeFactor per deterioration tick (frame-sliced).");
+                Append("- Traffic wear: Car/Train Navigation adds SideEffects.x * TrafficFactor when vehicles traverse lanes.");
+                Append("");
+
+                int laneListed = 0;
+
+                float minTf = float.MaxValue, maxTf = float.MinValue;
+                float minTraf = float.MaxValue, maxTraf = float.MinValue;
+
+                foreach ((RefRO<LaneDeteriorationData> laneRef, Entity e) in SystemAPI
+                             .Query<RefRO<LaneDeteriorationData>>()
+                             .WithAll<PrefabData>()
+                             .WithEntityAccess())
+                {
+                    if (truncated) break;
+
+                    laneTotal++;
+
+                    LaneDeteriorationData cur = laneRef.ValueRO;
+                    float tf = cur.m_TimeFactor;
+                    float traf = cur.m_TrafficFactor;
+
+                    if (tf < minTf) minTf = tf;
+                    if (tf > maxTf) maxTf = tf;
+
+                    if (traf < minTraf) minTraf = traf;
+                    if (traf > maxTraf) maxTraf = traf;
+
+                    // Only print first N, but still compute summary over all.
+                    if (laneListed < kMaxLaneDetails)
+                    {
+                        float vanTf = float.NaN;
+                        float vanTraf = float.NaN;
+
+                        if (m_PrefabSystem.TryGetPrefab(e, out PrefabBase pb) &&
+                            pb.TryGet(out Game.Prefabs.LaneDeterioration author))
+                        {
+                            vanTf = author.m_TimeDeterioration;
+                            vanTraf = author.m_TrafficDeterioration;
+                        }
+
+                        float xTime = (!float.IsNaN(vanTf) && vanTf > 0f) ? (tf / vanTf) : float.NaN;
+                        float xTraf = (!float.IsNaN(vanTraf) && vanTraf > 0f) ? (traf / vanTraf) : float.NaN;
+
+                        float expPerTick = tf / kUpdatesPerDay;
+
+                        Append(
+                            $"- {NameOf(e)} ({e.Index}:{e.Version}) " +
+                            $"Vanilla(Time={Fmt(vanTf)}, Traffic={Fmt(vanTraf)}) " +
+                            $"Current(Time={tf:0.###}, Traffic={traf:0.###}) " +
+                            $"xTime={Fmt(xTime)} xTraffic={Fmt(xTraf)} ExpΔ(Time)/Tick={expPerTick:0.###}");
+
+                        laneListed++;
+                    }
+                }
+
+                if (laneTotal > laneListed)
+                {
+                    Append($"(details capped) Printed={laneListed} of Total={laneTotal} (cap={kMaxLaneDetails}).");
+                }
+
+                Append("");
+                Append(laneTotal > 0
+                    ? $"Lane wear summary: Total={laneTotal} TimeFactor(min={minTf:0.###}, max={maxTf:0.###}) TrafficFactor(min={minTraf:0.###}, max={maxTraf:0.###})"
+                    : "Lane wear summary: Total=0");
+                Append("");
+
+                static string Fmt(float v) => float.IsNaN(v) ? "n/a" : v.ToString("0.###");
+
+
                 // ---- Transit lines ----
                 Append("== Transit lines (vanilla timing inputs) ==");
                 Append("Vehicle targets are based on route time estimate (segment durations + stop count), not distance-only.");
@@ -403,30 +480,7 @@ namespace DispatchBoss
                 Append($"Industrial extractor summary: Unique={extractorCompanies}");
                 Append("");
 
-                // ---- Lane wear ----
-                float minTf = float.MaxValue;
-                float maxTf = float.MinValue;
 
-                Append("== LaneDeteriorationData Prefabs (count + range) ==");
-                foreach ((RefRO<LaneDeteriorationData> laneRef, Entity e) in SystemAPI
-                             .Query<RefRO<LaneDeteriorationData>>()
-                             .WithAll<PrefabData>()
-                             .WithEntityAccess())
-                {
-                    if (truncated) break;
-
-                    laneTotal++;
-                    float tf = laneRef.ValueRO.m_TimeFactor;
-                    if (tf < minTf) minTf = tf;
-                    if (tf > maxTf) maxTf = tf;
-                }
-
-                if (laneTotal > 0)
-                    Append($"Lane wear summary: Total={laneTotal} TimeFactor(min={minTf:0.###}, max={maxTf:0.###})");
-                else
-                    Append("Lane wear summary: Total=0");
-
-                Append("");
 
                 // ---- Keyword scan (deduped + capped) ----
                 Append("== Keyword Matches (deduped, capped) ==");

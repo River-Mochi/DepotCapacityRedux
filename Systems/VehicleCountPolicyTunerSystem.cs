@@ -20,16 +20,12 @@ namespace DispatchBoss
         private PrefabSystem m_PrefabSystem = null!;
         private EntityQuery m_ConfigQuery;
 
-        // Store original so disabling the toggle undoes the change.
         private static bool s_HasOriginal;
         private static Bounds1 s_OriginalVehicleIntervalRange;
         private static ModifierValueMode s_OriginalVehicleIntervalMode;
 
-        // ---- TUNING Transit Lines (no Harmony) ----
-        // If it doesn't reach 1 vehicle on some lines, increase kFewerVehiclesApplied (e.g. 22f -> 24f).
-        // If max values are too high, make kMoreVehiclesApplied less negative (e.g. -0.84f -> -0.78f).
-        private const float kFewerVehiclesApplied = 22f;     // fewer vehicles target (positive applied delta)
-        private const float kMoreVehiclesApplied = -0.84f;   // more vehicles cap (negative applied delta)
+        private const float kFewerVehiclesApplied = 22f;
+        private const float kMoreVehiclesApplied = -0.84f;
 
         protected override void OnCreate()
         {
@@ -51,9 +47,7 @@ namespace DispatchBoss
                 (purpose == Purpose.NewGame || purpose == Purpose.LoadGame);
 
             if (!isRealGame)
-            {
                 return;
-            }
 
             Enabled = true;
         }
@@ -63,14 +57,10 @@ namespace DispatchBoss
             Enabled = false;
 
             if (m_ConfigQuery.IsEmptyIgnoreFilter)
-            {
                 return;
-            }
 
             if (Mod.Settings == null)
-            {
                 return;
-            }
 
             bool verbose = Mod.Settings.EnableDebugLogging;
 
@@ -79,13 +69,13 @@ namespace DispatchBoss
 
             Entity policyEntity = m_PrefabSystem.GetEntity(config.m_VehicleCountPolicy);
 
-            if (policyEntity == Entity.Null || !EntityManager.Exists(policyEntity))
+            if (policyEntity == Entity.Null || !SystemAPI.Exists(policyEntity))
             {
                 Mod.s_Log.Warn($"{Mod.ModTag} VehicleCountPolicyTuner: could not resolve VehicleCountPolicy entity.");
                 return;
             }
 
-            if (!EntityManager.HasBuffer<RouteModifierData>(policyEntity))
+            if (!SystemAPI.HasBuffer<RouteModifierData>(policyEntity))
             {
                 Mod.s_Log.Warn($"{Mod.ModTag} VehicleCountPolicyTuner: VehicleCountPolicy has no RouteModifierData buffer.");
                 return;
@@ -93,7 +83,7 @@ namespace DispatchBoss
 
             bool enable = Mod.Settings.EnableLineVehicleCountTuner;
 
-            DynamicBuffer<RouteModifierData> buf = EntityManager.GetBuffer<RouteModifierData>(policyEntity);
+            DynamicBuffer<RouteModifierData> buf = SystemAPI.GetBuffer<RouteModifierData>(policyEntity);
 
             bool found = false;
             bool changed = false;
@@ -102,9 +92,7 @@ namespace DispatchBoss
             {
                 RouteModifierData item = buf[i];
                 if (item.m_Type != RouteModifierType.VehicleInterval)
-                {
                     continue;
-                }
 
                 found = true;
 
@@ -188,6 +176,9 @@ namespace DispatchBoss
                         $"{Mod.ModTag} VehicleCountPolicyTuner: VehicleInterval mode is {item.m_Mode}; not modifying. " +
                         $"Range={item.m_Range.min:F3}..{item.m_Range.max:F3}");
                 }
+
+                // Only one entry expected; bail early once we handled it.
+                break;
             }
 
             if (!found)
@@ -202,8 +193,6 @@ namespace DispatchBoss
 
         private static Bounds1 BuildInverseRelativeInputRange(float fewerVehiclesApplied, float moreVehiclesApplied)
         {
-            // InverseRelative: applied = -input/(1+input)
-            // Choose input endpoints that correspond to our desired applied deltas.
             float inputForFewer = InverseRelativeInputFromApplied(fewerVehiclesApplied);
             float inputForMore = InverseRelativeInputFromApplied(moreVehiclesApplied);
 
@@ -217,7 +206,6 @@ namespace DispatchBoss
                 inputMax = t;
             }
 
-            // Safety: avoid exactly -1 (would explode).
             if (inputMin <= -0.999f) inputMin = -0.999f;
 
             return new Bounds1(inputMin, inputMax);
@@ -225,8 +213,6 @@ namespace DispatchBoss
 
         private static float InverseRelativeInputFromApplied(float applied)
         {
-            // applied = -input/(1+input)
-            // Solve for input: input = (-applied)/(1+applied)
             return (-applied) / (1f + applied);
         }
 

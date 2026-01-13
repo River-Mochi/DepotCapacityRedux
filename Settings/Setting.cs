@@ -77,7 +77,7 @@ namespace DispatchBoss
 
         // Road wear speed: percent (10%..400% = 0.1x..4.0x).
         public const float RoadWearMinPercent = 10f;
-        public const float RoadWearMaxPercent = 400f;
+        public const float RoadWearMaxPercent = 1000f;
         public const float RoadWearStepPercent = 10f;
 
         private const string UrlParadox =

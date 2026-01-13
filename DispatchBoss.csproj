@@ -73,4 +73,25 @@
 		<None Include="$(ModPropsFile)" Link="Properties\Mod.props" />
 		<None Include="$(ModTargetsFile)" Link="Properties\Mod.targets" />
 	</ItemGroup>
+
+	<!-- Exclude docs/ from compile, output, and publish packaging -->
+	<ItemGroup>
+		<!-- If a .cs is in docs/, don't compile it -->
+		<Compile Remove="docs\**\*.cs" />
+
+		<!-- Remove docs from any default "None"/"Content" globs (SDK projects + packaging targets) -->
+		<None Remove="docs\**" />
+		<Content Remove="docs\**" />
+
+		<!-- Belt-and-suspenders: if anything still shows up as None/Content, force it to never copy -->
+		<None Update="docs\**">
+			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+			<CopyToPublishDirectory>Never</CopyToPublishDirectory>
+		</None>
+		<Content Update="docs\**">
+			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+			<CopyToPublishDirectory>Never</CopyToPublishDirectory>
+		</Content>
+	</ItemGroup>
+
 </Project>

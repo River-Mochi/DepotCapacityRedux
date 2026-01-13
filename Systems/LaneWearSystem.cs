@@ -1,9 +1,9 @@
 // File: Systems/LaneWearSystem.cs
-// Purpose: Apply RoadWearScalar (percent) to LaneDeteriorationData.m_TimeFactor (prefab lane deterioration settings).
+// Purpose: Apply RoadWearScalar (percent) to BOTH LaneDeteriorationData.m_TimeFactor and m_TrafficFactor (prefab lane deterioration settings).
 // Notes:
 // - Run-once system: enabled on city load or when settings Apply() enables it.
-// - Caches original m_TimeFactor per prefab entity so changes do not stack.
-// - Affects how quickly lanes accumulate deterioration (wear) over time.
+// - Caches original m_TimeFactor + m_TrafficFactor per prefab entity so changes do not stack.
+// - Affects how quickly lanes accumulate deterioration from BOTH time and traffic.
 
 namespace DispatchBoss
 {
@@ -17,24 +17,25 @@ namespace DispatchBoss
 
     public sealed partial class LaneWearSystem : GameSystemBase
     {
-        // Base (vanilla/current-session-original) time factor per prefab entity.
-        // Key: prefab entity that has LaneDeteriorationData.
-        // Value: captured lane.m_TimeFactor before any scaling is applied this session.
-        private readonly Dictionary<Entity, float> m_BaseTimeFactor = new Dictionary<Entity, float>();
+        private struct BaseFactors
+        {
+            public float Time;
+            public float Traffic;
+        }
+
+        // Base (vanilla/current-session-original) factors per prefab entity (LaneDeteriorationData).
+        private readonly Dictionary<Entity, BaseFactors> m_Base = new Dictionary<Entity, BaseFactors>();
 
         protected override void OnCreate()
         {
             base.OnCreate();
 
-            // Only run if there are prefab entities that actually have lane deterioration settings.
-            // This is NOT per-road-segment data; it is prefab-level configuration used by many segments.
             EntityQuery q = SystemAPI.QueryBuilder()
                 .WithAll<PrefabData, LaneDeteriorationData>()
                 .Build();
 
             RequireForUpdate(q);
 
-            // One-shot behavior: disabled by default; enabled by Apply() or by game-load hook below.
             Enabled = false;
         }
 
@@ -42,27 +43,19 @@ namespace DispatchBoss
         {
             base.OnGameLoadingComplete(purpose, mode);
 
-            // Only apply when a real city is being played/loaded.
             bool isRealGame =
                 mode == GameMode.Game &&
                 (purpose == Purpose.NewGame || purpose == Purpose.LoadGame);
 
             if (!isRealGame)
-            {
                 return;
-            }
 
-            // Clear cached bases so the first run after loading captures fresh "original" values
-            // for this session (prevents accidental carryover between different city loads).
-            m_BaseTimeFactor.Clear();
-
-            // Enable so OnUpdate runs once right after loading completes.
+            m_Base.Clear();
             Enabled = true;
         }
 
         protected override void OnUpdate()
         {
-            // Safety: only operate in an active city.
             GameManager gm = GameManager.instance;
             if (gm == null || !gm.gameMode.IsGame())
             {
@@ -70,7 +63,6 @@ namespace DispatchBoss
                 return;
             }
 
-            // Safety: settings must exist.
             if (Mod.Settings == null)
             {
                 Enabled = false;
@@ -79,14 +71,11 @@ namespace DispatchBoss
 
             bool verbose = Mod.Settings.EnableDebugLogging;
 
-            float percent = Mod.Settings.RoadWearScalar; // Percent based, 100 = vanilla, 200 = 2x faster wear.
-
-            // Hard clamp so UI changes (or corrupted values) cannot push beyond supported range.
+            float percent = Mod.Settings.RoadWearScalar; // 100 = vanilla
             if (percent < Setting.RoadWearMinPercent) percent = Setting.RoadWearMinPercent;
             if (percent > Setting.RoadWearMaxPercent) percent = Setting.RoadWearMaxPercent;
 
-            // Convert percent to multiplier.
-            float scalar = percent / 100f;  // Example: 200% => 2.0f, 50% => 0.5f
+            float scalar = percent / 100f;
 
             int total = 0;
             int changed = 0;
@@ -100,29 +89,45 @@ namespace DispatchBoss
 
                 ref LaneDeteriorationData lane = ref laneRef.ValueRW;
 
-                if (!m_BaseTimeFactor.TryGetValue(e, out float baseTf))
+                if (!m_Base.TryGetValue(e, out BaseFactors baseF))
                 {
-                    baseTf = lane.m_TimeFactor;
-                    m_BaseTimeFactor[e] = baseTf;
+                    baseF = new BaseFactors
+                    {
+                        Time = lane.m_TimeFactor,
+                        Traffic = lane.m_TrafficFactor,
+                    };
+                    m_Base[e] = baseF;
                 }
 
-                float desired = baseTf * scalar;
+                float desiredTime = baseF.Time * scalar;
+                float desiredTraffic = baseF.Traffic * scalar;
 
-                if (desired < 0.0001f)
+                // Keep tiny positives so “0” doesn’t effectively freeze wear forever unless you explicitly want that behavior.
+                if (desiredTime < 0.0001f) desiredTime = 0.0001f;
+                if (desiredTraffic < 0.0001f) desiredTraffic = 0.0001f;
+
+                bool any = false;
+
+                if (Math.Abs(lane.m_TimeFactor - desiredTime) > 0.00001f)
                 {
-                    desired = 0.0001f;
+                    lane.m_TimeFactor = desiredTime;
+                    any = true;
                 }
 
-                if (Math.Abs(lane.m_TimeFactor - desired) > 0.00001f)
+                if (Math.Abs(lane.m_TrafficFactor - desiredTraffic) > 0.00001f)
                 {
-                    lane.m_TimeFactor = desired;
-                    changed++;
+                    lane.m_TrafficFactor = desiredTraffic;
+                    any = true;
                 }
+
+                if (any) changed++;
             }
 
             if (verbose)
             {
-                Mod.s_Log.Info($"{Mod.ModTag} Lane wear: RoadWearScalar={percent:0.#}% Scalar={scalar:0.###} TotalPrefabs={total} Changed={changed}");
+                Mod.s_Log.Info(
+                    $"{Mod.ModTag} Lane wear: RoadWearScalar={percent:0.#}% Scalar={scalar:0.###} " +
+                    $"Prefabs={total} Changed={changed} (scaled TimeFactor + TrafficFactor)");
             }
 
             Enabled = false;
