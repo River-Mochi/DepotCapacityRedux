@@ -69,12 +69,16 @@ namespace DispatchBoss
             updateSystem.UpdateAfter<IndustrySystem>(SystemUpdatePhase.PrefabUpdate);
             updateSystem.UpdateAfter<LaneWearSystem>(SystemUpdatePhase.PrefabUpdate);
 
-            // Allow transit lines range to be 1-50+
+            // Allow transit lines range to be 1-and higher than vanilla
             // Policy tuner: also better in PrefabUpdate so it applies immediately while paused/Options UI
             updateSystem.UpdateAfter<VehicleCountPolicyTunerSystem>(SystemUpdatePhase.PrefabUpdate);
 
             // Prefab scan: must run even while Options UI is open
             updateSystem.UpdateAt<PrefabScanSystem>(SystemUpdatePhase.PrefabUpdate);
+
+            // Debug probe: logs LaneCondition.m_Wear deltas (runtime)
+            updateSystem.UpdateAt<LaneWearProbeSystem>(SystemUpdatePhase.GameSimulation);
+
 
         }
 

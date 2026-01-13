@@ -3,6 +3,10 @@
 //          - Extractor fleet max trucks (TransportCompanyData.m_MaxTransports for industrial companies)
 //          - Cargo station max fleet (TransportCompanyData.m_MaxTransports for CargoTransportStationData)
 //          - Delivery truck cargo capacity (DeliveryTruckData.m_CargoCapacity)
+// Notes:
+// - Uses SystemAPI queries
+// - Delivery bucket classification here does NOT inspect tractor/trailer components;
+//   relies on name/resources/capacity, which is usually sufficient for buckets.
 
 namespace DispatchBoss
 {
@@ -95,8 +99,10 @@ namespace DispatchBoss
             // Cargo Stations: max trucks (TransportCompanyData.m_MaxTransports)
             // -------------------------
             {
-                // Cargo station slider is 1x..5x. Clamp to that range.
-                float scalar = ScalarMath.ClampScalar(settings.CargoStationMaxTrucksScalar, Setting.CargoStationMinScalar, Setting.CargoStationMaxScalar);
+                float scalar = ScalarMath.ClampScalar(
+                    settings.CargoStationMaxTrucksScalar,
+                    Setting.CargoStationMinScalar,
+                    Setting.CargoStationMaxScalar);
 
                 foreach ((RefRW<TransportCompanyData> companyRef, Entity prefabEntity) in SystemAPI
                              .Query<RefRW<TransportCompanyData>>()
@@ -118,7 +124,9 @@ namespace DispatchBoss
                     {
                         if (verbose)
                         {
-                            Mod.s_Log.Info($"{Mod.ModTag} CargoStation max trucks: '{PrefabNameUtil.GetNameSafe(m_PrefabSystem, prefabEntity)}' Base={baseMax} x{scalar:0.##} -> {newMax}");
+                            Mod.s_Log.Info(
+                                $"{Mod.ModTag} CargoStation max trucks: '{PrefabNameUtil.GetNameSafe(m_PrefabSystem, prefabEntity)}' " +
+                                $"Base={baseMax} x{scalar:0.##} -> {newMax}");
                         }
 
                         company.m_MaxTransports = newMax;
@@ -151,13 +159,12 @@ namespace DispatchBoss
 
                     string prefabName = PrefabNameUtil.GetNameSafe(m_PrefabSystem, prefabEntity);
 
-                    VehicleHelpers.GetTrailerTypeInfo(
-                        EntityManager,
-                        prefabEntity,
-                        out bool hasTractor,
-                        out CarTrailerType tractorType,
-                        out bool hasTrailer,
-                        out CarTrailerType trailerType);
+                    // don't inspect tractor/trailer component graphs here.
+                    // Classification still uses name/baseCap/resources; typically sufficient.
+                    bool hasTractor = false;
+                    CarTrailerType tractorType = default;
+                    bool hasTrailer = false;
+                    CarTrailerType trailerType = default;
 
                     VehicleHelpers.DeliveryBucket bucket = VehicleHelpers.ClassifyDeliveryTruckPrefab(
                         prefabName,
@@ -181,7 +188,9 @@ namespace DispatchBoss
                     {
                         if (verbose)
                         {
-                            Mod.s_Log.Info($"{Mod.ModTag} Delivery cargo: '{prefabName}' Bucket={bucket} Base={baseCap} x{scalar:0.##} -> {newCap} Resources={data.m_TransportedResources}");
+                            Mod.s_Log.Info(
+                                $"{Mod.ModTag} Delivery cargo: '{prefabName}' Bucket={bucket} Base={baseCap} x{scalar:0.##} -> {newCap} " +
+                                $"Resources={data.m_TransportedResources}");
                         }
 
                         data.m_CargoCapacity = newCap;
@@ -193,14 +202,10 @@ namespace DispatchBoss
             // Industrial extractor transport companies: max fleet (TransportCompanyData.m_MaxTransports)
             // -------------------------
             {
-                // Also clamp extractors to 1x..5x (extractor uses same slider range as CargoStation).
-                float scalarF = ScalarMath.ClampScalar(
-                      settings.ExtractorMaxTrucksScalar,
-                      Setting.CargoStationMinScalar,
-                      Setting.CargoStationMaxScalar);
-
-                int scalar = (int)Math.Round(scalarF);
-                scalar = ScalarMath.ClampInt(scalar, 1, (int)Setting.CargoStationMaxScalar);
+                float scalar = ScalarMath.ClampScalar(
+                    settings.ExtractorMaxTrucksScalar,
+                    Setting.CargoStationMinScalar,
+                    Setting.CargoStationMaxScalar);
 
                 int matched = 0;
                 int changed = 0;
@@ -221,7 +226,8 @@ namespace DispatchBoss
 
                     int baseMax = GetOrCacheExtractorCompanyBase(prefabEntity, tc.m_MaxTransports);
 
-                    if (baseMax == 0)
+                    // Keep 0 as 0 (some prefabs legitimately have 0/unused).
+                    if (baseMax == 0 && tc.m_MaxTransports == 0)
                     {
                         skippedZero++;
                         continue;
@@ -229,8 +235,7 @@ namespace DispatchBoss
 
                     matched++;
 
-                    int desired = baseMax * scalar;
-                    if (desired < 0) desired = 0;
+                    int desired = ScalarMath.ScaleIntRoundedAllowZeroMin1(baseMax, scalar);
 
                     if (tc.m_MaxTransports != desired)
                     {
@@ -239,14 +244,14 @@ namespace DispatchBoss
 
                         if (verbose)
                         {
-                            Mod.s_Log.Info($"{Mod.ModTag} Extractor trucks: '{name}' Base={baseMax} x{scalar} -> {desired}");
+                            Mod.s_Log.Info($"{Mod.ModTag} Extractor trucks: '{name}' Base={baseMax} x{scalar:0.##} -> {desired}");
                         }
                     }
                 }
 
                 if (verbose || changed > 0)
                 {
-                    Mod.s_Log.Info($"{Mod.ModTag} Extractor trucks: scalar={scalar} matched={matched} changed={changed} skippedZero={skippedZero}");
+                    Mod.s_Log.Info($"{Mod.ModTag} Extractor trucks: scalar={scalar:0.##} matched={matched} changed={changed} skippedZero={skippedZero}");
                 }
             }
 

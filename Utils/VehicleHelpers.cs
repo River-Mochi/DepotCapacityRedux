@@ -23,7 +23,7 @@ namespace DispatchBoss
             Motorbike = 4,
         }
 
-        // Preferred for systems: pass lookups from SystemAPI.GetComponentLookup<T>(true)
+
         public static void GetTrailerTypeInfo(
             in ComponentLookup<CarTractorData> tractorLookup,
             in ComponentLookup<CarTrailerData> trailerLookup,
@@ -141,4 +141,3 @@ namespace DispatchBoss
         }
     }
 }
-

@@ -69,7 +69,7 @@ namespace DispatchBoss
 
             m_PrefabSystem = World.GetOrCreateSystemManaged<PrefabSystem>();
 
-            // Cached query via SystemAPI.QueryBuilder (no EntityManager.CreateEntityQuery).
+            // Cached query via SystemAPI.QueryBuilder
             m_ConfigQuery = SystemAPI.QueryBuilder()
                 .WithAll<UITransportConfigurationData>()
                 .Build();
@@ -142,7 +142,7 @@ namespace DispatchBoss
                 const int kMaxLaneDetails = 250; // cap printed per-prefab lines
 
                 Append("== Lane wear (LaneDeteriorationData prefabs) ==");
-                Append("Wear sources (dnSpy):");
+                Append("Wear sources:");
                 Append("- Time wear: LaneCondition.m_Wear += (1/16) * TimeFactor per deterioration tick.");
                 Append("- Traffic wear: Car/Train Navigation adds SideEffects.x * TrafficFactor when vehicles traverse lanes.");
                 Append("");
