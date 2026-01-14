@@ -70,14 +70,14 @@ namespace DispatchBoss
         public const float CargoStationMaxScalar = 5f;
         public const float CargoStationStepScalar = 1f;
 
-        // Parks-Roads: display as percent (100%..1000% = 1x..10x).
+        // Parks+Roads: display as percent (100%..1000% = 1x..10x).
         public const float MaintenanceMinPercent = 100f;
-        public const float MaintenanceMaxPercent = 1000f;
+        public const float MaintenanceMaxPercent = 500f;
         public const float MaintenanceStepPercent = 10f;
 
-        // Road wear speed: percent (10%..400% = 0.1x..4.0x).
+        // Road wear speed: percent (10%..500% = 0.1x..5x).
         public const float RoadWearMinPercent = 10f;
-        public const float RoadWearMaxPercent = 1000f;
+        public const float RoadWearMaxPercent = 500f;
         public const float RoadWearStepPercent = 10f;
 
         private const string UrlParadox =

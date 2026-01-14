@@ -45,19 +45,19 @@ namespace DispatchBoss
                 // Public-Transit tab
                 // --------------------
 
-                { m_Setting.GetOptionGroupLocaleID(Setting.LineVehiclesGroup), "Transit Lines (in-game slider limits)" },
+                { m_Setting.GetOptionGroupLocaleID(Setting.LineVehiclesGroup), "Transit Lines (in-game slider range)" },
 
-                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.EnableLineVehicleCountTuner)), "Expand transit line range" },
+                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.EnableLineVehicleCountTuner)), "Expand transit line min/max" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.EnableLineVehicleCountTuner)),
-                    "Allows the in-game Transit Line slider to go as **low as 1 vehicle** on most routes.\n" +
-                    "**Maximum route line ranges are all increased** (this is variable but a lot more than what vanilla gives you).\n" +
-                    "The game uses route time (driving time + stop count), so max varies per line.\n" +
-                    "<Avoid Conflicts: remove mods that edit the same Transit Line policy>.\n" +
-                    "If you want to use another Transit Line mod, then keep this checkbox OFF.\n" +
+                    "Increases the range of in-game Transit Line slider.\n" +
+                    "**As low as (1)** on most routes.\n" +
+                    "**Maximum limit varies**; but all are 3x or more higher than vanilla\n" +
+                    "Game uses route time (driving time + stop count), which creates variable maximums (this mod follows game logic so does not set a static max limit like 50).\n" +
                     "Works for: bus, tram, train, subway, ship, ferry, airplane.\n\n" +
-
-                    "Tip: add a few stops to the route if you want to increase maximum end of the slider.\n" +
-                    "Game auto-increases the maximum allowed based on added stops + other factors, but adding stops is a simple player control."
+                    "**---------------**\n" +
+                    "<Avoid Conflicts>: remove mods that edit the same Transit Line policy.\n" +
+                    "Tip: if you want to increase maximum end of the slider a little more, add some stops to the route.\n" +
+                    "Game auto-increases the max based on added stops + factors; adding stops is an easy player tweak."
                 },
 
                 // Depot Capacity sliders
@@ -68,7 +68,7 @@ namespace DispatchBoss
                     "Change how many buses each **Bus Depot** can maintain/spawn.\n" +
                     "**100%** = vanilla (game default).\n" +
                     "**1000%** = 10× more.\n" +
-                    "Applies to the base building capacity." },
+                    "Applies to base buildings." },
 
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TaxiDepotScalar)), "Taxi depot" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.TaxiDepotScalar)),
@@ -78,17 +78,17 @@ namespace DispatchBoss
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TramDepotScalar)), "Tram depot" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.TramDepotScalar)),
                     "Change how many trams each **Tram Depot** can maintain.\n" +
-                    "Applies to the base building capacity." },
+                    "Applies to the base building." },
 
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TrainDepotScalar)), "Train depot" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.TrainDepotScalar)),
                     "Change how many trains each **Train Depot** can maintain.\n" +
-                    "Applies to the base building capacity." },
+                    "Applies to the base building." },
 
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.SubwayDepotScalar)), "Subway depot" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.SubwayDepotScalar)),
                     "Change how many subway vehicles each **Subway Depot** can maintain.\n" +
-                    "Applies to the base building capacity." },
+                    "Applies to the base building." },
 
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.ResetDepotToVanillaButton)), "Reset all depots" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.ResetDepotToVanillaButton)),
@@ -106,17 +106,24 @@ namespace DispatchBoss
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TramPassengerScalar)), "Tram" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.TramPassengerScalar)),
                     "Change **tram passenger** capacity.\n" +
-                    "**100%** = vanilla seats (game default)." },
+                    "**10%** = 10% of vanilla seats.\n" +
+                    "**100%** = vanilla seats (game default).\n" +
+                    "**1000%** = 10× more seats." },
 
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.TrainPassengerScalar)), "Train" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.TrainPassengerScalar)),
                     "Change **train passenger** capacity.\n" +
-                    "Applies to engines and cars." },
+                    "Applies to engines and sections.\n" +
+                    "**10%** = 10% of vanilla seats.\n" +
+                    "**100%** = vanilla seats (game default).\n" +
+                    "**1000%** = 10× more seats." },
 
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.SubwayPassengerScalar)), "Subway" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.SubwayPassengerScalar)),
                     "Change **subway passenger** capacity.\n" +
-                    "**100%** = vanilla seats (game default)." },
+                    "**10%** = 10% of vanilla seats.\n" +
+                    "**100%** = vanilla seats (game default).\n" +
+                    "**1000%** = 10× more seats." },
 
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.ShipPassengerScalar)), "Ship" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.ShipPassengerScalar)),
@@ -126,21 +133,25 @@ namespace DispatchBoss
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.FerryPassengerScalar)), "Ferry" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.FerryPassengerScalar)),
                     "Change **ferry passenger** capacity.\n" +
-                    "**100%** = vanilla seats (game default)." },
+                    "**10%** = 10% of vanilla seats.\n" +
+                    "**100%** = vanilla seats (game default).\n" +
+                    "**1000%** = 10× more seats." },
 
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.AirplanePassengerScalar)), "Airplane" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.AirplanePassengerScalar)),
                     "Change **airplane passenger** capacity.\n" +
-                    "**100%** = vanilla seats (game default)." },
+                    "**10%** = 10% of vanilla seats.\n" +
+                    "**100%** = vanilla seats (game default).\n" +
+                    "**1000%** = 10× more seats." },
 
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.DoublePassengersButton)), "Double up" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.DoublePassengersButton)),
-                    "Set every passenger slider to **200%**.\n" +
-                    "Applies to buses, trams, trains, subways, ships, ferries, and airplanes." },
+                    "Set every passenger slider to **200%**." },
 
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.ResetPassengerToVanillaButton)), "Reset all passengers" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.ResetPassengerToVanillaButton)),
-                    "Set all passenger sliders back to **100%** (game default / vanilla)." },
+                    "Set all passenger sliders back to **100%**\n" +
+                    "(game default / vanilla)." },
 
                 // ----------------
                 // INDUSTRY tab
@@ -152,22 +163,26 @@ namespace DispatchBoss
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.SemiTruckCargoScalar)),
                     "**Semi trucks** capactiy.\n" +
                     "Includes specialized industry Semi (farms, fish, forestry, etc.).\n" +
-                    "Multiplier: **1×** = vanilla (**25t**), **10×** = 10× more." },
+                    "**1×** = vanilla (**25t**)\n" +
+                    "**10×** = 10× more." },
 
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.DeliveryVanCargoScalar)), "Delivery vans" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.DeliveryVanCargoScalar)),
                     "**Delivery vans**\n" +
-                    "Multiplier: **1×** = vanilla (**4t**), **10×** = 10× more." },
+                    "**1×** = vanilla (**4t**)\n" +
+                    "**10×** = 10× more." },
 
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.OilTruckCargoScalar)), "Raw material trucks" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.OilTruckCargoScalar)),
                     "**Raw materials trucks** (oil, coal, ore, stone)\n" +
-                    "Multiplier: **1×** = vanilla (**20t**), **10×** = 10× more." },
+                    "**1×** = vanilla (**20t**)\n" +
+                    "**10×** = 10× more." },
 
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.MotorbikeDeliveryCargoScalar)), "Delivery Motorbike" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.MotorbikeDeliveryCargoScalar)),
                     "**Motorbike delivery**\n" +
-                    "Multiplier: **1×** = vanilla, **10×** = 10× more." },
+                    "**1×** = vanilla (**0.1t**)\n" +
+                    "**10×** = 10× more." },
 
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.ResetDeliveryToVanillaButton)), "Reset delivery" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.ResetDeliveryToVanillaButton)),
@@ -238,11 +253,11 @@ namespace DispatchBoss
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.RoadWearScalar)), "Road wear" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.RoadWearScalar)),
                     "<Alpha feature>\n" +
-                    "Controls how fast roads deteriorate from time/weather and traffic.\n" +
-                    "This scales both **Time and Traffic wear** factors.\n" +
+                    "Controls how fast roads deteriorate from **time and traffic** factors.\n" +
                     "**10%** = 10× slower wear (fewer repairs needed)\n" +
-                    "**1000%** = 10× faster wear (more repairs needed)\n" +
-                    "**100%** = vanilla"
+                    "**100%** = vanilla\n" +
+                    "**500%** = 5× faster wear (more repairs needed)\n"
+           
                 },
 
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.ResetRoadMaintenanceToVanillaButton)), "Reset road maintenance" },
@@ -271,7 +286,7 @@ namespace DispatchBoss
 
                 { m_Setting.GetOptionLabelLocaleID(nameof(Setting.RunPrefabScanButton)), "Scan Report (prefabs)" },
                 { m_Setting.GetOptionDescLocaleID(nameof(Setting.RunPrefabScanButton)),
-                    "One-time report of relevant prefabs + lane wear values.\n" +
+                    "One-time report of relevant prefabs + values.\n" +
                     "Report file: <ModsData/DispatchBoss/ScanReport-Prefabs.txt>\n" +
                     "Avoid clicking repeatedly; wait for status to show Done." },
 

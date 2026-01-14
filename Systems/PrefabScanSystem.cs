@@ -139,13 +139,12 @@ namespace DispatchBoss
                     if (truncated)
                         return;
 
-                    Append("");
                     Append("== Live lane usage (LaneCondition + PrefabRef) ==");
                     Append("Counts live lane entities grouped by PrefabRef.m_Prefab (lane prefab).");
                     Append("Proof that a small set of lane prefabs can power many road types.");
                     Append("");
 
-                    // Set of lane prefabs that actually have LaneDeteriorationData (ones we tweak).
+                    // Set of lane prefabs that actually have LaneDeteriorationData (ones mod tweaked).
                     var wearPrefabs = new HashSet<Entity>();
 
                     foreach ((RefRO<LaneDeteriorationData> detRO, Entity prefabEntity) in SystemAPI
@@ -211,9 +210,8 @@ namespace DispatchBoss
                     }
                 }
 
-                Append("Dispatch Boss: Prefab Scan Report");
+                Append($"Prefab Scan Report for: {Mod.ModName} {Mod.ModVersion}") ;
                 Append($"Timestamp (local): {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
-                Append($"Mod: {Mod.ModName} {Mod.ModVersion}");
                 Append("");
 
                 // ---- Lane wear ----
@@ -290,9 +288,9 @@ namespace DispatchBoss
 
                 // NEW: Prove Coverage section
                 AppendLiveLaneUsage();
-
-
+                Append("");
                 // ---- Transit Lines ----
+
                 Append("== Transit lines (vanilla timing inputs) ==");
                 Append("Vehicle targets are based on route time estimate (segment durations + stop count).");
                 Append("");
