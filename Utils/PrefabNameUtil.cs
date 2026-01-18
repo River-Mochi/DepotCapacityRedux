@@ -1,5 +1,5 @@
 // File: Utils/PrefabNameUtil.cs
-// Purpose: name lookup (string). One place for safe prefab name lookup (no crashes, minimal noise).
+// Purpose: name lookup (string). One place for safe prefab name lookup.
 // Notes:
 // - Logs exception only once (rare, but keeps logs clean).
 // - Returns a stable fallback string if name can't be resolved.
